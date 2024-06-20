@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "Camera.h"
+
 static void error_callback(int error, const char *description)
 {
   fprintf(stderr, "Error: %s\n", description);
@@ -50,19 +52,25 @@ int main(void)
   // Enable depth test
   glEnable(GL_DEPTH_TEST);
 
-  Triangle *Tri1 = new Triangle();
-  Triangle *Tri2 = new Triangle();
+  int width, height;
+  glfwGetFramebufferSize(window, &width, &height);
+
+  Camera camera(45.0f * (3.14159265f / 180.0f), (float)width / height, 0.1f,
+                10.0f);
+
+  Triangle *Tri1 = new Triangle(width, height);
+  Triangle *Tri2 = new Triangle(width * 2, height * 2);
 
   while (!glfwWindowShouldClose(window))
   {
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    const float ratio = width / (float)height;
+
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    Tri1->draw(ratio);
-    Tri2->draw(ratio / 1.5);
+    Tri1->draw(camera);
+    Tri2->draw(camera);
+
+    camera.setPosition(0, sin((float)glfwGetTime()) * 2, 2);
 
     glfwSwapBuffers(window);
     glfwPollEvents();

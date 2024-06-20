@@ -1,7 +1,9 @@
 #include "Triangle.h"
+#include "Camera.h"
 #include <stdio.h>
 
-Triangle::Triangle() : program(glCreateProgram())
+Triangle::Triangle(const int width, const int height)
+    : program(glCreateProgram()), ratio(width / (float)height)
 {
   GLuint vertex_buffer;
   glGenBuffers(1, &vertex_buffer);
@@ -33,21 +35,17 @@ Triangle::Triangle() : program(glCreateProgram())
                         (void *)offsetof(Vertex, col));
 }
 
-void Triangle::draw(const float ratio)
+void Triangle::draw(const Camera &camera)
 {
-  mat4x4 m, p, mvp;
+  mat4x4 m, p, v, vp, mvp;
   mat4x4_identity(m);
   mat4x4_rotate_Z(m, m, (float)glfwGetTime());
-  mat4x4_translate_in_place(m, 0.0f, 0.0f, -2 - sin(glfwGetTime()));
 
-  // Create a perspective projection matrix
-  float fov = 45.0f * (3.14159265f / 180.0f); // Field of view in radians
-  float near = 0.1f;                          // Near clipping plane
-  float far = 10.0f;                          // Far clipping plane
-  float aspect = ratio;                       // Aspect ratio
+  camera.getProjectionMatrix(p);
+  camera.getViewMatrix(v);
 
-  mat4x4_perspective(p, fov, aspect, near, far);
-  mat4x4_mul(mvp, p, m);
+  mat4x4_mul(vp, p, v);
+  mat4x4_mul(mvp, vp, m);
 
   glUseProgram(program);
   glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat *)&mvp);

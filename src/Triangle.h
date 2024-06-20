@@ -1,6 +1,9 @@
+#pragma once
+
 #define GLAD_GL_IMPLEMENTATION
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
+#include "Camera.h"
 #include <GLFW/glfw3.h>
 #include <linmath.h>
 
@@ -37,9 +40,9 @@ static const char *fragment_shader_text = "#version 330\n"
 class Triangle
 {
 public:
-  Triangle();
+  Triangle(const int width, const int height);
 
-  void draw(const float ratio);
+  void draw(const Camera &camera);
 
 private:
   const GLuint program;
@@ -47,4 +50,6 @@ private:
   GLint vpos_location;
   GLint vcol_location;
   GLuint vertex_array;
+
+  float ratio;
 };
