@@ -1,0 +1,8 @@
+{
+    "editor.defaultFormatter": "xaver.clang-format",
+    "editor.formatOnSave": true,
+    "files.associations": {
+        "ratio": "cpp",
+        "ios": "cpp"
+    }
+}
