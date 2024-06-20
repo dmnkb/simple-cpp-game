@@ -39,7 +39,6 @@ void Triangle::draw(const Camera &camera)
 {
   mat4x4 m, p, v, vp, mvp;
   mat4x4_identity(m);
-  mat4x4_rotate_Z(m, m, (float)glfwGetTime());
 
   camera.getProjectionMatrix(p);
   camera.getViewMatrix(v);

@@ -17,5 +17,7 @@ private:
   Renderer *renderer;
   Camera camera;
 
-  Triangle *Tri1, *Tri2;
+  float camX, camZ;
+
+  Triangle *Tri1;
 };

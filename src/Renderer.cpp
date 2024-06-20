@@ -6,11 +6,12 @@
 
 Renderer *Renderer::instance = nullptr;
 
-Renderer::Renderer() : isWindowOpen(true)
+Renderer::Renderer()
+    : isWindowOpen(true), keyW(false), keyA(false), keyS(false), keyD(false)
 {
   instance = this;
 
-  glfwSetErrorCallback(error_callback);
+  glfwSetErrorCallback(errorCallback);
 
   if (!glfwInit())
     exit(EXIT_FAILURE);
@@ -27,7 +28,8 @@ Renderer::Renderer() : isWindowOpen(true)
     exit(EXIT_FAILURE);
   }
 
-  glfwSetKeyCallback(window, key_callback);
+  glfwSetKeyCallback(window, keyCallback);
+  glfwSetWindowCloseCallback(window, closeCallback);
 
   glfwMakeContextCurrent(window);
   gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
@@ -41,6 +43,7 @@ Renderer::Renderer() : isWindowOpen(true)
 
 void Renderer::beginRender()
 {
+
   glViewport(0, 0, windowWidth, windowHeight);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
@@ -51,13 +54,13 @@ void Renderer::endRender()
   glfwPollEvents();
 }
 
-void Renderer::error_callback(int error, const char *description)
+void Renderer::errorCallback(int error, const char *description)
 {
   fprintf(stderr, "Error: %s\n", description);
 }
 
-void Renderer::key_callback(GLFWwindow *window, int key, int scancode,
-                            int action, int mods)
+void Renderer::keyCallback(GLFWwindow *window, int key, int scancode,
+                           int action, int mods)
 {
   if (instance)
   {
@@ -65,10 +68,21 @@ void Renderer::key_callback(GLFWwindow *window, int key, int scancode,
   }
 }
 
+void Renderer::closeCallback(GLFWwindow *window)
+{
+  instance->isWindowOpen = false;
+}
+
 void Renderer::handleKeyCallback(GLFWwindow *window, int key, int scancode,
                                  int action, int mods)
 {
   printf("Key pressed: %d\n", key);
+  printf("Action: %d\n", action);
+
+  keyW = action > 0 && key == 87;
+  keyA = action > 0 && key == 65;
+  keyS = action > 0 && key == 83;
+  keyD = action > 0 && key == 68;
 
   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
   {
