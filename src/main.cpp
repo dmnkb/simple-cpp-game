@@ -24,7 +24,6 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action,
 
 int main(void)
 {
-
   glfwSetErrorCallback(error_callback);
 
   if (!glfwInit())
@@ -48,7 +47,11 @@ int main(void)
   gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
   glfwSwapInterval(1);
 
-  Triangle *Tri = new Triangle();
+  // Enable depth test
+  glEnable(GL_DEPTH_TEST);
+
+  Triangle *Tri1 = new Triangle();
+  Triangle *Tri2 = new Triangle();
 
   while (!glfwWindowShouldClose(window))
   {
@@ -56,15 +59,17 @@ int main(void)
     glfwGetFramebufferSize(window, &width, &height);
     const float ratio = width / (float)height;
     glViewport(0, 0, width, height);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    Tri->draw(ratio);
+    Tri1->draw(ratio);
+    Tri2->draw(ratio / 1.5);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
 
-  delete Tri;
+  delete Tri1;
+  delete Tri2;
 
   glfwDestroyWindow(window);
 
