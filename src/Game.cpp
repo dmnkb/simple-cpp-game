@@ -4,7 +4,7 @@ Game::Game()
     : renderer(new Renderer()),
       camera(45.0f * (3.14159265f / 180.0f),
              (float)renderer->windowWidth / renderer->windowHeight, 0.1f,
-             10.0f),
+             100.0f),
       camX(0.0f), camZ(5.0f)
 {
   Tri1 = new Triangle(renderer->windowWidth, renderer->windowHeight);
