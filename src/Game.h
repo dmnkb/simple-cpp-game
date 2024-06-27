@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Camera.h"
+#include "Plane.h"
 #include "Renderer.h"
-#include "Triangle.h"
 
 class Game
 {
@@ -19,5 +19,5 @@ private:
 
   float camX, camZ;
 
-  Triangle *Tri1;
+  Plane *plane;
 };

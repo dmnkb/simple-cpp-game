@@ -2,12 +2,10 @@
 
 Game::Game()
     : renderer(new Renderer()),
-      camera(45.0f * (3.14159265f / 180.0f),
-             (float)renderer->windowWidth / renderer->windowHeight, 0.1f,
-             100.0f),
+      camera(45.0f * (3.14159265f / 180.0f), (float)renderer->windowWidth / renderer->windowHeight, 0.1f, 100.0f),
       camX(0.0f), camZ(5.0f)
 {
-  Tri1 = new Triangle(renderer->windowWidth, renderer->windowHeight);
+  plane = new Plane(renderer->windowWidth, renderer->windowHeight);
 }
 
 void Game::run()
@@ -16,7 +14,7 @@ void Game::run()
   {
     renderer->beginRender();
 
-    Tri1->draw(camera);
+    plane->draw(camera);
 
     // TODO: Times delta time
     if (renderer->keyW)
@@ -36,7 +34,7 @@ void Game::run()
 
 Game::~Game()
 {
-  delete Tri1;
+  delete plane;
 
   exit(EXIT_SUCCESS);
 }
