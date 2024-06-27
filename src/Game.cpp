@@ -35,6 +35,7 @@ void Game::run()
 Game::~Game()
 {
   delete plane;
+  delete renderer;
 
   exit(EXIT_SUCCESS);
 }
