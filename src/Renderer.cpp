@@ -6,8 +6,7 @@
 
 Renderer *Renderer::instance = nullptr;
 
-Renderer::Renderer()
-    : isWindowOpen(true), keyW(false), keyA(false), keyS(false), keyD(false)
+Renderer::Renderer() : isWindowOpen(true), keyW(false), keyA(false), keyS(false), keyD(false)
 {
   instance = this;
 
@@ -54,13 +53,9 @@ void Renderer::endRender()
   glfwPollEvents();
 }
 
-void Renderer::errorCallback(int error, const char *description)
-{
-  fprintf(stderr, "Error: %s\n", description);
-}
+void Renderer::errorCallback(int error, const char *description) { fprintf(stderr, "Error: %s\n", description); }
 
-void Renderer::keyCallback(GLFWwindow *window, int key, int scancode,
-                           int action, int mods)
+void Renderer::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
   if (instance)
   {
@@ -68,13 +63,9 @@ void Renderer::keyCallback(GLFWwindow *window, int key, int scancode,
   }
 }
 
-void Renderer::closeCallback(GLFWwindow *window)
-{
-  instance->isWindowOpen = false;
-}
+void Renderer::closeCallback(GLFWwindow *window) { instance->isWindowOpen = false; }
 
-void Renderer::handleKeyCallback(GLFWwindow *window, int key, int scancode,
-                                 int action, int mods)
+void Renderer::handleKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
   printf("Key pressed: %d\n", key);
   printf("Action: %d\n", action);

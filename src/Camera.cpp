@@ -1,7 +1,6 @@
 #include "Camera.h"
 
-Camera::Camera(float fov, float aspect, float near, float far)
-    : fov(fov), aspect(aspect), near(near), far(far)
+Camera::Camera(float fov, float aspect, float near, float far) : fov(fov), aspect(aspect), near(near), far(far)
 {
   vec3 defaultPosition = {0.0f, 0.0f, 5.0f};
   vec3 defaultTarget = {0.0f, 0.0f, 0.0f};
@@ -23,10 +22,7 @@ void Camera::lookAt(float x, float y, float z)
   target[2] = z;
 }
 
-void Camera::getProjectionMatrix(mat4x4 proj) const
-{
-  mat4x4_perspective(proj, fov, aspect, near, far);
-}
+void Camera::getProjectionMatrix(mat4x4 proj) const { mat4x4_perspective(proj, fov, aspect, near, far); }
 
 void Camera::getViewMatrix(mat4x4 view) const
 {

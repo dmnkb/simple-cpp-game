@@ -23,10 +23,8 @@ private:
   static Renderer *instance;
 
   static void errorCallback(int error, const char *description);
-  static void keyCallback(GLFWwindow *window, int key, int scancode, int action,
-                          int mods);
+  static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
-  void handleKeyCallback(GLFWwindow *window, int key, int scancode, int action,
-                         int mods);
+  void handleKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
   static void closeCallback(GLFWwindow *window);
 };
