@@ -46,13 +46,19 @@ Plane::Plane(const int width, const int height) : program(glCreateProgram()), ra
     glEnableVertexAttribArray(vuv_location);
     glVertexAttribPointer(vuv_location, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, uv));
 
+    std::string texturePath = "assets/texture_01.png";
+    if (!std::filesystem::exists(texturePath))
+    {
+        fprintf(stderr, "[ERROR] Texture file not found: %s\n", texturePath.c_str());
+        return;
+    }
+
     int texWidth, texHeight, nrChannels;
-    unsigned char *data = stbi_load("/Users/Dominik.Borchert/Desktop/simple-cpp-game/assets/texture_01.png", &texWidth,
-                                    &texHeight, &nrChannels, 0);
+    unsigned char *data = stbi_load(texturePath.c_str(), &texWidth, &texHeight, &nrChannels, 0);
 
     if (!data)
     {
-        fprintf(stderr, "Failed to load texture\n");
+        fprintf(stderr, "[ERROR] Failed to load texture\n");
         return;
     }
 

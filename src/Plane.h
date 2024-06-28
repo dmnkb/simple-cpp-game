@@ -60,7 +60,7 @@ static void checkShaderCompilation(GLuint shader)
     {
         GLchar infoLog[1024];
         glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-        fprintf(stderr, "Error compiling shader: %s\n", infoLog);
+        fprintf(stderr, "[ERROR] Error compiling shader: %s\n", infoLog);
     }
 }
 
@@ -72,7 +72,7 @@ static void checkProgramLinking(GLuint program)
     {
         GLchar infoLog[1024];
         glGetProgramInfoLog(program, 1024, NULL, infoLog);
-        fprintf(stderr, "Error linking program: %s\n", infoLog);
+        fprintf(stderr, "[ERROR] Error linking program: %s\n", infoLog);
     }
 }
 
