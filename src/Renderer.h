@@ -5,26 +5,26 @@
 
 class Renderer
 {
-public:
-  Renderer();
-  ~Renderer();
+  public:
+    Renderer();
+    ~Renderer();
 
-  void beginRender();
-  void endRender();
+    void beginRender();
+    void endRender();
 
-  bool isWindowOpen;
-  int windowWidth, windowHeight;
+    bool isWindowOpen;
+    int windowWidth, windowHeight;
 
-  bool keyW, keyA, keyS, keyD;
+    bool keyW, keyA, keyS, keyD;
 
-private:
-  GLFWwindow *window;
+  private:
+    GLFWwindow *window;
 
-  static Renderer *instance;
+    static Renderer *instance;
 
-  static void errorCallback(int error, const char *description);
-  static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
+    static void errorCallback(int error, const char *description);
+    static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
-  void handleKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
-  static void closeCallback(GLFWwindow *window);
+    void handleKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
+    static void closeCallback(GLFWwindow *window);
 };

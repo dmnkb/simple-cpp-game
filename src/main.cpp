@@ -2,9 +2,9 @@
 
 int main(void)
 {
-  Game *game = new Game();
+    Game *game = new Game();
 
-  game->run();
+    game->run();
 
-  delete game;
+    delete game;
 }

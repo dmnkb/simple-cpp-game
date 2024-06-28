@@ -6,18 +6,18 @@
 
 class Game
 {
-public:
-  Game();
+  public:
+    Game();
 
-  void run();
+    void run();
 
-  ~Game();
+    ~Game();
 
-private:
-  Renderer *renderer;
-  Camera camera;
+  private:
+    Renderer *renderer;
+    Camera camera;
 
-  float camX, camZ;
+    float camX, camZ;
 
-  Plane *plane;
+    Plane *plane;
 };

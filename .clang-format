@@ -1,4 +1,6 @@
-Language:        Cpp
-BasedOnStyle:  LLVM
-BreakBeforeBraces: Allman
-ColumnLimit:     120
+Language:           Cpp
+BasedOnStyle:       LLVM
+BreakBeforeBraces:  Allman
+ColumnLimit:        120
+IndentWidth:        4
+UseTab:             Never
