@@ -11,10 +11,11 @@ class Player
     void onKeyEvent(std::shared_ptr<Event> event);
     void onMousePosEvent(std::shared_ptr<Event> event);
     void update();
+    bool isKeyPressed(unsigned int key);
 
   private:
     Camera& m_Camera;
     vec3 m_Position;
 
-    bool m_KeyW, m_KeyS;
+    std::vector<unsigned int> m_PressedKeys;
 };
