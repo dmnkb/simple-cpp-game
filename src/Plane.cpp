@@ -48,7 +48,7 @@ Plane::Plane(const int width, const int height) : program(glCreateProgram()), ra
     glEnableVertexAttribArray(vuv_location);
     glVertexAttribPointer(vuv_location, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
 
-    std::string texturePath = "assets/texture_01.png";
+    std::string texturePath = "assets/texture_02.png";
     if (!std::filesystem::exists(texturePath))
     {
         fprintf(stderr, "[ERROR] Texture file not found: %s\n", texturePath.c_str());

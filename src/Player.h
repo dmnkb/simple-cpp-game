@@ -16,6 +16,12 @@ class Player
   private:
     Camera& m_Camera;
     vec3 m_Position;
+    vec2 m_Rotation;
+    struct
+    {
+        int x;
+        int y;
+    } m_camChange;
 
     std::vector<unsigned int> m_PressedKeys;
 };

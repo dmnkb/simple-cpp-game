@@ -35,7 +35,7 @@ Renderer::Renderer(EventManager& eventManager) : m_EventManager(eventManager), i
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     glfwSwapInterval(1);
 
-    // Enable depth test
+    glClearColor(0.2902f, 0.4196f, 0.9647f, 1.0f);
     glEnable(GL_DEPTH_TEST);
 
     glfwGetFramebufferSize(m_Window, &windowWidth, &windowHeight);

@@ -2,7 +2,7 @@
 #include <GLFW/glfw3.h>
 #include <string>
 
-Player::Player(Camera& camera, EventManager& eventManager) : m_Camera(camera)
+Player::Player(Camera& camera, EventManager& eventManager) : m_Camera(camera), m_Position{0, 0, -2}, m_Rotation{0, 0}
 {
     eventManager.registerListeners(typeid(KeyEvent).name(),
                                    [this](std::shared_ptr<Event> event) { this->onKeyEvent(event); });
