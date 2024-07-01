@@ -4,9 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-Renderer *Renderer::instance = nullptr;
+Renderer* Renderer::instance = nullptr;
 
-Renderer::Renderer() : isWindowOpen(true), keyW(false), keyA(false), keyS(false), keyD(false)
+Renderer::Renderer(EventManager& eventManager) : m_EventManager(eventManager), isWindowOpen(true)
 {
     instance = this;
 
@@ -19,71 +19,81 @@ Renderer::Renderer() : isWindowOpen(true), keyW(false), keyA(false), keyS(false)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window = glfwCreateWindow(640, 480, "OpenGL Triangle", NULL, NULL);
+    m_Window = glfwCreateWindow(640, 480, "OpenGL Triangle", NULL, NULL);
 
-    if (!window)
+    if (!m_Window)
     {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
 
-    glfwSetKeyCallback(window, keyCallback);
-    glfwSetWindowCloseCallback(window, closeCallback);
+    glfwSetKeyCallback(m_Window, keyCallback);
+    glfwSetCursorPosCallback(m_Window, mousePosCallback);
+    glfwSetWindowCloseCallback(m_Window, closeCallback);
 
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(m_Window);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     glfwSwapInterval(1);
 
     // Enable depth test
     glEnable(GL_DEPTH_TEST);
 
-    glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
+    glfwGetFramebufferSize(m_Window, &windowWidth, &windowHeight);
+}
+
+void Renderer::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (instance)
+        instance->handleKeyCallback(window, key, scancode, action, mods);
+}
+
+void Renderer::handleKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    auto event = std::make_shared<KeyEvent>(key, action);
+    m_EventManager.queueEvent(event);
+}
+
+void Renderer::mousePosCallback(GLFWwindow* window, double xpos, double ypos)
+{
+    if (instance)
+        instance->handleMousePosCallback(window, xpos, ypos);
+}
+
+void Renderer::handleMousePosCallback(GLFWwindow* window, double xpos, double ypos)
+{
+    auto event = std::make_shared<MousePosEvent>(xpos, ypos);
+    m_EventManager.queueEvent(event);
+}
+
+void Renderer::closeCallback(GLFWwindow* window)
+{
+    instance->isWindowOpen = false;
 }
 
 void Renderer::beginRender()
 {
-
     glViewport(0, 0, windowWidth, windowHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void Renderer::endRender()
 {
-    glfwSwapBuffers(window);
+    glfwSwapBuffers(m_Window);
     glfwPollEvents();
 }
 
-void Renderer::errorCallback(int error, const char *description) { fprintf(stderr, "Error: %s\n", description); }
-
-void Renderer::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
+GLFWwindow* Renderer::getWindow()
 {
-    if (instance)
-    {
-        instance->handleKeyCallback(window, key, scancode, action, mods);
-    }
+    return m_Window;
 }
 
-void Renderer::closeCallback(GLFWwindow *window) { instance->isWindowOpen = false; }
-
-void Renderer::handleKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
+void Renderer::errorCallback(int error, const char* description)
 {
-    printf("Key pressed: %d\n", key);
-    printf("Action: %d\n", action);
-
-    keyW = action > 0 && key == 87;
-    keyA = action > 0 && key == 65;
-    keyS = action > 0 && key == 83;
-    keyD = action > 0 && key == 68;
-
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-    {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-        isWindowOpen = false;
-    }
+    fprintf(stderr, "Error: %s\n", description);
 }
 
 Renderer::~Renderer()
 {
-    glfwDestroyWindow(window);
+    glfwDestroyWindow(m_Window);
     glfwTerminate();
 }

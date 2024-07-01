@@ -2,6 +2,7 @@
 
 #include "Camera.h"
 #include "Plane.h"
+#include "Player.h"
 #include "Renderer.h"
 
 class Game
@@ -14,10 +15,10 @@ class Game
     ~Game();
 
   private:
-    Renderer *renderer;
-    Camera camera;
+    Renderer m_Renderer;
+    EventManager m_EventManager;
+    Player m_Player;
+    Camera m_Camera;
 
-    float camX, camZ;
-
-    Plane *plane;
+    Plane* m_Plane;
 };

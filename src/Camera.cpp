@@ -22,7 +22,10 @@ void Camera::lookAt(float x, float y, float z)
     target[2] = z;
 }
 
-void Camera::getProjectionMatrix(mat4x4 proj) const { mat4x4_perspective(proj, fov, aspect, near, far); }
+void Camera::getProjectionMatrix(mat4x4 proj) const
+{
+    mat4x4_perspective(proj, fov, aspect, near, far);
+}
 
 void Camera::getViewMatrix(mat4x4 view) const
 {

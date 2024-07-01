@@ -31,6 +31,8 @@ Plane::Plane(const int width, const int height) : program(glCreateProgram()), ra
     glLinkProgram(program);
     checkProgramLinking(program);
 
+    // TODO: glDeleteProgram (and shader) in destructor of Shader class
+
     mvp_location = glGetUniformLocation(program, "MVP");
     vpos_location = glGetAttribLocation(program, "vPos");
     vuv_location = glGetAttribLocation(program, "vUV");
@@ -41,10 +43,10 @@ Plane::Plane(const int width, const int height) : program(glCreateProgram()), ra
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
 
     glEnableVertexAttribArray(vpos_location);
-    glVertexAttribPointer(vpos_location, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, pos));
+    glVertexAttribPointer(vpos_location, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
 
     glEnableVertexAttribArray(vuv_location);
-    glVertexAttribPointer(vuv_location, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, uv));
+    glVertexAttribPointer(vuv_location, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
 
     std::string texturePath = "assets/texture_01.png";
     if (!std::filesystem::exists(texturePath))
@@ -54,7 +56,7 @@ Plane::Plane(const int width, const int height) : program(glCreateProgram()), ra
     }
 
     int texWidth, texHeight, nrChannels;
-    unsigned char *data = stbi_load(texturePath.c_str(), &texWidth, &texHeight, &nrChannels, 0);
+    unsigned char* data = stbi_load(texturePath.c_str(), &texWidth, &texHeight, &nrChannels, 0);
 
     if (!data)
     {
@@ -76,7 +78,7 @@ Plane::Plane(const int width, const int height) : program(glCreateProgram()), ra
     stbi_image_free(data);
 }
 
-void Plane::draw(const Camera &camera)
+void Plane::draw(const Camera& camera)
 {
     mat4x4 m, p, v, vp, mvp;
     mat4x4_identity(m);
@@ -88,7 +90,7 @@ void Plane::draw(const Camera &camera)
     mat4x4_mul(mvp, vp, m);
 
     glUseProgram(program);
-    glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat *)&mvp);
+    glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*)&mvp);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);

@@ -1,5 +1,6 @@
 #pragma once
 
+// TODO: Maybe replace with glm:: ?
 #include <linmath.h>
 
 class Camera
