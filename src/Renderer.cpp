@@ -49,6 +49,12 @@ void Renderer::keyCallback(GLFWwindow* window, int key, int scancode, int action
 
 void Renderer::handleKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    {
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+        isWindowOpen = false;
+    }
+
     auto event = std::make_shared<KeyEvent>(key, action);
     m_EventManager.queueEvent(event);
 }
