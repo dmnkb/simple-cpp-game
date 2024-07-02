@@ -10,6 +10,7 @@
 
 typedef struct Vertex
 {
+    // TODO: Migrate to glm::vec3 https://glm.g-truc.net/0.9.9/
     vec3 pos;
     vec2 uv;
 } Vertex;
@@ -31,7 +32,7 @@ static const GLuint indices[6] = {
     2, 3, 0  // second triangle
 };
 
-static const char *vertex_shader_text = "#version 330\n"
+static const char* vertex_shader_text = "#version 330\n"
                                         "uniform mat4 MVP;\n"
                                         "in vec3 vPos;\n"
                                         "in vec2 vUV;\n"
@@ -42,7 +43,7 @@ static const char *vertex_shader_text = "#version 330\n"
                                         "    UV = vUV;\n"
                                         "}\n";
 
-static const char *fragment_shader_text = "#version 330\n"
+static const char* fragment_shader_text = "#version 330\n"
                                           "in vec2 UV;\n"
                                           "out vec4 fragment;\n"
                                           "uniform sampler2D myTextureSampler;\n"
@@ -81,7 +82,7 @@ class Plane
   public:
     Plane(const int width, const int height);
 
-    void draw(const Camera &camera);
+    void draw(const Camera& camera);
 
   private:
     const GLuint program;

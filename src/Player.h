@@ -17,6 +17,7 @@ class Player
     Camera& m_Camera;
     vec3 m_Position;
     vec2 m_Rotation;
+    vec3 m_Direction;
     struct
     {
         double x;

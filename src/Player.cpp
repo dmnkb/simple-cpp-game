@@ -46,27 +46,52 @@ void Player::onMousePosEvent(Event* event)
 
 void Player::update()
 {
-    m_Camera.setPosition(m_Position[0], m_Position[1], m_Position[2]);
-    if (isKeyPressed(GLFW_KEY_W))
-        m_Position[2] -= .01;
-    if (isKeyPressed(GLFW_KEY_S))
-        m_Position[2] += .01;
-    if (isKeyPressed(GLFW_KEY_A))
-        m_Position[0] -= .01;
-    if (isKeyPressed(GLFW_KEY_D))
-        m_Position[0] += .01;
-
+    // Rotation
     m_Rotation[0] += m_camChange.x;
     m_Rotation[1] += m_camChange.y;
 
-    // clang-format off
-    m_Camera.lookAt(    m_Position[0] + sin(m_Rotation[0] * M_PI / 180.f), 
-                        m_Position[1] + tan(m_Rotation[1] * M_PI / 180.f),
-                        m_Position[2] + cos(m_Rotation[0] * M_PI / 180.f));
-    // clang-format on
+    float radians = m_Rotation[0] * (M_PI / 180.0);
+
+    m_Direction[0] = sin(radians);
+    m_Direction[1] = 0;
+    m_Direction[2] = cos(radians);
+
+    m_Camera.lookAt(m_Position[0] + m_Direction[0], m_Position[1] + m_Direction[1], m_Position[2] + m_Direction[2]);
 
     m_camChange.x = 0;
     m_camChange.y = 0;
+
+    // Position
+    float speed = 0.01f;
+
+    if (isKeyPressed(GLFW_KEY_W))
+    {
+        m_Position[0] += speed * m_Direction[0];
+        m_Position[2] += speed * m_Direction[2];
+    }
+    if (isKeyPressed(GLFW_KEY_S))
+    {
+        m_Position[0] -= speed * m_Direction[0];
+        m_Position[2] -= speed * m_Direction[2];
+    }
+    if (isKeyPressed(GLFW_KEY_A))
+    {
+        float leftRadians = (m_Rotation[0] + 90.0f) * (M_PI / 180.0);
+        float leftDirectionX = sin(leftRadians);
+        float leftDirectionZ = cos(leftRadians);
+        m_Position[0] += speed * leftDirectionX;
+        m_Position[2] += speed * leftDirectionZ;
+    }
+    if (isKeyPressed(GLFW_KEY_D))
+    {
+        float rightRadians = (m_Rotation[0] - 90.0f) * (M_PI / 180.0);
+        float rightDirectionX = sin(rightRadians);
+        float rightDirectionZ = cos(rightRadians);
+        m_Position[0] += speed * rightDirectionX;
+        m_Position[2] += speed * rightDirectionZ;
+    }
+
+    m_Camera.setPosition(m_Position[0], m_Position[1], m_Position[2]);
 }
 
 bool Player::isKeyPressed(unsigned int key)
