@@ -11,7 +11,7 @@ class Player
 
     void onKeyEvent(Event* event);
     void onMousePosEvent(Event* event);
-    void update();
+    void update(double deltaTime);
     bool isKeyPressed(unsigned int key);
 
   private:

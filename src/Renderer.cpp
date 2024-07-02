@@ -6,7 +6,8 @@
 
 Renderer* Renderer::instance = nullptr;
 
-Renderer::Renderer(EventManager& eventManager) : m_EventManager(eventManager), isWindowOpen(true)
+Renderer::Renderer(EventManager& eventManager)
+    : m_EventManager(eventManager), isWindowOpen(true), m_FPSUpdateTime(glfwGetTime())
 {
     instance = this;
 
@@ -39,6 +40,37 @@ Renderer::Renderer(EventManager& eventManager) : m_EventManager(eventManager), i
     glEnable(GL_DEPTH_TEST);
 
     glfwGetFramebufferSize(m_Window, &windowWidth, &windowHeight);
+}
+
+void Renderer::beginRender()
+{
+    glViewport(0, 0, windowWidth, windowHeight);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Calculate delta time
+    double currentTime = glfwGetTime();
+    m_DeltaTime = static_cast<float>(currentTime - m_PreviousTime);
+    m_PreviousTime = currentTime;
+
+    m_FrameCount++;
+
+    // Print FPS every second
+    if (currentTime - m_FPSUpdateTime >= 1.0)
+    {
+        double fps = double(m_FrameCount) / (currentTime - m_FPSUpdateTime);
+
+        m_FPSUpdateTime = currentTime;
+        m_FrameCount = 0;
+
+        std::string title = "FPS: " + std::to_string(fps);
+        glfwSetWindowTitle(m_Window, title.c_str());
+    }
+}
+
+void Renderer::endRender()
+{
+    glfwSwapBuffers(m_Window);
+    glfwPollEvents();
 }
 
 void Renderer::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -76,21 +108,14 @@ void Renderer::closeCallback(GLFWwindow* window)
     instance->isWindowOpen = false;
 }
 
-void Renderer::beginRender()
-{
-    glViewport(0, 0, windowWidth, windowHeight);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
-
-void Renderer::endRender()
-{
-    glfwSwapBuffers(m_Window);
-    glfwPollEvents();
-}
-
 GLFWwindow* Renderer::getWindow()
 {
     return m_Window;
+}
+
+double Renderer::getDeltaTime()
+{
+    return m_DeltaTime;
 }
 
 void Renderer::errorCallback(int error, const char* description)

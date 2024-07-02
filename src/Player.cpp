@@ -6,8 +6,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <string>
 
-Player::Player(Camera& camera, EventManager& eventManager)
-    : m_Camera(camera), m_Position(0.0f, 0.0f, 2.0f), m_Rotation(0.0f, 0.0f)
+Player::Player(Camera& camera, EventManager& eventManager) : m_Camera(camera), m_Position(0, 0, 5), m_Rotation(0, 0)
 {
     eventManager.registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
     eventManager.registerListeners(typeid(MousePosEvent).name(),
@@ -48,7 +47,7 @@ void Player::onMousePosEvent(Event* event)
     }
 }
 
-void Player::update()
+void Player::update(double deltaTime)
 {
     // Rotation
     m_Rotation.x += m_camChange.x;
@@ -68,7 +67,7 @@ void Player::update()
     m_camChange = glm::vec2(0.0f);
 
     // Position
-    float speed = 0.01f;
+    float speed = 5.0f * deltaTime;
 
     if (isKeyPressed(GLFW_KEY_W))
     {

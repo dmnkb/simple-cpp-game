@@ -14,8 +14,10 @@ void Game::run()
     {
         m_Renderer.beginRender();
 
+        auto deltaTime = m_Renderer.getDeltaTime();
+
         m_Plane->draw(m_Camera);
-        m_Player.update();
+        m_Player.update(deltaTime);
         m_EventManager.processEvents();
 
         m_Renderer.endRender();
