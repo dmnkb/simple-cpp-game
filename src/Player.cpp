@@ -35,7 +35,13 @@ void Player::onKeyEvent(Event* event)
 void Player::onMousePosEvent(Event* event)
 {
     if (auto mousePosEvent = dynamic_cast<MousePosEvent*>(event))
-        printf("x: %f, y: %f\n", mousePosEvent->xpos, mousePosEvent->ypos);
+    {
+        m_camChange.x = m_cursorPositionOld.x - mousePosEvent->xpos;
+        m_camChange.y = m_cursorPositionOld.y - mousePosEvent->ypos;
+
+        m_cursorPositionOld.x = mousePosEvent->xpos;
+        m_cursorPositionOld.y = mousePosEvent->ypos;
+    }
 }
 
 void Player::update()
@@ -49,6 +55,18 @@ void Player::update()
         m_Position[0] -= .01;
     if (isKeyPressed(GLFW_KEY_D))
         m_Position[0] += .01;
+
+    m_Rotation[0] += m_camChange.x;
+    m_Rotation[1] += m_camChange.y;
+
+    // clang-format off
+    m_Camera.lookAt(    m_Position[0] + sin(m_Rotation[0] * M_PI / 180.f), 
+                        m_Position[1] + tan(m_Rotation[1] * M_PI / 180.f),
+                        m_Position[2] + cos(m_Rotation[0] * M_PI / 180.f));
+    // clang-format on
+
+    m_camChange.x = 0;
+    m_camChange.y = 0;
 }
 
 bool Player::isKeyPressed(unsigned int key)

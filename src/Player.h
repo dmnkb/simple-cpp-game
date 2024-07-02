@@ -19,9 +19,9 @@ class Player
     vec2 m_Rotation;
     struct
     {
-        int x;
-        int y;
-    } m_camChange;
+        double x;
+        double y;
+    } m_camChange, m_cursorPositionOld;
 
     std::vector<unsigned int> m_PressedKeys;
 };
