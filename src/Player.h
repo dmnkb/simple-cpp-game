@@ -8,8 +8,8 @@ class Player
   public:
     Player(Camera& camera, EventManager& eventManager);
 
-    void onKeyEvent(std::shared_ptr<Event> event);
-    void onMousePosEvent(std::shared_ptr<Event> event);
+    void onKeyEvent(Event* event);
+    void onMousePosEvent(Event* event);
     void update();
     bool isKeyPressed(unsigned int key);
 

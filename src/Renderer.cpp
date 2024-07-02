@@ -55,7 +55,7 @@ void Renderer::handleKeyCallback(GLFWwindow* window, int key, int scancode, int 
         isWindowOpen = false;
     }
 
-    auto event = std::make_shared<KeyEvent>(key, action);
+    KeyEvent* event = new KeyEvent(key, action);
     m_EventManager.queueEvent(event);
 }
 
@@ -67,7 +67,7 @@ void Renderer::mousePosCallback(GLFWwindow* window, double xpos, double ypos)
 
 void Renderer::handleMousePosCallback(GLFWwindow* window, double xpos, double ypos)
 {
-    auto event = std::make_shared<MousePosEvent>(xpos, ypos);
+    MousePosEvent* event = new MousePosEvent(xpos, ypos);
     m_EventManager.queueEvent(event);
 }
 

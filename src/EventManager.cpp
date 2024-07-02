@@ -8,23 +8,29 @@ void EventManager::registerListeners(const std::string& eventType, EventCallback
     listeners[eventType].push_back(callback);
 }
 
-void EventManager::queueEvent(std::shared_ptr<Event> event)
+void EventManager::queueEvent(Event* event)
 {
+    printf("queueEvent: %s\n", typeid(*event).name());
     eventQueue.push_back(event);
 }
 
 void EventManager::processEvents()
 {
-    for (auto& event : eventQueue)
+    for (auto event : eventQueue)
     {
         dispatchEvent(event);
+    }
+    for (auto event : eventQueue)
+    {
+        delete event;
     }
     eventQueue.clear();
 }
 
-void EventManager::dispatchEvent(std::shared_ptr<Event> event)
+void EventManager::dispatchEvent(Event* event)
 {
-    std::string eventType = typeid(*event).name();
+    auto eventType = typeid(*event).name();
+    printf("dispatchEvent %s \n", eventType);
     if (listeners.find(eventType) != listeners.end())
     {
         for (auto& listener : listeners[eventType])
