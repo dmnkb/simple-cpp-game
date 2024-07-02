@@ -16,11 +16,10 @@ set(CMAKE_CXX_STANDARD 23)
 file(GLOB_RECURSE MY_SOURCES src/*.cpp include/*.h)
 add_executable(${PROJECT_NAME} ${MY_SOURCES})
 
-# glfw
-add_subdirectory(vendor/glfw EXCLUDE_FROM_ALL)
 
-# glad
+add_subdirectory(vendor/glfw EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/glad EXCLUDE_FROM_ALL)
+add_subdirectory(vendor/glm EXCLUDE_FROM_ALL)
 
 target_sources("${CMAKE_PROJECT_NAME}" PRIVATE ${MY_SOURCES} )
 
