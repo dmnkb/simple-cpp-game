@@ -21,3 +21,5 @@ target_link_libraries("${CMAKE_PROJECT_NAME}"
 target_include_directories("${CMAKE_PROJECT_NAME}" 
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/"
 )
+
+file(COPY assets DESTINATION ${CMAKE_BINARY_DIR})
