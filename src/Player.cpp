@@ -38,7 +38,6 @@ void Player::onMousePosEvent(Event* event)
     {
         m_camChange.x = m_cursorPositionOld.x - mousePosEvent->xpos;
         m_camChange.y = m_cursorPositionOld.y - mousePosEvent->ypos;
-
         m_cursorPositionOld.x = mousePosEvent->xpos;
         m_cursorPositionOld.y = mousePosEvent->ypos;
     }
@@ -50,11 +49,20 @@ void Player::update()
     m_Rotation[0] += m_camChange.x;
     m_Rotation[1] += m_camChange.y;
 
-    float radians = m_Rotation[0] * (M_PI / 180.0);
+    m_Rotation[1] = std::max(-89.0f, std::min(89.0f, m_Rotation[1]));
 
-    m_Direction[0] = sin(radians);
-    m_Direction[1] = 0;
-    m_Direction[2] = cos(radians);
+    float yawRadians = m_Rotation[0] * (M_PI / 180.0);
+    float pitchRadians = m_Rotation[1] * (M_PI / 180.0);
+
+    m_Direction[0] = cos(pitchRadians) * sin(yawRadians);
+    m_Direction[1] = sin(pitchRadians);
+    m_Direction[2] = cos(pitchRadians) * cos(yawRadians);
+
+    float length =
+        sqrt(m_Direction[0] * m_Direction[0] + m_Direction[1] * m_Direction[1] + m_Direction[2] * m_Direction[2]);
+    m_Direction[0] /= length;
+    m_Direction[1] /= length;
+    m_Direction[2] /= length;
 
     m_Camera.lookAt(m_Position[0] + m_Direction[0], m_Position[1] + m_Direction[1], m_Position[2] + m_Direction[2]);
 
@@ -67,11 +75,13 @@ void Player::update()
     if (isKeyPressed(GLFW_KEY_W))
     {
         m_Position[0] += speed * m_Direction[0];
+        m_Position[1] += speed * m_Direction[1];
         m_Position[2] += speed * m_Direction[2];
     }
     if (isKeyPressed(GLFW_KEY_S))
     {
         m_Position[0] -= speed * m_Direction[0];
+        m_Position[1] -= speed * m_Direction[1];
         m_Position[2] -= speed * m_Direction[2];
     }
     if (isKeyPressed(GLFW_KEY_A))
