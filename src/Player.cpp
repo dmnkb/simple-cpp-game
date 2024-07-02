@@ -64,8 +64,6 @@ void Player::update()
     m_Direction[1] /= length;
     m_Direction[2] /= length;
 
-    m_Camera.lookAt(m_Position[0] + m_Direction[0], m_Position[1] + m_Direction[1], m_Position[2] + m_Direction[2]);
-
     m_camChange.x = 0;
     m_camChange.y = 0;
 
@@ -101,7 +99,9 @@ void Player::update()
         m_Position[2] += speed * rightDirectionZ;
     }
 
+    // Update both
     m_Camera.setPosition(m_Position[0], m_Position[1], m_Position[2]);
+    m_Camera.lookAt(m_Position[0] + m_Direction[0], m_Position[1] + m_Direction[1], m_Position[2] + m_Direction[2]);
 }
 
 bool Player::isKeyPressed(unsigned int key)

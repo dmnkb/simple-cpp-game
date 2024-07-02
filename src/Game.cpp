@@ -3,7 +3,7 @@
 
 Game::Game()
     : m_Renderer(m_EventManager), m_Player(m_Camera, m_EventManager),
-      m_Camera(45.0f * (3.14159265f / 180.0f), (float)m_Renderer.windowWidth / m_Renderer.windowHeight, 0.1f, 100.0f)
+      m_Camera(45.0f * (M_PI / 180.0f), (float)m_Renderer.windowWidth / m_Renderer.windowHeight, 0.1f, 100.0f)
 {
     m_Plane = new Plane(m_Renderer.windowWidth, m_Renderer.windowHeight);
 }
