@@ -19,7 +19,7 @@ Renderer::Renderer(EventManager& eventManager) : m_EventManager(eventManager), i
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    m_Window = glfwCreateWindow(640, 480, "OpenGL Triangle", NULL, NULL);
+    m_Window = glfwCreateWindow(640, 480, "Simple CPP Game", NULL, NULL);
 
     if (!m_Window)
     {

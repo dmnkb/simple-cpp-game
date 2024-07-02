@@ -5,7 +5,7 @@
             "name": "(lldb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Hello",
+            "program": "${workspaceFolder}/build/SimpleCPPGame",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
