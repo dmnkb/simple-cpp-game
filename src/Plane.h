@@ -6,18 +6,17 @@
 #include "Camera.h"
 #include <GLFW/glfw3.h>
 #include <cstdio>
-#include <linmath.h>
+#include <glm/glm.hpp>
 
 typedef struct Vertex
 {
-    // TODO: Migrate to glm::vec3 https://glm.g-truc.net/0.9.9/
-    vec3 pos;
-    vec2 uv;
+    glm::vec3 pos;
+    glm::vec2 uv;
 } Vertex;
 
 typedef struct Index
 {
-    vec3 pos;
+    glm::vec3 pos;
 } Index;
 
 static const Vertex vertices[4] = {
