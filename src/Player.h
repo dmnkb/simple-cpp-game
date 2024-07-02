@@ -2,6 +2,7 @@
 
 #include "Camera.h"
 #include "EventManager.h"
+#include <glm/glm.hpp>
 
 class Player
 {
@@ -15,14 +16,11 @@ class Player
 
   private:
     Camera& m_Camera;
-    vec3 m_Position;
-    vec2 m_Rotation;
-    vec3 m_Direction;
-    struct
-    {
-        double x;
-        double y;
-    } m_camChange, m_cursorPositionOld;
+    glm::vec3 m_Position;
+    glm::vec2 m_Rotation;
+    glm::vec3 m_Direction;
+    glm::vec2 m_camChange;
+    glm::vec2 m_cursorPositionOld;
 
     std::vector<unsigned int> m_PressedKeys;
 };

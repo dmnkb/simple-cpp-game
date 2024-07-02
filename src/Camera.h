@@ -1,18 +1,17 @@
 #pragma once
-
-// TODO: Maybe replace with glm:: ?
-#include <linmath.h>
+#include <glm/glm.hpp>
 
 class Camera
 {
   public:
-    Camera(float fov, float aspect, float near, float far);
+    Camera(float fov, float aspect, float near, float far, glm::vec3 defaultTarget = glm::vec3(0, 0, 0),
+           glm::vec3 defaultRotation = glm::vec3(0, 0, 0));
 
-    void setPosition(float x, float y, float z);
-    void lookAt(float x, float y, float z);
+    void setPosition(glm::vec3 position);
+    void lookAt(glm::vec3 target);
 
-    void getProjectionMatrix(mat4x4 proj) const;
-    void getViewMatrix(mat4x4 view) const;
+    glm::mat4 getProjectionMatrix() const;
+    glm::mat4 getViewMatrix() const;
 
   private:
     float fov;
@@ -20,6 +19,6 @@ class Camera
     float near;
     float far;
 
-    vec3 position;
-    vec3 target;
+    glm::vec3 m_Position;
+    glm::vec3 m_Target;
 };

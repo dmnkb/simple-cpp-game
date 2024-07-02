@@ -1,8 +1,13 @@
 #include "Player.h"
 #include <GLFW/glfw3.h>
+#include <algorithm>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <string>
 
-Player::Player(Camera& camera, EventManager& eventManager) : m_Camera(camera), m_Position{0, 0, 2}, m_Rotation{0, 0}
+Player::Player(Camera& camera, EventManager& eventManager)
+    : m_Camera(camera), m_Position(0.0f, 0.0f, 2.0f), m_Rotation(0.0f, 0.0f)
 {
     eventManager.registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
     eventManager.registerListeners(typeid(MousePosEvent).name(),
@@ -46,62 +51,47 @@ void Player::onMousePosEvent(Event* event)
 void Player::update()
 {
     // Rotation
-    m_Rotation[0] += m_camChange.x;
-    m_Rotation[1] += m_camChange.y;
+    m_Rotation.x += m_camChange.x;
+    m_Rotation.y += m_camChange.y;
 
-    m_Rotation[1] = std::max(-89.0f, std::min(89.0f, m_Rotation[1]));
+    m_Rotation.y = std::clamp(m_Rotation.y, -89.0f, 89.0f);
 
-    float yawRadians = m_Rotation[0] * (M_PI / 180.0);
-    float pitchRadians = m_Rotation[1] * (M_PI / 180.0);
+    float yawRadians = glm::radians(m_Rotation.x);
+    float pitchRadians = glm::radians(m_Rotation.y);
 
-    m_Direction[0] = cos(pitchRadians) * sin(yawRadians);
-    m_Direction[1] = sin(pitchRadians);
-    m_Direction[2] = cos(pitchRadians) * cos(yawRadians);
+    m_Direction.x = cos(pitchRadians) * sin(yawRadians);
+    m_Direction.y = sin(pitchRadians);
+    m_Direction.z = cos(pitchRadians) * cos(yawRadians);
 
-    float length =
-        sqrt(m_Direction[0] * m_Direction[0] + m_Direction[1] * m_Direction[1] + m_Direction[2] * m_Direction[2]);
-    m_Direction[0] /= length;
-    m_Direction[1] /= length;
-    m_Direction[2] /= length;
+    m_Direction = glm::normalize(m_Direction);
 
-    m_camChange.x = 0;
-    m_camChange.y = 0;
+    m_camChange = glm::vec2(0.0f);
 
     // Position
     float speed = 0.01f;
 
     if (isKeyPressed(GLFW_KEY_W))
     {
-        m_Position[0] += speed * m_Direction[0];
-        m_Position[1] += speed * m_Direction[1];
-        m_Position[2] += speed * m_Direction[2];
+        m_Position += speed * m_Direction;
     }
     if (isKeyPressed(GLFW_KEY_S))
     {
-        m_Position[0] -= speed * m_Direction[0];
-        m_Position[1] -= speed * m_Direction[1];
-        m_Position[2] -= speed * m_Direction[2];
+        m_Position -= speed * m_Direction;
     }
     if (isKeyPressed(GLFW_KEY_A))
     {
-        float leftRadians = (m_Rotation[0] + 90.0f) * (M_PI / 180.0);
-        float leftDirectionX = sin(leftRadians);
-        float leftDirectionZ = cos(leftRadians);
-        m_Position[0] += speed * leftDirectionX;
-        m_Position[2] += speed * leftDirectionZ;
+        glm::vec3 leftDirection = glm::normalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), m_Direction));
+        m_Position += speed * leftDirection;
     }
     if (isKeyPressed(GLFW_KEY_D))
     {
-        float rightRadians = (m_Rotation[0] - 90.0f) * (M_PI / 180.0);
-        float rightDirectionX = sin(rightRadians);
-        float rightDirectionZ = cos(rightRadians);
-        m_Position[0] += speed * rightDirectionX;
-        m_Position[2] += speed * rightDirectionZ;
+        glm::vec3 rightDirection = glm::normalize(glm::cross(m_Direction, glm::vec3(0.0f, 1.0f, 0.0f)));
+        m_Position += speed * rightDirection;
     }
 
     // Update both
-    m_Camera.setPosition(m_Position[0], m_Position[1], m_Position[2]);
-    m_Camera.lookAt(m_Position[0] + m_Direction[0], m_Position[1] + m_Direction[1], m_Position[2] + m_Direction[2]);
+    m_Camera.setPosition(m_Position);
+    m_Camera.lookAt(m_Position + m_Direction);
 }
 
 bool Player::isKeyPressed(unsigned int key)

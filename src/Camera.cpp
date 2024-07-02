@@ -1,34 +1,28 @@
 #include "Camera.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <string.h>
 
-Camera::Camera(float fov, float aspect, float near, float far) : fov(fov), aspect(aspect), near(near), far(far)
+Camera::Camera(float fov, float aspect, float near, float far, glm::vec3 defaultPosition, glm::vec3 defaultTarget)
+    : fov(fov), aspect(aspect), near(near), far(far), m_Position(defaultPosition), m_Target(defaultTarget){};
+
+void Camera::setPosition(glm::vec3 position)
 {
-    vec3 defaultPosition = {0.0f, 0.0f, 5.0f};
-    vec3 defaultTarget = {0.0f, 0.0f, 0.0f};
-    memcpy(position, defaultPosition, sizeof(vec3));
-    memcpy(target, defaultTarget, sizeof(vec3));
+    m_Position = position;
 }
 
-void Camera::setPosition(float x, float y, float z)
+void Camera::lookAt(glm::vec3 target)
 {
-    position[0] = x;
-    position[1] = y;
-    position[2] = z;
+    m_Target = target;
 }
 
-void Camera::lookAt(float x, float y, float z)
+glm::mat4 Camera::getProjectionMatrix() const
 {
-    target[0] = x;
-    target[1] = y;
-    target[2] = z;
+    return glm::perspective(fov, aspect, near, far);
 }
 
-void Camera::getProjectionMatrix(mat4x4 proj) const
+glm::mat4 Camera::getViewMatrix() const
 {
-    mat4x4_perspective(proj, fov, aspect, near, far);
-}
-
-void Camera::getViewMatrix(mat4x4 view) const
-{
-    vec3 up = {0.0f, 1.0f, 0.0f};
-    mat4x4_look_at(view, position, target, up);
+    glm::vec3 up = {0.0f, 1.0f, 0.0f};
+    return glm::lookAt(m_Position, m_Target, up);
 }

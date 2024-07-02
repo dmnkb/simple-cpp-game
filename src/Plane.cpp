@@ -2,6 +2,7 @@
 #include "Camera.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include <filesystem>
+#include <glm/glm.hpp>
 #include <stb_image.h>
 
 Plane::Plane(const int width, const int height) : program(glCreateProgram()), ratio(width / (float)height)
@@ -80,22 +81,19 @@ Plane::Plane(const int width, const int height) : program(glCreateProgram()), ra
 
 void Plane::draw(const Camera& camera)
 {
-    mat4x4 m, p, v, vp, mvp;
-    mat4x4_identity(m);
+    glm::mat4 modelMatrix = glm::mat4(1.0f);
+    glm::mat4 projectionMatrix = camera.getProjectionMatrix();
+    glm::mat4 viewMatrix = camera.getViewMatrix();
 
-    camera.getProjectionMatrix(p);
-    camera.getViewMatrix(v);
-
-    mat4x4_mul(vp, p, v);
-    mat4x4_mul(mvp, vp, m);
+    glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;
 
     glUseProgram(program);
-    glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*)&mvp);
+    glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*)&modelViewProjectionMatrix);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
     glUniform1i(glGetUniformLocation(program, "myTextureSampler"), 0);
 
     glBindVertexArray(vertex_array);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // Draw 2 triangles (6 vertices)
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
