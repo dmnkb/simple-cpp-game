@@ -14,9 +14,9 @@ class KeyEvent : public Event
     int action;
 };
 
-class MousePosEvent : public Event
+class MouseMoveEvent : public Event
 {
   public:
-    MousePosEvent(double xpos, double ypos) : xpos(xpos), ypos(ypos) {}
-    double xpos, ypos;
+    MouseMoveEvent(float speedX, float speedY) : speedX(speedX), speedY(speedY) {}
+    float speedX, speedY;
 };

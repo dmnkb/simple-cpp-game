@@ -6,11 +6,12 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <string>
 
-Player::Player(Camera& camera, EventManager& eventManager) : m_Camera(camera), m_Position(0, 0, 5), m_Rotation(0, 0)
+Player::Player(Camera& camera, EventManager& eventManager)
+    : m_Camera(camera), m_Position(0, 0, 5), m_Rotation(-180, 0), m_camChange(0, 0)
 {
     eventManager.registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
-    eventManager.registerListeners(typeid(MousePosEvent).name(),
-                                   [this](Event* event) { this->onMousePosEvent(event); });
+    eventManager.registerListeners(typeid(MouseMoveEvent).name(),
+                                   [this](Event* event) { this->onMouseMoveEvent(event); });
 }
 
 void Player::onKeyEvent(Event* event)
@@ -36,24 +37,39 @@ void Player::onKeyEvent(Event* event)
     }
 }
 
-void Player::onMousePosEvent(Event* event)
+void Player::onMouseMoveEvent(Event* event)
 {
-    if (auto mousePosEvent = dynamic_cast<MousePosEvent*>(event))
+    if (auto mouseMoveEvent = dynamic_cast<MouseMoveEvent*>(event))
     {
-        m_camChange.x = m_cursorPositionOld.x - mousePosEvent->xpos;
-        m_camChange.y = m_cursorPositionOld.y - mousePosEvent->ypos;
-        m_cursorPositionOld.x = mousePosEvent->xpos;
-        m_cursorPositionOld.y = mousePosEvent->ypos;
+        m_camChange.x = mouseMoveEvent->speedX;
+        m_camChange.y = mouseMoveEvent->speedY;
     }
 }
 
 void Player::update(double deltaTime)
 {
-    // Rotation
-    m_Rotation.x += m_camChange.x;
-    m_Rotation.y += m_camChange.y;
+    // Average out the deltaTime
+    const size_t maxHistorySize = 120;
+    m_DeltaTimeHistory.push_back(deltaTime);
+    if (m_DeltaTimeHistory.size() > maxHistorySize)
+    {
+        m_DeltaTimeHistory.pop_front();
+    }
 
+    double averageDeltaTime = 0.0;
+    for (double dt : m_DeltaTimeHistory)
+    {
+        averageDeltaTime += dt;
+    }
+    averageDeltaTime /= m_DeltaTimeHistory.size();
+
+    // Rotation
+    float mouseSpeed = 30.0f * averageDeltaTime;
+
+    m_Rotation.x += m_camChange.x * mouseSpeed;
+    m_Rotation.y += m_camChange.y * mouseSpeed;
     m_Rotation.y = std::clamp(m_Rotation.y, -89.0f, 89.0f);
+    m_camChange = glm::vec2(0.0f);
 
     float yawRadians = glm::radians(m_Rotation.x);
     float pitchRadians = glm::radians(m_Rotation.y);
@@ -61,10 +77,7 @@ void Player::update(double deltaTime)
     m_Direction.x = cos(pitchRadians) * sin(yawRadians);
     m_Direction.y = sin(pitchRadians);
     m_Direction.z = cos(pitchRadians) * cos(yawRadians);
-
     m_Direction = glm::normalize(m_Direction);
-
-    m_camChange = glm::vec2(0.0f);
 
     // Position
     float speed = 5.0f * deltaTime;

@@ -2,6 +2,7 @@
 
 #include "Camera.h"
 #include "EventManager.h"
+#include <deque>
 #include <glm/glm.hpp>
 
 class Player
@@ -10,7 +11,7 @@ class Player
     Player(Camera& camera, EventManager& eventManager);
 
     void onKeyEvent(Event* event);
-    void onMousePosEvent(Event* event);
+    void onMouseMoveEvent(Event* event);
     void update(double deltaTime);
     bool isKeyPressed(unsigned int key);
 
@@ -21,6 +22,6 @@ class Player
     glm::vec3 m_Direction;
     glm::vec2 m_camChange;
     glm::vec2 m_cursorPositionOld;
-
+    std::deque<double> m_DeltaTimeHistory;
     std::vector<unsigned int> m_PressedKeys;
 };

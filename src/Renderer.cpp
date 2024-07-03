@@ -1,5 +1,6 @@
 #include "Renderer.h"
 #define GLAD_GL_IMPLEMENTATION
+#include <GLFW/glfw3.h>
 #include <glad/glad.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,6 +32,7 @@ Renderer::Renderer(EventManager& eventManager)
     glfwSetKeyCallback(m_Window, keyCallback);
     glfwSetCursorPosCallback(m_Window, mousePosCallback);
     glfwSetWindowCloseCallback(m_Window, closeCallback);
+    // glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
     glfwMakeContextCurrent(m_Window);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
@@ -44,15 +46,15 @@ Renderer::Renderer(EventManager& eventManager)
 
 void Renderer::beginRender()
 {
-    glViewport(0, 0, windowWidth, windowHeight);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     // Calculate delta time
     double currentTime = glfwGetTime();
     m_DeltaTime = static_cast<float>(currentTime - m_PreviousTime);
     m_PreviousTime = currentTime;
-
     m_FrameCount++;
+
+    // Set viewport and clear buffers
+    glViewport(0, 0, windowWidth, windowHeight);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Print FPS every second
     if (currentTime - m_FPSUpdateTime >= 1.0)
@@ -65,6 +67,11 @@ void Renderer::beginRender()
         std::string title = "FPS: " + std::to_string(fps);
         glfwSetWindowTitle(m_Window, title.c_str());
     }
+
+    // Fix cursor at the center
+    int windowWidth, windowHeight;
+    glfwGetWindowSize(m_Window, &windowWidth, &windowHeight);
+    glfwSetCursorPos(m_Window, windowWidth / 2, windowHeight / 2);
 }
 
 void Renderer::endRender()
@@ -99,7 +106,13 @@ void Renderer::mousePosCallback(GLFWwindow* window, double xpos, double ypos)
 
 void Renderer::handleMousePosCallback(GLFWwindow* window, double xpos, double ypos)
 {
-    MousePosEvent* event = new MousePosEvent(xpos, ypos);
+    int windowWidth, windowHeight;
+    glfwGetWindowSize(m_Window, &windowWidth, &windowHeight);
+
+    float speedX = float(windowWidth / 2 - xpos);
+    float speedY = float(windowHeight / 2 - ypos);
+
+    MouseMoveEvent* event = new MouseMoveEvent(speedX, speedY);
     m_EventManager.queueEvent(event);
 }
 
