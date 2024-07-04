@@ -1,14 +1,13 @@
 #include "Renderer.h"
-#define GLAD_GL_IMPLEMENTATION
 #include <GLFW/glfw3.h>
+#define GLAD_GL_IMPLEMENTATION
 #include <glad/glad.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 Renderer* Renderer::instance = nullptr;
 
-Renderer::Renderer(EventManager& eventManager)
-    : m_EventManager(eventManager), isWindowOpen(true), m_FPSUpdateTime(glfwGetTime())
+Renderer::Renderer(EventManager& eventManager) : m_EventManager(eventManager), isWindowOpen(true)
 {
     instance = this;
 
@@ -32,7 +31,7 @@ Renderer::Renderer(EventManager& eventManager)
     glfwSetKeyCallback(m_Window, keyCallback);
     glfwSetCursorPosCallback(m_Window, mousePosCallback);
     glfwSetWindowCloseCallback(m_Window, closeCallback);
-    // glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     glfwMakeContextCurrent(m_Window);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
@@ -46,27 +45,8 @@ Renderer::Renderer(EventManager& eventManager)
 
 void Renderer::beginRender()
 {
-    // Calculate delta time
-    double currentTime = glfwGetTime();
-    m_DeltaTime = static_cast<float>(currentTime - m_PreviousTime);
-    m_PreviousTime = currentTime;
-    m_FrameCount++;
-
-    // Set viewport and clear buffers
     glViewport(0, 0, windowWidth, windowHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Print FPS every second
-    if (currentTime - m_FPSUpdateTime >= 1.0)
-    {
-        double fps = double(m_FrameCount) / (currentTime - m_FPSUpdateTime);
-
-        m_FPSUpdateTime = currentTime;
-        m_FrameCount = 0;
-
-        std::string title = "FPS: " + std::to_string(fps);
-        glfwSetWindowTitle(m_Window, title.c_str());
-    }
 
     // Fix cursor at the center
     int windowWidth, windowHeight;
@@ -124,11 +104,6 @@ void Renderer::closeCallback(GLFWwindow* window)
 GLFWwindow* Renderer::getWindow()
 {
     return m_Window;
-}
-
-double Renderer::getDeltaTime()
-{
-    return m_DeltaTime;
 }
 
 void Renderer::errorCallback(int error, const char* description)

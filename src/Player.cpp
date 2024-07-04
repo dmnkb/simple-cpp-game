@@ -48,23 +48,8 @@ void Player::onMouseMoveEvent(Event* event)
 
 void Player::update(double deltaTime)
 {
-    // Average out the deltaTime
-    const size_t maxHistorySize = 120;
-    m_DeltaTimeHistory.push_back(deltaTime);
-    if (m_DeltaTimeHistory.size() > maxHistorySize)
-    {
-        m_DeltaTimeHistory.pop_front();
-    }
-
-    double averageDeltaTime = 0.0;
-    for (double dt : m_DeltaTimeHistory)
-    {
-        averageDeltaTime += dt;
-    }
-    averageDeltaTime /= m_DeltaTimeHistory.size();
-
     // Rotation
-    float mouseSpeed = 30.0f * averageDeltaTime;
+    float mouseSpeed = .3;
 
     m_Rotation.x += m_camChange.x * mouseSpeed;
     m_Rotation.y += m_camChange.y * mouseSpeed;

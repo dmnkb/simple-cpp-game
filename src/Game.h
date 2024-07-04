@@ -21,4 +21,7 @@ class Game
     Camera m_Camera;
 
     Plane* m_Plane;
+
+    double m_DeltaTime, m_FPSUpdateTime;
+    int m_FrameCount;
 };

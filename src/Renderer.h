@@ -30,7 +30,4 @@ class Renderer
     static void mousePosCallback(GLFWwindow* window, double xpos, double ypos);
     void handleMousePosCallback(GLFWwindow* window, double xpos, double ypos);
     static void closeCallback(GLFWwindow* window);
-
-    double m_DeltaTime, m_PreviousTime, m_FPSUpdateTime;
-    int m_FrameCount;
 };
