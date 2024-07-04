@@ -4,6 +4,7 @@
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
 #include "Camera.h"
+#include "Shader.h"
 #include <GLFW/glfw3.h>
 #include <cstdio>
 #include <glm/glm.hpp>
@@ -80,18 +81,10 @@ class Plane
 {
   public:
     Plane(const int width, const int height);
-
     void draw(const Camera& camera);
 
   private:
-    const GLuint program;
-    GLint mvp_location;
-    GLint vpos_location;
-    GLint vcol_location;
-    GLint vuv_location;
-    GLuint vertex_array;
-
-    float ratio;
-
-    GLuint texture;
+    GLuint m_VertexArray;
+    GLuint m_Texture;
+    Shader m_Shader;
 };

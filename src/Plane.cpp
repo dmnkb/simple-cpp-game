@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 #include <stb_image.h>
 
-Plane::Plane(const int width, const int height) : program(glCreateProgram()), ratio(width / (float)height)
+Plane::Plane(const int width, const int height) : m_Shader(vertex_shader_text, fragment_shader_text)
 {
     GLuint vertex_buffer;
     glGenBuffers(1, &vertex_buffer);
@@ -17,37 +17,13 @@ Plane::Plane(const int width, const int height) : program(glCreateProgram()), ra
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    const GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader, 1, &vertex_shader_text, NULL);
-    glCompileShader(vertex_shader);
-    checkShaderCompilation(vertex_shader);
-
-    const GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader, 1, &fragment_shader_text, NULL);
-    glCompileShader(fragment_shader);
-    checkShaderCompilation(fragment_shader);
-
-    glAttachShader(program, vertex_shader);
-    glAttachShader(program, fragment_shader);
-    glLinkProgram(program);
-    checkProgramLinking(program);
-
-    // TODO: glDeleteProgram (and shader) in destructor of Shader class
-
-    mvp_location = glGetUniformLocation(program, "MVP");
-    vpos_location = glGetAttribLocation(program, "vPos");
-    vuv_location = glGetAttribLocation(program, "vUV");
-
-    glGenVertexArrays(1, &vertex_array);
-    glBindVertexArray(vertex_array);
+    glGenVertexArrays(1, &m_VertexArray);
+    glBindVertexArray(m_VertexArray);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
 
-    glEnableVertexAttribArray(vpos_location);
-    glVertexAttribPointer(vpos_location, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
-
-    glEnableVertexAttribArray(vuv_location);
-    glVertexAttribPointer(vuv_location, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
+    m_Shader.setVertexAttribute("vPos", 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
+    m_Shader.setVertexAttribute("vUV", 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
 
     std::string texturePath = "assets/texture_02.png";
     if (!std::filesystem::exists(texturePath))
@@ -65,8 +41,8 @@ Plane::Plane(const int width, const int height) : program(glCreateProgram()), ra
         return;
     }
 
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    glGenTextures(1, &m_Texture);
+    glBindTexture(GL_TEXTURE_2D, m_Texture);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -84,16 +60,15 @@ void Plane::draw(const Camera& camera)
     glm::mat4 modelMatrix = glm::mat4(1.0f);
     glm::mat4 projectionMatrix = camera.getProjectionMatrix();
     glm::mat4 viewMatrix = camera.getViewMatrix();
-
     glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;
 
-    glUseProgram(program);
-    glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*)&modelViewProjectionMatrix);
+    m_Shader.useProgram();
+    m_Shader.setUniformMatrix4fv("MVP", 1, GL_FALSE, (const GLfloat*)&modelViewProjectionMatrix);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glUniform1i(glGetUniformLocation(program, "myTextureSampler"), 0);
+    glBindTexture(GL_TEXTURE_2D, m_Texture);
+    m_Shader.setUniform1i("myTextureSampler", 0);
 
-    glBindVertexArray(vertex_array);
+    glBindVertexArray(m_VertexArray);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
