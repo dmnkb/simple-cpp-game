@@ -36,7 +36,7 @@ class Shader
     GLuint m_Vertex_shader;
     GLuint m_Fragment_shader;
 
-    GLint getLocation(const char* name, ELocationType locationType);
+    GLint getCachedLocation(const char* name, ELocationType locationType);
     void checkShaderCompilation(GLuint shader);
     void checkProgramLinking(GLuint shader);
 

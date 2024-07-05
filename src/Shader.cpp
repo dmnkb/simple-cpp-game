@@ -35,14 +35,14 @@ void Shader::useProgram()
 
 void Shader::setUniformMatrix4fv(const char* name, GLsizei count, GLboolean transpose, const GLfloat* value)
 {
-    auto location = getLocation(name, ELocationType::UNIFORM);
+    auto location = getCachedLocation(name, ELocationType::UNIFORM);
     if (location != -1)
         glUniformMatrix4fv(location, count, transpose, value);
 }
 
 void Shader::setUniform1i(const char* name, GLint v0)
 {
-    auto location = getLocation(name, ELocationType::UNIFORM);
+    auto location = getCachedLocation(name, ELocationType::UNIFORM);
     if (location != -1)
         glUniform1i(location, v0);
 }
@@ -50,7 +50,7 @@ void Shader::setUniform1i(const char* name, GLint v0)
 void Shader::setVertexAttribute(const char* name, GLint size, GLenum type, GLboolean normalized, GLsizei stride,
                                 const void* pointer)
 {
-    auto location = getLocation(name, ELocationType::ATTRIBUTE);
+    auto location = getCachedLocation(name, ELocationType::ATTRIBUTE);
     if (location != -1)
     {
         glEnableVertexAttribArray(location);
@@ -58,20 +58,16 @@ void Shader::setVertexAttribute(const char* name, GLint size, GLenum type, GLboo
     }
 }
 
-GLint Shader::getLocation(const char* name, ELocationType locationType)
+GLint Shader::getCachedLocation(const char* name, ELocationType locationType)
 {
     // Return cached location if available
     auto& locationMap = (locationType == ELocationType::ATTRIBUTE) ? m_AttributeLocations : m_UniformLocations;
     auto it = locationMap.find(name);
     if (it != locationMap.end())
-    {
-
         return it->second;
-    }
-    // Get location from OpenGL otherwise
+    // Get location from OpenGL otherwise and cache it
     GLint location = locationType == ELocationType::ATTRIBUTE ? glGetAttribLocation(m_Program, name)
                                                               : glGetUniformLocation(m_Program, name);
-
     if (location == -1)
     {
         std::cerr << "[ERROR] " << locationTypeToString.at(locationType) << " '" << name
@@ -79,7 +75,6 @@ GLint Shader::getLocation(const char* name, ELocationType locationType)
     }
     else
     {
-        // Cache location
         locationMap[name] = location;
     }
     return location;
