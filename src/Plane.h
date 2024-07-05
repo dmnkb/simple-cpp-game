@@ -80,7 +80,7 @@ static void checkProgramLinking(GLuint program)
 class Plane
 {
   public:
-    Plane(const int width, const int height);
+    Plane();
     void draw(const Camera& camera);
 
   private:

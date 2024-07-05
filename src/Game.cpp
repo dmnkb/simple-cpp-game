@@ -4,10 +4,9 @@
 
 Game::Game()
     : m_Renderer(m_EventManager), m_Player(m_Camera, m_EventManager),
-      m_Camera(45.0f * (M_PI / 180.0f), (float)m_Renderer.windowWidth / m_Renderer.windowHeight, 0.1f, 100.0f),
+      m_Camera(45.0f * (M_PI / 180.0f), m_Renderer.getViewport().x / m_Renderer.getViewport().y, 0.1f, 100.0f),
       m_DeltaTime(0.f), m_FPSUpdateTime(0.f), m_FrameCount(0)
 {
-    m_Plane = new Plane(m_Renderer.windowWidth, m_Renderer.windowHeight);
 }
 
 void Game::run()
@@ -38,7 +37,7 @@ void Game::run()
         m_Renderer.beginRender();
 
         // Update scene
-        m_Plane->draw(m_Camera);
+        m_Plane.draw(m_Camera);
         m_Player.update(m_DeltaTime);
         m_EventManager.processEvents();
 
@@ -52,7 +51,5 @@ void Game::run()
 
 Game::~Game()
 {
-    delete m_Plane;
-
     exit(EXIT_SUCCESS);
 }

@@ -9,9 +9,7 @@ Renderer* Renderer::instance = nullptr;
 
 Renderer::Renderer(EventManager& eventManager) : m_EventManager(eventManager), isWindowOpen(true)
 {
-    instance = this;
-
-    glfwSetErrorCallback(errorCallback);
+    glfwSetErrorCallback([](int error, const char* description) { fprintf(stderr, "Error: %s\n", description); });
 
     if (!glfwInit())
         exit(EXIT_FAILURE);
@@ -28,9 +26,21 @@ Renderer::Renderer(EventManager& eventManager) : m_EventManager(eventManager), i
         exit(EXIT_FAILURE);
     }
 
-    glfwSetKeyCallback(m_Window, keyCallback);
-    glfwSetCursorPosCallback(m_Window, mousePosCallback);
-    glfwSetWindowCloseCallback(m_Window, closeCallback);
+    instance = this;
+    glfwSetKeyCallback(m_Window,
+                       [](GLFWwindow* window, int key, int scancode, int action, int mods)
+                       {
+                           if (instance)
+                               instance->keyCallback(window, key, scancode, action, mods);
+                       });
+    glfwSetCursorPosCallback(m_Window,
+                             [](GLFWwindow* window, double xpos, double ypos)
+                             {
+                                 if (instance)
+                                     instance->mousePosCallback(window, xpos, ypos);
+                             });
+    glfwSetWindowCloseCallback(m_Window, [](GLFWwindow* window) { instance->isWindowOpen = false; });
+
     glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     glfwMakeContextCurrent(m_Window);
@@ -40,18 +50,19 @@ Renderer::Renderer(EventManager& eventManager) : m_EventManager(eventManager), i
     glClearColor(0.2902f, 0.4196f, 0.9647f, 1.0f);
     glEnable(GL_DEPTH_TEST);
 
-    glfwGetFramebufferSize(m_Window, &windowWidth, &windowHeight);
+    glfwGetFramebufferSize(m_Window, &m_WindowWidth, &m_WindowHeight);
+}
+
+Renderer::~Renderer()
+{
+    glfwDestroyWindow(m_Window);
+    glfwTerminate();
 }
 
 void Renderer::beginRender()
 {
-    glViewport(0, 0, windowWidth, windowHeight);
+    glViewport(0, 0, m_WindowWidth, m_WindowHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Fix cursor at the center
-    int windowWidth, windowHeight;
-    glfwGetWindowSize(m_Window, &windowWidth, &windowHeight);
-    glfwSetCursorPos(m_Window, windowWidth / 2, windowHeight / 2);
 }
 
 void Renderer::endRender()
@@ -61,12 +72,6 @@ void Renderer::endRender()
 }
 
 void Renderer::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-    if (instance)
-        instance->handleKeyCallback(window, key, scancode, action, mods);
-}
-
-void Renderer::handleKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     {
@@ -80,39 +85,19 @@ void Renderer::handleKeyCallback(GLFWwindow* window, int key, int scancode, int 
 
 void Renderer::mousePosCallback(GLFWwindow* window, double xpos, double ypos)
 {
-    if (instance)
-        instance->handleMousePosCallback(window, xpos, ypos);
-}
+    if (m_FirstMosue)
+    {
+        m_CursorLastX = static_cast<float>(xpos);
+        m_CursorLastY = static_cast<float>(ypos);
+        m_FirstMosue = false;
+    }
 
-void Renderer::handleMousePosCallback(GLFWwindow* window, double xpos, double ypos)
-{
-    int windowWidth, windowHeight;
-    glfwGetWindowSize(m_Window, &windowWidth, &windowHeight);
+    float xoffset = m_CursorLastX - xpos;
+    float yoffset = m_CursorLastY - ypos;
 
-    float speedX = float(windowWidth / 2 - xpos);
-    float speedY = float(windowHeight / 2 - ypos);
-
-    MouseMoveEvent* event = new MouseMoveEvent(speedX, speedY);
+    MouseMoveEvent* event = new MouseMoveEvent(xoffset, yoffset);
     m_EventManager.queueEvent(event);
-}
 
-void Renderer::closeCallback(GLFWwindow* window)
-{
-    instance->isWindowOpen = false;
-}
-
-GLFWwindow* Renderer::getWindow()
-{
-    return m_Window;
-}
-
-void Renderer::errorCallback(int error, const char* description)
-{
-    fprintf(stderr, "Error: %s\n", description);
-}
-
-Renderer::~Renderer()
-{
-    glfwDestroyWindow(m_Window);
-    glfwTerminate();
+    m_CursorLastX = xpos;
+    m_CursorLastY = ypos;
 }

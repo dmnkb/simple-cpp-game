@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 #include <stb_image.h>
 
-Plane::Plane(const int width, const int height) : m_Shader(vertex_shader_text, fragment_shader_text)
+Plane::Plane() : m_Shader(vertex_shader_text, fragment_shader_text)
 {
     GLuint vertex_buffer;
     glGenBuffers(1, &vertex_buffer);
