@@ -62,8 +62,8 @@ void Plane::draw(const Camera& camera)
     glm::mat4 viewMatrix = camera.getViewMatrix();
     glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;
 
-    m_Shader.useProgram();
-    m_Shader.setUniformMatrix4fv("MVP", 1, GL_FALSE, (const GLfloat*)&modelViewProjectionMatrix);
+    m_Shader.bind();
+    m_Shader.setUniformMatrix4fv("MVP", modelViewProjectionMatrix);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_Texture);

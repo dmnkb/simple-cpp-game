@@ -2,81 +2,79 @@
 #include <iostream>
 #include <stdio.h>
 
-Shader::Shader(const char* vertexShader, const char* fragmentShader)
-    : m_Program(glCreateProgram()), m_Vertex_shader(0), m_Fragment_shader(0)
+Shader::Shader(const char* vertexShader, const char* fragmentShader) : m_ProgramID(glCreateProgram())
 {
-    m_Vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(m_Vertex_shader, 1, &vertexShader, NULL);
-    glCompileShader(m_Vertex_shader);
-    checkShaderCompilation(m_Vertex_shader);
+    m_VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(m_VertexShaderID, 1, &vertexShader, NULL);
+    glCompileShader(m_VertexShaderID);
+    checkShaderCompilation(m_VertexShaderID);
 
-    m_Fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(m_Fragment_shader, 1, &fragmentShader, NULL);
-    glCompileShader(m_Fragment_shader);
-    checkShaderCompilation(m_Fragment_shader);
+    m_FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(m_FragmentShaderID, 1, &fragmentShader, NULL);
+    glCompileShader(m_FragmentShaderID);
+    checkShaderCompilation(m_FragmentShaderID);
 
-    glAttachShader(m_Program, m_Vertex_shader);
-    glAttachShader(m_Program, m_Fragment_shader);
-    glLinkProgram(m_Program);
-    checkProgramLinking(m_Program);
+    glAttachShader(m_ProgramID, m_VertexShaderID);
+    glAttachShader(m_ProgramID, m_FragmentShaderID);
+    glLinkProgram(m_ProgramID);
+    checkProgramLinking(m_ProgramID);
 }
 
 Shader::~Shader()
 {
-    glDeleteShader(m_Vertex_shader);
-    glDeleteShader(m_Fragment_shader);
-    glDeleteProgram(m_Program);
+    unbind();
+    glDeleteShader(m_VertexShaderID);
+    glDeleteShader(m_VertexShaderID);
+    glDeleteProgram(m_ProgramID);
 }
 
-void Shader::useProgram()
+void Shader::bind()
 {
-    glUseProgram(m_Program);
+    glUseProgram(m_ProgramID);
 }
 
-void Shader::setUniformMatrix4fv(const char* name, GLsizei count, GLboolean transpose, const GLfloat* value)
+void Shader::unbind()
 {
-    auto location = getCachedLocation(name, ELocationType::UNIFORM);
-    if (location != -1)
-        glUniformMatrix4fv(location, count, transpose, value);
-}
-
-void Shader::setUniform1i(const char* name, GLint v0)
-{
-    auto location = getCachedLocation(name, ELocationType::UNIFORM);
-    if (location != -1)
-        glUniform1i(location, v0);
+    glUseProgram(0);
 }
 
 void Shader::setVertexAttribute(const char* name, GLint size, GLenum type, GLboolean normalized, GLsizei stride,
                                 const void* pointer)
 {
-    auto location = getCachedLocation(name, ELocationType::ATTRIBUTE);
-    if (location != -1)
+    GLint location = glGetAttribLocation(m_ProgramID, name);
+    if (location == -1)
+        std::cerr << "[ERROR] Uniform '" << name << "' not found in shader program." << std::endl;
+    else
     {
         glEnableVertexAttribArray(location);
         glVertexAttribPointer(location, size, type, normalized, stride, pointer);
     }
 }
 
-GLint Shader::getCachedLocation(const char* name, ELocationType locationType)
+void Shader::setUniformMatrix4fv(const char* name, const glm::mat4 value)
 {
-    // Return cached location if available
-    auto& locationMap = (locationType == ELocationType::ATTRIBUTE) ? m_AttributeLocations : m_UniformLocations;
-    auto it = locationMap.find(name);
-    if (it != locationMap.end())
-        return it->second;
-    // Get location from OpenGL otherwise and cache it
-    GLint location = locationType == ELocationType::ATTRIBUTE ? glGetAttribLocation(m_Program, name)
-                                                              : glGetUniformLocation(m_Program, name);
+    auto location = getCachedLocation(name);
+    if (location != -1)
+        glUniformMatrix4fv(location, 1, GL_FALSE, (const GLfloat*)&value);
+}
+
+void Shader::setUniform1i(const char* name, GLint v0)
+{
+    auto location = getCachedLocation(name);
+    if (location != -1)
+        glUniform1i(location, v0);
+}
+
+GLint Shader::getCachedLocation(const char* name)
+{
+    if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
+        return m_UniformLocationCache[name];
+
+    GLint location = glGetUniformLocation(m_ProgramID, name);
     if (location == -1)
-    {
-        std::cerr << "[ERROR] " << locationTypeToString.at(locationType) << " '" << name
-                  << "' not found in shader program." << std::endl;
-    }
-    else
-    {
-        locationMap[name] = location;
-    }
+        std::cerr << "[ERROR] Uniform '" << name << "' not found in shader program." << std::endl;
+
+    m_UniformLocationCache[name] = location;
     return location;
 }
 
