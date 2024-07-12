@@ -1,21 +1,13 @@
 #pragma once
 
 #define GLAD_GL_IMPLEMENTATION
-#include <functional>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
-#include <iostream>
-#include <map>
-
-struct SShaderLocation
-{
-    GLint location;
-    GLint type;
-    const char* name;
-};
+#include <unordered_map>
 class Shader
 {
   public:
+    // TODO: Read in shader file
     Shader(const char* vertexShader, const char* fragmentShader);
     ~Shader();
 
@@ -37,5 +29,5 @@ class Shader
     void checkShaderCompilation(GLuint shader);
     void checkProgramLinking(GLuint shader);
 
-    std::unordered_map<std::string, GLint> m_UniformLocationCache;
+    std::unordered_map<const char*, GLint> m_UniformLocationCache;
 };

@@ -9,6 +9,11 @@ Game::Game()
 {
 }
 
+Game::~Game()
+{
+    exit(EXIT_SUCCESS);
+}
+
 void Game::run()
 {
     while (m_Renderer.isWindowOpen)
@@ -47,9 +52,4 @@ void Game::run()
         // For the next frame, the "last time" will be "now"
         lastTime = currentTime;
     }
-}
-
-Game::~Game()
-{
-    exit(EXIT_SUCCESS);
 }

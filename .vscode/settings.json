@@ -59,6 +59,7 @@
         "deque": "cpp",
         "__tree": "cpp",
         "map": "cpp",
-        "chrono": "cpp"
+        "chrono": "cpp",
+        "functional": "cpp"
     }
 }
