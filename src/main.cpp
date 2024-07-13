@@ -2,7 +2,7 @@
 
 int main(void)
 {
-    Game* game;
+    Game* game = new Game();
 
     game->run();
 }

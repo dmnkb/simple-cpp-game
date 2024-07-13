@@ -7,7 +7,7 @@
 
 Renderer* Renderer::instance = nullptr;
 
-Renderer::Renderer(EventManager& eventManager) : m_EventManager(eventManager), isWindowOpen(true)
+Renderer::Renderer(EventManager& eventManager) : m_EventManager(eventManager), isWindowOpen(true), m_TextureManager()
 {
     glfwSetErrorCallback([](int error, const char* description) { fprintf(stderr, "Error: %s\n", description); });
 
@@ -101,3 +101,6 @@ void Renderer::mousePosCallback(GLFWwindow* window, double xpos, double ypos)
     m_CursorLastX = xpos;
     m_CursorLastY = ypos;
 }
+
+void Renderer::addPlane(glm::vec3& position) {}
+void Renderer::removePlane(glm::vec3& position) {}
