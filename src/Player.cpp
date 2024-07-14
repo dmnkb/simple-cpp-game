@@ -7,7 +7,7 @@
 #include <string>
 
 Player::Player(Camera& camera, EventManager& eventManager)
-    : m_Camera(camera), m_Position(0, 0, 5), m_Rotation(-180, 0), m_camChange(0, 0)
+    : m_Camera(camera), m_Position(15, 5, 15), m_Rotation(225, -15), m_camChange(0, 0)
 {
     eventManager.registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
     eventManager.registerListeners(typeid(MouseMoveEvent).name(),

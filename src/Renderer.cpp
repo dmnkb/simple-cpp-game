@@ -33,7 +33,8 @@ static const char* fragment_shader_text = "#version 330\n"
 Renderer* Renderer::instance = nullptr;
 
 Renderer::Renderer(EventManager& eventManager)
-    : m_Camera(45.0f * (M_PI / 180.0f), ((float)WINDOW_WIDTH / WINDOW_HEIGHT), 0.1f, 100.0f),
+    : m_Camera(45.0f * (M_PI / 180.0f), ((float)WINDOW_WIDTH / WINDOW_HEIGHT), 0.1f, 100.0f, glm::vec3(5, 2, 5),
+               glm::vec3(0, 0, 0)),
       m_EventManager(eventManager), isWindowOpen(true), m_TextureManager()
 {
     glfwSetErrorCallback([](int error, const char* description) { fprintf(stderr, "Error: %s\n", description); });

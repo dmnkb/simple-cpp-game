@@ -7,7 +7,7 @@ Game::Game()
     : m_Renderer(m_EventManager), m_Player(m_Renderer.getCamera(), m_EventManager), m_DeltaTime(0.f),
       m_FPSUpdateTime(0.f), m_FrameCount(0)
 {
-    auto myCube = m_Renderer.addCube(glm::vec3(0, 0, 0));
+    auto myCube = m_Renderer.addCube(glm::vec3(5, 0, 5));
     myCube->setScale(glm::vec3(10, .5f, 10));
 }
 
