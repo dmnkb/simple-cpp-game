@@ -38,13 +38,16 @@ static const GLfloat vertices[] = {
     0.5f,  0.5f,  0.5f,  0.0f, 1.0f, // G 23
 };
 
+// clang-format off
 static const GLuint indices[] = {
     // front and back
     0, 3, 2, 2, 1, 0, 4, 5, 6, 6, 7, 4,
     // left and right
     11, 8, 9, 9, 10, 11, 12, 13, 14, 14, 15, 12,
     // bottom and top
-    16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20};
+    16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20,
+};
+// clang-format on
 
 class Cube
 {
