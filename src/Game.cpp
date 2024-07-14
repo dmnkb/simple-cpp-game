@@ -7,9 +7,9 @@ Game::Game()
     : m_Renderer(m_EventManager), m_Player(m_Renderer.getCamera(), m_EventManager), m_DeltaTime(0.f),
       m_FPSUpdateTime(0.f), m_FrameCount(0)
 {
-    m_Renderer.addPlane(glm::vec3(0, 0, 0));
-    m_Renderer.addPlane(glm::vec3(1, 0, 0));
-    m_Renderer.addPlane(glm::vec3(1, 1, 0));
+    m_Renderer.addCube(glm::vec3(0, 0, 0));
+    m_Renderer.addCube(glm::vec3(1, 0, 0));
+    m_Renderer.addCube(glm::vec3(1, 1, 0));
 }
 
 Game::~Game()

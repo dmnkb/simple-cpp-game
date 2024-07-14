@@ -2,8 +2,8 @@
 
 #define GLFW_INCLUDE_NONE
 #include "Camera.h"
+#include "Cube.h"
 #include "EventManager.h"
-#include "Plane.h"
 #include "Shader.h"
 #include "TextureManager.h"
 #include <GLFW/glfw3.h>
@@ -33,8 +33,8 @@ class Renderer
     }
 
     // Placeholder functions
-    void addPlane(glm::vec3 position);
-    void removePlane(glm::vec3 position);
+    void addCube(glm::vec3 position);
+    void removeCube(glm::vec3 position);
 
     bool isWindowOpen = false;
 
@@ -59,5 +59,5 @@ class Renderer
 
     Camera m_Camera;
     Shader* m_Shader;
-    std::vector<Plane> m_Planes;
+    std::vector<Cube> m_Cubes;
 };

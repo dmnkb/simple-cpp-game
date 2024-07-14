@@ -93,9 +93,9 @@ void Renderer::render()
     glViewport(0, 0, m_WindowWidth, m_WindowHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    for (auto& plane : m_Planes)
+    for (auto& cube : m_Cubes)
     {
-        plane.draw(m_Camera);
+        cube.draw(m_Camera);
     }
 
     glfwSwapBuffers(m_Window);
@@ -133,17 +133,17 @@ void Renderer::mousePosCallback(GLFWwindow* window, double xpos, double ypos)
     m_CursorLastY = ypos;
 }
 
-void Renderer::addPlane(glm::vec3 position)
+void Renderer::addCube(glm::vec3 position)
 {
     auto tex = loadTexture("assets/texture_02.png").id;
-    Plane plane(tex, m_Shader, position);
-    m_Planes.push_back(plane);
+    Cube cube(tex, m_Shader, position);
+    m_Cubes.push_back(cube);
 }
-void Renderer::removePlane(glm::vec3 position)
+void Renderer::removeCube(glm::vec3 position)
 {
-    for (auto it = m_Planes.begin(); it != m_Planes.end();)
+    for (auto it = m_Cubes.begin(); it != m_Cubes.end();)
     {
         it->remove();
-        it = m_Planes.erase(it);
+        it = m_Cubes.erase(it);
     }
 }
