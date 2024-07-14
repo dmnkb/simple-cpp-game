@@ -8,6 +8,8 @@
 #include <GLFW/glfw3.h>
 #include <cstdio>
 #include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp>
+#include <iostream>
 
 static const GLfloat vertices[] = {
     -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, // A 0
@@ -55,22 +57,19 @@ class Cube
     Cube(const GLuint& textureID, Shader* shader, glm::vec3 position);
     void draw(const Camera& camera);
     void remove();
-
-    GLuint getTexture()
-    {
-        return m_Texture;
+    // clang-format off
+    void setPosition(glm::vec3 position) { m_Position = position; }
+    void setScale(glm::vec3 scale) { 
+        std::cout << "setting cube scale to: " << glm::to_string(scale) << std::endl;
+        m_Scale = scale; 
     }
-
-    glm::vec3 getPosition()
-    {
-        return m_Position;
-    }
+    // clang-format on
 
   private:
-    GLuint m_VertexArray;
-    GLuint m_VertexBuffer;
-    GLuint m_IndexBuffer;
+    GLuint m_VertexArray, m_VertexBuffer, m_IndexBuffer;
     GLuint m_Texture;
     Shader* m_Shader;
-    glm::vec3 m_Position;
+
+    glm::vec3 m_Position = glm::vec3(0, 0, 0);
+    glm::vec3 m_Scale = glm::vec3(1, 1, 1);
 };

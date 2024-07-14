@@ -17,23 +17,13 @@ class Renderer
 
     void render();
 
-    GLFWwindow* getWindow()
-    {
-        return m_Window;
-    }
+    // clang-format off
+    GLFWwindow* getWindow() { return m_Window; }
+    Texture loadTexture(const char* path) { return m_TextureManager.loadTexture(path); };
+    Camera& getCamera() { return m_Camera; }
+    // clang-format on
 
-    Texture loadTexture(const char* path)
-    {
-        return m_TextureManager.loadTexture(path);
-    };
-
-    Camera& getCamera()
-    {
-        return m_Camera;
-    }
-
-    // Placeholder functions
-    void addCube(glm::vec3 position);
+    std::shared_ptr<Cube> addCube(glm::vec3 position);
     void removeCube(glm::vec3 position);
 
     bool isWindowOpen = false;
@@ -59,5 +49,5 @@ class Renderer
 
     Camera m_Camera;
     Shader* m_Shader;
-    std::vector<Cube> m_Cubes;
+    std::vector<std::shared_ptr<Cube>> m_Cubes;
 };

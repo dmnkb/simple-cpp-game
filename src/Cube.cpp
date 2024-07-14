@@ -40,7 +40,7 @@ Cube::Cube(const GLuint& textureID, Shader* shader, glm::vec3 position)
 
 void Cube::draw(const Camera& camera)
 {
-    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), m_Position);
+    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), m_Position) * glm::scale(glm::mat4(1.0f), m_Scale);
     glm::mat4 projectionMatrix = camera.getProjectionMatrix();
     glm::mat4 viewMatrix = camera.getViewMatrix();
     glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;

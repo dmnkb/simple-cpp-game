@@ -95,7 +95,7 @@ void Renderer::render()
 
     for (auto& cube : m_Cubes)
     {
-        cube.draw(m_Camera);
+        cube->draw(m_Camera);
     }
 
     glfwSwapBuffers(m_Window);
@@ -133,17 +133,19 @@ void Renderer::mousePosCallback(GLFWwindow* window, double xpos, double ypos)
     m_CursorLastY = ypos;
 }
 
-void Renderer::addCube(glm::vec3 position)
+std::shared_ptr<Cube> Renderer::addCube(glm::vec3 position)
 {
     auto tex = loadTexture("assets/texture_02.png").id;
-    Cube cube(tex, m_Shader, position);
+    auto cube = std::make_shared<Cube>(tex, m_Shader, position);
     m_Cubes.push_back(cube);
+    return cube;
 }
+
 void Renderer::removeCube(glm::vec3 position)
 {
     for (auto it = m_Cubes.begin(); it != m_Cubes.end();)
     {
-        it->remove();
+        (*it)->remove();
         it = m_Cubes.erase(it);
     }
 }
