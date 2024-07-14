@@ -1,8 +1,9 @@
 #include "Plane.h"
 #include "Camera.h"
-#define STB_IMAGE_IMPLEMENTATION
 #include <filesystem>
 #include <glm/glm.hpp>
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_STATIC
 #include <stb_image.h>
 
 Plane::Plane() : m_Shader(vertex_shader_text, fragment_shader_text)

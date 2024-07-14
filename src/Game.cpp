@@ -5,8 +5,7 @@
 Game::Game()
     : m_Renderer(m_EventManager), m_Player(m_Camera, m_EventManager),
       m_Camera(45.0f * (M_PI / 180.0f), m_Renderer.getViewport().x / m_Renderer.getViewport().y, 0.1f, 100.0f),
-      m_DeltaTime(0.f), m_FPSUpdateTime(0.f), m_FrameCount(0),
-      m_Plane(Plane(m_Renderer.loadTexture("assets/texture_02.png").id))
+      m_DeltaTime(0.f), m_FPSUpdateTime(0.f), m_FrameCount(0)
 {
 }
 
