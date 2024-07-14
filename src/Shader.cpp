@@ -4,16 +4,19 @@
 
 Shader::Shader(const char* vertexShader, const char* fragmentShader) : m_ProgramID(glCreateProgram())
 {
+    printf("Create vertex shader\n");
     m_VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(m_VertexShaderID, 1, &vertexShader, NULL);
     glCompileShader(m_VertexShaderID);
     checkShaderCompilation(m_VertexShaderID);
 
+    printf("Create fragment shader\n");
     m_FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(m_FragmentShaderID, 1, &fragmentShader, NULL);
     glCompileShader(m_FragmentShaderID);
     checkShaderCompilation(m_FragmentShaderID);
 
+    printf("Link shader\n");
     glAttachShader(m_ProgramID, m_VertexShaderID);
     glAttachShader(m_ProgramID, m_FragmentShaderID);
     glLinkProgram(m_ProgramID);

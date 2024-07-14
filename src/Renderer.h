@@ -1,8 +1,10 @@
 #pragma once
 
 #define GLFW_INCLUDE_NONE
+#include "Camera.h"
 #include "EventManager.h"
 #include "Plane.h"
+#include "Shader.h"
 #include "TextureManager.h"
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -13,16 +15,11 @@ class Renderer
     Renderer(EventManager& eventManager);
     ~Renderer();
 
-    void beginRender();
-    void endRender();
+    void render();
 
     GLFWwindow* getWindow()
     {
         return m_Window;
-    }
-    const glm::vec2 getViewport()
-    {
-        return glm::vec2(m_WindowWidth, m_WindowHeight);
     }
 
     Texture loadTexture(const char* path)
@@ -30,9 +27,14 @@ class Renderer
         return m_TextureManager.loadTexture(path);
     };
 
+    Camera& getCamera()
+    {
+        return m_Camera;
+    }
+
     // Placeholder functions
-    void addPlane(glm::vec3& position);
-    void removePlane(glm::vec3& position);
+    void addPlane(glm::vec3 position);
+    void removePlane(glm::vec3 position);
 
     bool isWindowOpen = false;
 
@@ -41,15 +43,21 @@ class Renderer
     EventManager& m_EventManager;
     TextureManager m_TextureManager;
 
+    // static instance pointer to handle events
     static Renderer* instance;
 
     void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
     void mousePosCallback(GLFWwindow* window, double xpos, double ypos);
+    const glm::vec2 getViewport()
+    {
+        return glm::vec2(m_WindowWidth, m_WindowHeight);
+    }
 
     int m_WindowWidth, m_WindowHeight = 0;
     bool m_FirstMosue = true;
     float m_CursorLastX, m_CursorLastY = 0.f;
 
-    // placeholder storage for planes
+    Camera m_Camera;
+    Shader* m_Shader;
     std::vector<Plane> m_Planes;
 };

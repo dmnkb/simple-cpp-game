@@ -2,12 +2,39 @@
 #include <GLFW/glfw3.h>
 #define GLAD_GL_IMPLEMENTATION
 #include <glad/glad.h>
-#include <stdio.h>
+#include <iostream>
 #include <stdlib.h>
+
+// FIXME: SHould be updated on window resize event
+const int WINDOW_WIDTH = 640;
+const int WINDOW_HEIGHT = 480;
+
+static const char* vertex_shader_text = "#version 330\n"
+                                        "uniform mat4 MVP;\n"
+                                        "in vec3 vPos;\n"
+                                        "in vec2 vUV;\n"
+                                        "out vec2 UV;\n"
+                                        "void main()\n"
+                                        "{\n"
+                                        "    gl_Position = MVP * vec4(vPos, 1.0);\n"
+                                        "    UV = vUV;\n"
+                                        "}\n";
+
+static const char* fragment_shader_text = "#version 330\n"
+                                          "in vec2 UV;\n"
+                                          "out vec4 fragment;\n"
+                                          "uniform sampler2D myTextureSampler;\n"
+                                          "void main()\n"
+                                          "{\n"
+                                          "    vec4 texColor = texture(myTextureSampler, UV);\n"
+                                          "    fragment = texColor;\n"
+                                          "}\n";
 
 Renderer* Renderer::instance = nullptr;
 
-Renderer::Renderer(EventManager& eventManager) : m_EventManager(eventManager), isWindowOpen(true), m_TextureManager()
+Renderer::Renderer(EventManager& eventManager)
+    : m_Camera(45.0f * (M_PI / 180.0f), ((float)WINDOW_WIDTH / WINDOW_HEIGHT), 0.1f, 100.0f),
+      m_EventManager(eventManager), isWindowOpen(true), m_TextureManager()
 {
     glfwSetErrorCallback([](int error, const char* description) { fprintf(stderr, "Error: %s\n", description); });
 
@@ -18,7 +45,7 @@ Renderer::Renderer(EventManager& eventManager) : m_EventManager(eventManager), i
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    m_Window = glfwCreateWindow(640, 480, "Simple CPP Game", NULL, NULL);
+    m_Window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Simple CPP Game", NULL, NULL);
 
     if (!m_Window)
     {
@@ -51,6 +78,8 @@ Renderer::Renderer(EventManager& eventManager) : m_EventManager(eventManager), i
     glEnable(GL_DEPTH_TEST);
 
     glfwGetFramebufferSize(m_Window, &m_WindowWidth, &m_WindowHeight);
+
+    m_Shader = new Shader(vertex_shader_text, fragment_shader_text);
 }
 
 Renderer::~Renderer()
@@ -59,14 +88,16 @@ Renderer::~Renderer()
     glfwTerminate();
 }
 
-void Renderer::beginRender()
+void Renderer::render()
 {
     glViewport(0, 0, m_WindowWidth, m_WindowHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
 
-void Renderer::endRender()
-{
+    for (auto& plane : m_Planes)
+    {
+        plane.draw(m_Camera);
+    }
+
     glfwSwapBuffers(m_Window);
     glfwPollEvents();
 }
@@ -102,5 +133,17 @@ void Renderer::mousePosCallback(GLFWwindow* window, double xpos, double ypos)
     m_CursorLastY = ypos;
 }
 
-void Renderer::addPlane(glm::vec3& position) {}
-void Renderer::removePlane(glm::vec3& position) {}
+void Renderer::addPlane(glm::vec3 position)
+{
+    auto tex = loadTexture("assets/texture_02.png").id;
+    Plane plane(tex, m_Shader, position);
+    m_Planes.push_back(plane);
+}
+void Renderer::removePlane(glm::vec3 position)
+{
+    for (auto it = m_Planes.begin(); it != m_Planes.end();)
+    {
+        it->remove();
+        it = m_Planes.erase(it);
+    }
+}

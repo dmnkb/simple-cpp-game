@@ -1,12 +1,15 @@
 #include "Game.h"
 #include "EventManager.h"
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 
 Game::Game()
-    : m_Renderer(m_EventManager), m_Player(m_Camera, m_EventManager),
-      m_Camera(45.0f * (M_PI / 180.0f), m_Renderer.getViewport().x / m_Renderer.getViewport().y, 0.1f, 100.0f),
-      m_DeltaTime(0.f), m_FPSUpdateTime(0.f), m_FrameCount(0)
+    : m_Renderer(m_EventManager), m_Player(m_Renderer.getCamera(), m_EventManager), m_DeltaTime(0.f),
+      m_FPSUpdateTime(0.f), m_FrameCount(0)
 {
+    m_Renderer.addPlane(glm::vec3(0, 0, 0));
+    m_Renderer.addPlane(glm::vec3(1, 0, 0));
+    m_Renderer.addPlane(glm::vec3(1, 1, 0));
 }
 
 Game::~Game()
@@ -38,16 +41,12 @@ void Game::run()
             glfwSetWindowTitle(m_Renderer.getWindow(), title.c_str());
         }
 
-        // Begin rendering
-        m_Renderer.beginRender();
-
         // Update scene
-        m_Plane.draw(m_Camera);
         m_Player.update(m_DeltaTime);
         m_EventManager.processEvents();
 
-        // End rendering
-        m_Renderer.endRender();
+        // Render scene
+        m_Renderer.render();
 
         // For the next frame, the "last time" will be "now"
         lastTime = currentTime;
