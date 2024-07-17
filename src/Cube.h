@@ -59,10 +59,8 @@ class Cube
     void remove();
     // clang-format off
     void setPosition(glm::vec3 position) { m_Position = position; }
-    void setScale(glm::vec3 scale) { 
-        std::cout << "setting cube scale to: " << glm::to_string(scale) << std::endl;
-        m_Scale = scale; 
-    }
+    void setRotation(glm::vec3 rotation) { m_Rotation = rotation; }
+    void setScale(glm::vec3 scale) {  m_Scale = scale; }
     // clang-format on
 
   private:
@@ -71,5 +69,6 @@ class Cube
     Shader* m_Shader;
 
     glm::vec3 m_Position = glm::vec3(0, 0, 0);
+    glm::vec3 m_Rotation = glm::vec3(0, 0, 0);
     glm::vec3 m_Scale = glm::vec3(1, 1, 1);
 };

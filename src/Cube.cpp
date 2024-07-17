@@ -40,18 +40,32 @@ Cube::Cube(const GLuint& textureID, Shader* shader, glm::vec3 position)
 
 void Cube::draw(const Camera& camera)
 {
-    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), m_Position) * glm::scale(glm::mat4(1.0f), m_Scale);
+    // Create transformation matrices
+    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), m_Position);
+
+    // Apply rotations
+    modelMatrix = glm::rotate(modelMatrix, m_Rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+    modelMatrix = glm::rotate(modelMatrix, m_Rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+    modelMatrix = glm::rotate(modelMatrix, m_Rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
+
+    // Apply scale
+    modelMatrix = glm::scale(modelMatrix, m_Scale);
+
+    // Combine with view and projection matrices
     glm::mat4 projectionMatrix = camera.getProjectionMatrix();
     glm::mat4 viewMatrix = camera.getViewMatrix();
     glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;
 
+    // Bind the shader and set uniforms
     m_Shader->bind();
     m_Shader->setUniformMatrix4fv("MVP", modelViewProjectionMatrix);
 
+    // Bind texture and set uniform
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_Texture);
     m_Shader->setUniform1i("myTextureSampler", 0);
 
+    // Draw the cube
     glBindVertexArray(m_VertexArray);
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);

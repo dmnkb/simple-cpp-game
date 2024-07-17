@@ -7,8 +7,7 @@ Game::Game()
     : m_Renderer(m_EventManager), m_Player(m_Renderer.getCamera(), m_EventManager), m_DeltaTime(0.f),
       m_FPSUpdateTime(0.f), m_FrameCount(0)
 {
-    auto myCube = m_Renderer.addCube(glm::vec3(5, 0, 5));
-    myCube->setScale(glm::vec3(10, .5f, 10));
+    m_Cube = m_Renderer.addCube(glm::vec3(5, 0, 5));
 }
 
 Game::~Game()
@@ -18,6 +17,8 @@ Game::~Game()
 
 void Game::run()
 {
+    float i = 0.f;
+
     while (m_Renderer.isWindowOpen)
     {
         // Calculate delta time
@@ -39,6 +40,11 @@ void Game::run()
             std::string title = "FPS: " + std::to_string(fps);
             glfwSetWindowTitle(m_Renderer.getWindow(), title.c_str());
         }
+
+        i += m_DeltaTime;
+        m_Cube->setPosition(glm::vec3(sin(i) * 2, 0.f, 0.f));
+        m_Cube->setScale(glm::vec3(10, 2.f + (sin(i) * 2), 10));
+        m_Cube->setRotation(glm::vec3(0.f, 0.f + i, 0.f));
 
         // Update scene
         m_Player.update(m_DeltaTime);

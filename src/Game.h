@@ -20,4 +20,6 @@ class Game
 
     double m_DeltaTime, m_FPSUpdateTime;
     int m_FrameCount;
+
+    std::shared_ptr<Cube> m_Cube;
 };
