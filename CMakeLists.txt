@@ -11,11 +11,13 @@ add_executable(${PROJECT_NAME} ${MY_SOURCES})
 add_subdirectory(vendor/glfw EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/glad EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/glm EXCLUDE_FROM_ALL)
+add_subdirectory(vendor/imgui)
 
 target_link_libraries("${CMAKE_PROJECT_NAME}" 
     PRIVATE glfw 
     PRIVATE glad 
     PRIVATE glm
+    PRIVATE imgui
 )
 
 target_include_directories("${CMAKE_PROJECT_NAME}" 

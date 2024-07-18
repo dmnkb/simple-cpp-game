@@ -5,6 +5,10 @@
 #include <iostream>
 #include <stdlib.h>
 
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
 // FIXME: SHould be updated on window resize event
 const int WINDOW_WIDTH = 640;
 const int WINDOW_HEIGHT = 480;
@@ -69,7 +73,8 @@ Renderer::Renderer(EventManager& eventManager)
                              });
     glfwSetWindowCloseCallback(m_Window, [](GLFWwindow* window) { instance->isWindowOpen = false; });
 
-    glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    // Disable for now to test imgui
+    // glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     glfwMakeContextCurrent(m_Window);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
@@ -81,10 +86,24 @@ Renderer::Renderer(EventManager& eventManager)
     glfwGetFramebufferSize(m_Window, &m_WindowWidth, &m_WindowHeight);
 
     m_Shader = new Shader(vertex_shader_text, fragment_shader_text);
+
+    // Initialize ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
+    ImGui::StyleColorsDark();
+    ImGui_ImplGlfw_InitForOpenGL(m_Window, true);
+    ImGui_ImplOpenGL3_Init("#version 330");
 }
 
 Renderer::~Renderer()
 {
+    // Cleanup ImGui
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
     glfwDestroyWindow(m_Window);
     glfwTerminate();
 }
@@ -94,10 +113,24 @@ void Renderer::render()
     glViewport(0, 0, m_WindowWidth, m_WindowHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // Start the ImGui frame
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // Create ImGui window
+    ImGui::Begin("Hello, ImGui!");
+    ImGui::Text("This is a simple ImGui window.");
+    ImGui::End();
+
     for (auto& cube : m_Cubes)
     {
         cube->draw(m_Camera);
     }
+
+    // Render ImGui
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     glfwSwapBuffers(m_Window);
     glfwPollEvents();
@@ -117,6 +150,9 @@ void Renderer::keyCallback(GLFWwindow* window, int key, int scancode, int action
 
 void Renderer::mousePosCallback(GLFWwindow* window, double xpos, double ypos)
 {
+    // Don't propagate any events for now
+    return;
+
     if (m_FirstMosue)
     {
         m_CursorLastX = static_cast<float>(xpos);
