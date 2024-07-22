@@ -1,9 +1,8 @@
 #include "Cube.h"
 #include "Camera.h"
-#include <filesystem>
+#include "pch.h"
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
-#include <iostream>
 
 Cube::Cube(const GLuint& textureID, Shader* shader, glm::vec3 position)
     : m_Shader(shader), m_Texture(textureID), m_Position(position)

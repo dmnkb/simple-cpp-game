@@ -1,6 +1,5 @@
 #include "Shader.h"
-#include <iostream>
-#include <stdio.h>
+#include "pch.h"
 
 Shader::Shader(const char* vertexShader, const char* fragmentShader) : m_ProgramID(glCreateProgram())
 {

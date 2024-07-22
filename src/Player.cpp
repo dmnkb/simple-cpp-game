@@ -1,10 +1,9 @@
 #include "Player.h"
+#include "pch.h"
 #include <GLFW/glfw3.h>
-#include <algorithm>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <string>
 
 Player::Player(Camera& camera, EventManager& eventManager)
     : m_Camera(camera), m_Position(15, 5, 15), m_Rotation(225, -15), m_camChange(0, 0)

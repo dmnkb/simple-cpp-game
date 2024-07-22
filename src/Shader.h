@@ -1,9 +1,9 @@
 #pragma once
 
-#define GLAD_GL_IMPLEMENTATION
+#include "pch.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
-#include <unordered_map>
+
 class Shader
 {
   public:

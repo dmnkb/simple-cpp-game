@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Event.h"
-#include <functional>
-#include <string>
+#include "pch.h"
 
 class EventManager
 {

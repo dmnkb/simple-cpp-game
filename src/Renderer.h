@@ -1,6 +1,5 @@
 #pragma once
 
-#define GLFW_INCLUDE_NONE
 #include "Camera.h"
 #include "Cube.h"
 #include "EventManager.h"

@@ -1,13 +1,10 @@
 #include "Renderer.h"
-#include <GLFW/glfw3.h>
-#define GLAD_GL_IMPLEMENTATION
-#include <glad/glad.h>
-#include <iostream>
-#include <stdlib.h>
-
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "pch.h"
+#include <GLFW/glfw3.h>
+#include <glad/glad.h>
 
 // FIXME: SHould be updated on window resize event
 const int WINDOW_WIDTH = 640;
