@@ -8,10 +8,10 @@ class Game
 {
   public:
     Game();
+    ~Game();
 
     void run();
-
-    ~Game();
+    void onKeyEvent(Event* event);
 
   private:
     Renderer m_Renderer;
@@ -22,4 +22,6 @@ class Game
     int m_FrameCount;
 
     std::shared_ptr<Cube> m_Cube;
+
+    bool m_CanDisableCursor = true;
 };

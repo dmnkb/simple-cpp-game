@@ -80,7 +80,7 @@ Renderer::Renderer(EventManager& eventManager)
     glClearColor(0.2902f, 0.4196f, 0.9647f, 1.0f);
     glEnable(GL_DEPTH_TEST);
 
-    glfwGetFramebufferSize(m_Window, &m_WindowWidth, &m_WindowHeight);
+    glfwGetFramebufferSize(m_Window, &m_FBWidth, &m_FBHeight);
 
     m_Shader = new Shader(vertex_shader_text, fragment_shader_text);
 
@@ -107,7 +107,7 @@ Renderer::~Renderer()
 
 void Renderer::render()
 {
-    glViewport(0, 0, m_WindowWidth, m_WindowHeight);
+    glViewport(0, 0, m_FBWidth, m_FBHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Start the ImGui frame
@@ -135,21 +135,12 @@ void Renderer::render()
 
 void Renderer::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-    {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-        isWindowOpen = false;
-    }
-
     KeyEvent* event = new KeyEvent(key, action);
     m_EventManager.queueEvent(event);
 }
 
 void Renderer::mousePosCallback(GLFWwindow* window, double xpos, double ypos)
 {
-    // Don't propagate any events for now
-    return;
-
     if (m_FirstMosue)
     {
         m_CursorLastX = static_cast<float>(xpos);

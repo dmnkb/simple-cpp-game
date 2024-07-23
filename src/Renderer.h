@@ -16,11 +16,20 @@ class Renderer
 
     void render();
 
-    // clang-format off
-    GLFWwindow* getWindow() { return m_Window; }
-    Texture loadTexture(const char* path) { return m_TextureManager.loadTexture(path); };
-    Camera& getCamera() { return m_Camera; }
-    // clang-format on
+    GLFWwindow* getWindow()
+    {
+        return m_Window;
+    }
+
+    Texture loadTexture(const char* path)
+    {
+        return m_TextureManager.loadTexture(path);
+    };
+
+    Camera& getCamera()
+    {
+        return m_Camera;
+    }
 
     std::shared_ptr<Cube> addCube(glm::vec3 position);
     void removeCube(glm::vec3 position);
@@ -37,12 +46,8 @@ class Renderer
 
     void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
     void mousePosCallback(GLFWwindow* window, double xpos, double ypos);
-    const glm::vec2 getViewport()
-    {
-        return glm::vec2(m_WindowWidth, m_WindowHeight);
-    }
 
-    int m_WindowWidth, m_WindowHeight = 0;
+    int m_FBWidth, m_FBHeight = 0;
     bool m_FirstMosue = true;
     float m_CursorLastX, m_CursorLastY = 0.f;
 

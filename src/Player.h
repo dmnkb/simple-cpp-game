@@ -15,6 +15,11 @@ class Player
     void update(double deltaTime);
     bool isKeyPressed(unsigned int key);
 
+    void setIsCursorDisabled(bool disabled)
+    {
+        m_IsCursorDisabled = disabled;
+    }
+
   private:
     Camera& m_Camera;
     glm::vec3 m_Position;
@@ -24,4 +29,5 @@ class Player
     glm::vec2 m_cursorPositionOld;
     std::deque<double> m_DeltaTimeHistory;
     std::vector<unsigned int> m_PressedKeys;
+    bool m_IsCursorDisabled = true;
 };

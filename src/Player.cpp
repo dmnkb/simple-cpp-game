@@ -38,6 +38,9 @@ void Player::onKeyEvent(Event* event)
 
 void Player::onMouseMoveEvent(Event* event)
 {
+    if (m_IsCursorDisabled)
+        return;
+
     if (auto mouseMoveEvent = dynamic_cast<MouseMoveEvent*>(event))
     {
         m_camChange.x = mouseMoveEvent->speedX;
