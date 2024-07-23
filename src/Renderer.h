@@ -52,6 +52,6 @@ class Renderer
     float m_CursorLastX, m_CursorLastY = 0.f;
 
     Camera m_Camera;
-    Shader* m_Shader;
+    std::shared_ptr<Shader> m_Shader;
     std::vector<std::shared_ptr<Cube>> m_Cubes;
 };

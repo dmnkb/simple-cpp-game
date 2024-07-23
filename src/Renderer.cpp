@@ -70,9 +70,6 @@ Renderer::Renderer(EventManager& eventManager)
                              });
     glfwSetWindowCloseCallback(m_Window, [](GLFWwindow* window) { instance->isWindowOpen = false; });
 
-    // Disable for now to test imgui
-    // glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
     glfwMakeContextCurrent(m_Window);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     glfwSwapInterval(1);
@@ -82,7 +79,7 @@ Renderer::Renderer(EventManager& eventManager)
 
     glfwGetFramebufferSize(m_Window, &m_FBWidth, &m_FBHeight);
 
-    m_Shader = new Shader(vertex_shader_text, fragment_shader_text);
+    m_Shader = std::make_shared<Shader>(vertex_shader_text, fragment_shader_text);
 
     // Initialize ImGui
     IMGUI_CHECKVERSION();

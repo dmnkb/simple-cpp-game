@@ -4,8 +4,8 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
 
-Cube::Cube(const GLuint& textureID, Shader* shader, glm::vec3 position)
-    : m_Shader(shader), m_Texture(textureID), m_Position(position)
+Cube::Cube(const GLuint textureID, std::shared_ptr<Shader> shader, glm::vec3 position)
+    : m_Shader(shader), m_TextureID(textureID), m_Position(position)
 {
     glGenVertexArrays(1, &m_VertexArray);
     glGenBuffers(1, &m_VertexBuffer);
@@ -31,6 +31,11 @@ Cube::Cube(const GLuint& textureID, Shader* shader, glm::vec3 position)
     // UV attribute
     glVertexAttribPointer(1, UV_SIZE, GL_FLOAT, GL_FALSE, STRIDE, (GLvoid*)(3 * sizeof(GLfloat)));
     glEnableVertexAttribArray(1);
+
+    // Bind texture and set uniform
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_TextureID);
+    m_Shader->setUniform1i("myTextureSampler", 0);
 
     // Unbind VBO and VAO
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -59,11 +64,6 @@ void Cube::draw(const Camera& camera)
     m_Shader->bind();
     m_Shader->setUniformMatrix4fv("MVP", modelViewProjectionMatrix);
 
-    // Bind texture and set uniform
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_Texture);
-    m_Shader->setUniform1i("myTextureSampler", 0);
-
     // Draw the cube
     glBindVertexArray(m_VertexArray);
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
@@ -75,5 +75,4 @@ void Cube::remove()
     glDeleteBuffers(1, &m_VertexBuffer);
     glDeleteBuffers(1, &m_IndexBuffer);
     glDeleteVertexArrays(1, &m_VertexArray);
-    std::cout << "Cube removed" << std::endl;
 }

@@ -52,7 +52,7 @@ static const GLuint indices[] = {
 class Cube
 {
   public:
-    Cube(const GLuint& textureID, Shader* shader, glm::vec3 position);
+    Cube(const GLuint textureID, std::shared_ptr<Shader> shader, glm::vec3 position);
     void draw(const Camera& camera);
     void remove();
     // clang-format off
@@ -63,8 +63,8 @@ class Cube
 
   private:
     GLuint m_VertexArray, m_VertexBuffer, m_IndexBuffer;
-    GLuint m_Texture;
-    Shader* m_Shader;
+    GLuint m_TextureID;
+    std::shared_ptr<Shader> m_Shader;
 
     glm::vec3 m_Position = glm::vec3(0, 0, 0);
     glm::vec3 m_Rotation = glm::vec3(0, 0, 0);

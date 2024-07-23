@@ -9,6 +9,7 @@ Game::Game()
 {
     m_EventManager.registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
     m_Cube = m_Renderer.addCube(glm::vec3(5, 0, 5));
+    m_Cube->setScale(glm::vec3(10, 1, 10));
 }
 
 Game::~Game()
@@ -41,11 +42,6 @@ void Game::run()
             std::string title = "FPS: " + std::to_string(fps);
             glfwSetWindowTitle(m_Renderer.getWindow(), title.c_str());
         }
-
-        i += m_DeltaTime;
-        m_Cube->setPosition(glm::vec3(sin(i) * 2, 0.f, 0.f));
-        m_Cube->setScale(glm::vec3(10, 2.f + (sin(i) * 2), 10));
-        m_Cube->setRotation(glm::vec3(0.f, 0.f + i, 0.f));
 
         // Update scene
         m_Player.update(m_DeltaTime);
