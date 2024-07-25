@@ -9,13 +9,13 @@
 // clang-format on
 #include <glm/glm.hpp>
 
-typedef struct
+struct WindowProps
 {
     int width, height;
     const char* title;
     GLFWmonitor* monitor;
     GLFWwindow* share;
-} WindowProps;
+};
 
 class Window
 {

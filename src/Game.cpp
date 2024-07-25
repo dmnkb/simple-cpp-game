@@ -9,11 +9,13 @@
 const int windowWidth = 1600;
 const int windowHeigth = 900;
 
-WindowProps props = {windowWidth, windowHeigth, "Simple CPP Game", NULL, NULL};
+WindowProps windowProps = {windowWidth, windowHeigth, "Simple CPP Game", NULL, NULL};
+CameraProps camProps = {45.0f * (M_PI / 180.0f), ((float)windowWidth / windowHeigth), 0.1f, 100.0f, glm::vec3(5, 2, 5),
+                        glm::vec3(0, 0, 0)};
+
 Game::Game()
-    : m_Window(props, m_EventManager), m_Camera(45.0f * (M_PI / 180.0f), ((float)windowWidth / windowHeigth), 0.1f,
-                                                100.0f, glm::vec3(5, 2, 5), glm::vec3(0, 0, 0)),
-      m_Renderer(m_Window.getFrameBufferDimensions()), m_Player(m_Camera, m_EventManager)
+    : m_Window(windowProps, m_EventManager), m_Camera(camProps), m_Renderer(m_Window.getFrameBufferDimensions()),
+      m_Player(m_Camera, m_EventManager)
 {
     m_EventManager.registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
 
