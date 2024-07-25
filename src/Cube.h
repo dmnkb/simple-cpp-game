@@ -1,11 +1,9 @@
 #pragma once
 
-#define GLAD_GL_IMPLEMENTATION
 #include "Camera.h"
 #include "Shader.h"
 #include "pch.h"
 #include <GLFW/glfw3.h>
-#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 

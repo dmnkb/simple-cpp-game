@@ -1,8 +1,10 @@
 #pragma once
 
 #include "Camera.h"
+#include "EventManager.h"
 #include "Player.h"
 #include "Renderer.h"
+#include "Window.h"
 
 class Game
 {
@@ -14,12 +16,14 @@ class Game
     void onKeyEvent(Event* event);
 
   private:
-    Renderer m_Renderer;
     EventManager m_EventManager;
+    Window m_Window;
+    Camera m_Camera;
+    Renderer m_Renderer;
     Player m_Player;
 
-    double m_DeltaTime, m_FPSUpdateTime;
-    int m_FrameCount;
+    double m_DeltaTime, m_FPSUpdateTime = 0.0;
+    int m_FrameCount = 0;
 
     std::shared_ptr<Cube> m_Cube;
 

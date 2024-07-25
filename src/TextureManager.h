@@ -14,9 +14,9 @@ class TextureManager
   public:
     ~TextureManager();
 
-    Texture loadTexture(const std::string path);
-    void deleteTexture(const GLuint& textureID);
+    static Texture loadTexture(const std::string path);
+    static void deleteTexture(const GLuint& textureID);
 
   private:
-    std::unordered_map<std::string, Texture> m_textureCache;
+    static std::unordered_map<std::string, Texture> s_textureCache;
 };

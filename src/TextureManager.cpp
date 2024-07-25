@@ -4,9 +4,11 @@
 #define STB_IMAGE_STATIC
 #include <stb_image.h>
 
+std::unordered_map<std::string, Texture> TextureManager::s_textureCache;
+
 TextureManager::~TextureManager()
 {
-    for (const auto& pair : m_textureCache)
+    for (const auto& pair : s_textureCache)
     {
         glDeleteTextures(1, &pair.second.id);
     }
@@ -18,9 +20,9 @@ Texture TextureManager::loadTexture(const std::string path)
     Texture texture;
 
     // Return cached texture
-    if (m_textureCache.find(path) != m_textureCache.end())
+    if (s_textureCache.find(path) != s_textureCache.end())
     {
-        return m_textureCache[path];
+        return s_textureCache[path];
     }
 
     // Load texture
@@ -62,18 +64,18 @@ Texture TextureManager::loadTexture(const std::string path)
 
     stbi_image_free(data);
 
-    m_textureCache[path] = texture;
+    s_textureCache[path] = texture;
     return texture;
 }
 
 void TextureManager::deleteTexture(const GLuint& textureID)
 {
-    for (const auto& [key, value] : m_textureCache)
+    for (const auto& [key, value] : s_textureCache)
     {
         if (value.id == textureID)
         {
             glDeleteTextures(1, &textureID);
-            m_textureCache.erase(key);
+            s_textureCache.erase(key);
             return;
         }
     }

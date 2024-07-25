@@ -1,14 +1,9 @@
 #include "Renderer.h"
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
+#include "Gui.h"
+#include "TextureManager.h"
 #include "pch.h"
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
-
-// FIXME: SHould be updated on window resize event
-const int WINDOW_WIDTH = 640;
-const int WINDOW_HEIGHT = 480;
 
 static const char* vertex_shader_text = "#version 330\n"
                                         "uniform mat4 MVP;\n"
@@ -33,131 +28,38 @@ static const char* fragment_shader_text = "#version 330\n"
 
 Renderer* Renderer::instance = nullptr;
 
-Renderer::Renderer(EventManager& eventManager)
-    : m_Camera(45.0f * (M_PI / 180.0f), ((float)WINDOW_WIDTH / WINDOW_HEIGHT), 0.1f, 100.0f, glm::vec3(5, 2, 5),
-               glm::vec3(0, 0, 0)),
-      m_EventManager(eventManager), isWindowOpen(true), m_TextureManager()
+Renderer::Renderer(glm::vec2 frameBufferDimensions)
+    : m_FBWidth(frameBufferDimensions.x), m_FBHeight(frameBufferDimensions.y), m_TextureManager()
 {
-    glfwSetErrorCallback([](int error, const char* description) { fprintf(stderr, "Error: %s\n", description); });
-
-    if (!glfwInit())
-        exit(EXIT_FAILURE);
-
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    m_Window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Simple CPP Game", NULL, NULL);
-
-    if (!m_Window)
-    {
-        glfwTerminate();
-        exit(EXIT_FAILURE);
-    }
-
-    instance = this;
-    glfwSetKeyCallback(m_Window,
-                       [](GLFWwindow* window, int key, int scancode, int action, int mods)
-                       {
-                           if (instance)
-                               instance->keyCallback(window, key, scancode, action, mods);
-                       });
-    glfwSetCursorPosCallback(m_Window,
-                             [](GLFWwindow* window, double xpos, double ypos)
-                             {
-                                 if (instance)
-                                     instance->mousePosCallback(window, xpos, ypos);
-                             });
-    glfwSetWindowCloseCallback(m_Window, [](GLFWwindow* window) { instance->isWindowOpen = false; });
-
-    glfwMakeContextCurrent(m_Window);
-    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-    glfwSwapInterval(1);
-
-    glClearColor(0.2902f, 0.4196f, 0.9647f, 1.0f);
-    glEnable(GL_DEPTH_TEST);
-
-    glfwGetFramebufferSize(m_Window, &m_FBWidth, &m_FBHeight);
-
     m_Shader = std::make_shared<Shader>(vertex_shader_text, fragment_shader_text);
-
-    // Initialize ImGui
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    (void)io;
-    ImGui::StyleColorsDark();
-    ImGui_ImplGlfw_InitForOpenGL(m_Window, true);
-    ImGui_ImplOpenGL3_Init("#version 330");
 }
 
-Renderer::~Renderer()
-{
-    // Cleanup ImGui
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+Renderer::~Renderer() {}
 
-    glfwDestroyWindow(m_Window);
-    glfwTerminate();
-}
+static std::vector<std::shared_ptr<Cube>> m_Cubes;
 
-void Renderer::render()
+void Renderer::render(Camera& m_Camera, GLFWwindow*& m_Window)
 {
     glViewport(0, 0, m_FBWidth, m_FBHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Start the ImGui frame
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-
-    // Create ImGui window
-    ImGui::Begin("Hello, ImGui!");
-    ImGui::Text("This is a simple ImGui window.");
-    ImGui::End();
+    Gui::beginFrame();
+    Gui::bind();
 
     for (auto& cube : m_Cubes)
     {
         cube->draw(m_Camera);
     }
 
-    // Render ImGui
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    Gui::render();
 
     glfwSwapBuffers(m_Window);
     glfwPollEvents();
 }
 
-void Renderer::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-    KeyEvent* event = new KeyEvent(key, action);
-    m_EventManager.queueEvent(event);
-}
-
-void Renderer::mousePosCallback(GLFWwindow* window, double xpos, double ypos)
-{
-    if (m_FirstMosue)
-    {
-        m_CursorLastX = static_cast<float>(xpos);
-        m_CursorLastY = static_cast<float>(ypos);
-        m_FirstMosue = false;
-    }
-
-    float xoffset = m_CursorLastX - xpos;
-    float yoffset = m_CursorLastY - ypos;
-
-    MouseMoveEvent* event = new MouseMoveEvent(xoffset, yoffset);
-    m_EventManager.queueEvent(event);
-
-    m_CursorLastX = xpos;
-    m_CursorLastY = ypos;
-}
-
 std::shared_ptr<Cube> Renderer::addCube(glm::vec3 position)
 {
-    auto tex = loadTexture("assets/texture_02.png").id;
+    auto tex = TextureManager::loadTexture("assets/texture_02.png").id;
     auto cube = std::make_shared<Cube>(tex, m_Shader, position);
     m_Cubes.push_back(cube);
     return cube;

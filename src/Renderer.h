@@ -11,47 +11,57 @@
 class Renderer
 {
   public:
-    Renderer(EventManager& eventManager);
+    Renderer(glm::vec2 frameBufferDimensions);
     ~Renderer();
 
-    void render();
+    void render(Camera& m_Camera, GLFWwindow*& m_Window);
 
-    GLFWwindow* getWindow()
-    {
-        return m_Window;
-    }
+    // TODO:
+    // An arbitrary mesh to be rendered without batching
+    // addMesh()
 
-    Texture loadTexture(const char* path)
-    {
-        return m_TextureManager.loadTexture(path);
-    };
-
-    Camera& getCamera()
-    {
-        return m_Camera;
-    }
+    // TODO:
+    // Called each frame. (What's supposed to be drawn is controlled by the actual cube entity)
+    // Should update the batched cube vertex and index buffer to be drawn on render()
+    // static void submitCube(position, rotation, scale, texture);
 
     std::shared_ptr<Cube> addCube(glm::vec3 position);
+
+    // Will be obsolete once submitCube is in place, since the game / scene / level should keep track of
+    // all entites which in turn decide what's submitted to the renderer.
     void removeCube(glm::vec3 position);
 
     bool isWindowOpen = false;
 
+    // TODO:
+    struct Statistics
+    {
+        uint32_t DrawCalls = 0;
+
+        // uint32_t GetTotalVertexCount() const
+        // {
+        //     return cubeCount * 8;
+        // }
+        // uint32_t GetTotalIndexCount() const
+        // {
+        //     return cubeCount * 36;
+        // }
+    };
+    static void ResetStats();
+    static Statistics GetStats();
+
   private:
-    GLFWwindow* m_Window;
-    EventManager& m_EventManager;
-    TextureManager m_TextureManager;
+    // TODO:
+    // batchCubes()
+    // nextBatch()
 
     // static instance pointer to handle events
     static Renderer* instance;
 
-    void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-    void mousePosCallback(GLFWwindow* window, double xpos, double ypos);
-
     int m_FBWidth, m_FBHeight = 0;
-    bool m_FirstMosue = true;
-    float m_CursorLastX, m_CursorLastY = 0.f;
-
-    Camera m_Camera;
+    TextureManager m_TextureManager;
     std::shared_ptr<Shader> m_Shader;
+
+    // TODO: remove
     std::vector<std::shared_ptr<Cube>> m_Cubes;
 };
