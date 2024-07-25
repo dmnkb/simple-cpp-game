@@ -24,8 +24,6 @@ Window::Window(const WindowProps& props, EventManager& eventManager)
         exit(EXIT_FAILURE);
     }
 
-    isWindowOpen = true;
-
     glfwSetKeyCallback(m_Window,
                        [](GLFWwindow* window, int key, int scancode, int action, int mods)
                        {
@@ -43,9 +41,6 @@ Window::Window(const WindowProps& props, EventManager& eventManager)
     glfwMakeContextCurrent(m_Window);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     glfwSwapInterval(1);
-
-    glClearColor(0.2902f, 0.4196f, 0.9647f, 1.0f);
-    glEnable(GL_DEPTH_TEST);
 
     int fbWidth, fbHeight = 0;
     glfwGetFramebufferSize(m_Window, &fbWidth, &fbHeight);

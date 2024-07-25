@@ -23,7 +23,7 @@ class Window
     Window(const WindowProps& props, EventManager& eventManager);
     ~Window();
 
-    bool isWindowOpen = false;
+    bool isWindowOpen = true;
 
     GLFWwindow*& getNativeWindow()
     {

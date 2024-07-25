@@ -6,8 +6,8 @@
 #include <glm/glm.hpp>
 
 // FIXME: to be updated on window resize
-const int windowWidth = 640;
-const int windowHeigth = 480;
+const int windowWidth = 1600;
+const int windowHeigth = 900;
 
 WindowProps props = {windowWidth, windowHeigth, "Simple CPP Game", NULL, NULL};
 Game::Game()
@@ -16,6 +16,8 @@ Game::Game()
       m_Renderer(m_Window.getFrameBufferDimensions()), m_Player(m_Camera, m_EventManager)
 {
     m_EventManager.registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
+
+    // To be done per frame. This will be taken care of the Cube enity
     m_Cube = m_Renderer.addCube(glm::vec3(5, 0, 5));
     m_Cube->setScale(glm::vec3(10, 1, 10));
 

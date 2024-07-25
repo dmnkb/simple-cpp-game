@@ -29,9 +29,11 @@ static const char* fragment_shader_text = "#version 330\n"
 Renderer* Renderer::instance = nullptr;
 
 Renderer::Renderer(glm::vec2 frameBufferDimensions)
-    : m_FBWidth(frameBufferDimensions.x), m_FBHeight(frameBufferDimensions.y), m_TextureManager()
+    : m_FBWidth(frameBufferDimensions.x), m_FBHeight(frameBufferDimensions.y), m_TextureManager(),
+      m_Shader(std::make_shared<Shader>(vertex_shader_text, fragment_shader_text))
 {
-    m_Shader = std::make_shared<Shader>(vertex_shader_text, fragment_shader_text);
+    glClearColor(0.2902f, 0.4196f, 0.9647f, 1.0f);
+    glEnable(GL_DEPTH_TEST);
 }
 
 Renderer::~Renderer() {}
@@ -45,6 +47,12 @@ void Renderer::render(Camera& m_Camera, GLFWwindow*& m_Window)
 
     Gui::beginFrame();
     Gui::bind();
+
+    // TODO:
+    // Do this stuff for all batched vertex buffers
+    // glBindVertexArray(m_VertexArray);
+    // glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+    // glBindVertexArray(0);
 
     for (auto& cube : m_Cubes)
     {
