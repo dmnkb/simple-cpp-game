@@ -167,7 +167,6 @@ void Renderer::beginScene(Camera& camera)
 void Renderer::endScene(GLFWwindow*& window)
 {
     flush();
-    printf("foo: %i\n", s_Data.Stats.DrawCalls);
 
     glfwSwapBuffers(window);
     glfwPollEvents();

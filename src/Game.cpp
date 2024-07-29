@@ -45,6 +45,7 @@ Game::~Game()
 void Game::run()
 {
     float i = 0.f;
+    int previousDrawCalls = 0;
 
     while (m_Window.isWindowOpen)
     {
@@ -77,7 +78,6 @@ void Game::run()
 
         // Render scene
         Renderer::beginScene(m_Camera);
-        Renderer::ResetStats();
 
         // Things to be drawn
         Renderer::drawCube(glm::vec3(5, 0, 5), glm::vec3(0, 0, 0), glm::vec3(10, 0, 10));
@@ -91,8 +91,7 @@ void Game::run()
         static bool open = true;
 
         ImGui::Begin("Hello, ImGui!", &open);
-        std::string drawCallsText = "Draw calls: " + std::to_string(Renderer::GetStats().DrawCalls);
-        std::cout << drawCallsText << std::endl;
+        std::string drawCallsText = "Draw calls: " + std::to_string(previousDrawCalls);
         ImGui::Text("%s", drawCallsText.c_str());
         ImGui::End();
 
@@ -101,6 +100,12 @@ void Game::run()
 
         // End scene
         Renderer::endScene(m_Window.getNativeWindow());
+
+        // Store the current draw calls count for the next frame
+        previousDrawCalls = Renderer::GetStats().DrawCalls;
+
+        // Reset stats for the next frame
+        Renderer::ResetStats();
 
         // For the next frame, the "last time" will be "now"
         lastTime = currentTime;
