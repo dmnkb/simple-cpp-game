@@ -46,6 +46,7 @@ void Game::run()
 {
     float i = 0.f;
     int previousDrawCalls = 0;
+    int previousVertexCount = 0;
 
     while (m_Window.isWindowOpen)
     {
@@ -81,6 +82,10 @@ void Game::run()
 
         // Things to be drawn
         Renderer::drawCube(glm::vec3(5, 0, 5), glm::vec3(0, 0, 0), glm::vec3(10, 0, 10));
+        Renderer::drawCube(glm::vec3(5, 0, 5), glm::vec3(0, 0, 0), glm::vec3(10, 0, 10));
+        Renderer::drawCube(glm::vec3(5, 0, 5), glm::vec3(0, 0, 0), glm::vec3(10, 0, 10));
+        Renderer::drawCube(glm::vec3(5, 0, 5), glm::vec3(0, 0, 0), glm::vec3(10, 0, 10));
+        Renderer::drawCube(glm::vec3(5, 0, 5), glm::vec3(0, 0, 0), glm::vec3(10, 0, 10));
 
         // Gui begin
         ImGui_ImplOpenGL3_NewFrame();
@@ -93,6 +98,8 @@ void Game::run()
         ImGui::Begin("Hello, ImGui!", &open);
         std::string drawCallsText = "Draw calls: " + std::to_string(previousDrawCalls);
         ImGui::Text("%s", drawCallsText.c_str());
+        std::string vertCountText = "Vertices: " + std::to_string(previousVertexCount);
+        ImGui::Text("%s", vertCountText.c_str());
         ImGui::End();
 
         ImGui::Render();
@@ -101,8 +108,9 @@ void Game::run()
         // End scene
         Renderer::endScene(m_Window.getNativeWindow());
 
-        // Store the current draw calls count for the next frame
+        // Store the current stats for the next frame
         previousDrawCalls = Renderer::GetStats().DrawCalls;
+        previousVertexCount = Renderer::GetStats().VertexCount;
 
         // Reset stats for the next frame
         Renderer::ResetStats();

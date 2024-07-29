@@ -40,7 +40,8 @@ struct SceneData
 
 struct RendererData
 {
-    static const uint32_t MaxCubes = 20000;
+    // static const uint32_t MaxCubes = 20000;
+    static const uint32_t MaxCubes = 2; // for debugging purposes
     static const uint32_t MaxVertices;
     static const uint32_t MaxIndices;
 
@@ -227,6 +228,7 @@ void Renderer::drawCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale)
     }
 
     s_Data.CubeIndexCount += 36; // 36 indices for a cube
+    s_Data.Stats.VertexCount += 8;
 }
 
 void Renderer::startBatch()

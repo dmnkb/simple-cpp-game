@@ -25,6 +25,7 @@ class Renderer
     struct Statistics
     {
         uint32_t DrawCalls = 0;
+        uint32_t VertexCount = 0;
     };
 
     static Statistics GetStats();
