@@ -1,35 +1,42 @@
 #include "Game.h"
 #include "EventManager.h"
-#include "Gui.h"
+#include "Renderer.h"
 #include "Window.h"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+#include "pch.h"
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
 // FIXME: to be updated on window resize
-const int windowWidth = 1600;
-const int windowHeigth = 900;
+const int windowWidth = 640;
+const int windowHeigth = 480;
 
 WindowProps windowProps = {windowWidth, windowHeigth, "Simple CPP Game", NULL, NULL};
 CameraProps camProps = {45.0f * (M_PI / 180.0f), ((float)windowWidth / windowHeigth), 0.1f, 100.0f, glm::vec3(5, 2, 5),
                         glm::vec3(0, 0, 0)};
 
-Game::Game()
-    : m_Window(windowProps, m_EventManager), m_Camera(camProps), m_Renderer(m_Window.getFrameBufferDimensions()),
-      m_Player(m_Camera, m_EventManager)
+Game::Game() : m_Window(windowProps, m_EventManager), m_Camera(camProps), m_Player(m_Camera, m_EventManager)
 {
+    m_Renderer = std::make_shared<Renderer>(m_Window.getFrameBufferDimensions());
     m_EventManager.registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
 
-    // To be done per frame. This will be taken care of the Cube enity
-    m_Cube = m_Renderer.addCube(glm::vec3(5, 0, 5));
-    m_Cube->setScale(glm::vec3(10, 1, 10));
-
-    Gui& gui = Gui::getInstance(m_Window.getNativeWindow());
-    std::shared_ptr<GuiText> myGuiText = std::make_shared<GuiText>("Foo");
-    Gui::pushElement("foo", myGuiText);
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
+    ImGui::StyleColorsDark();
+    ImGui_ImplGlfw_InitForOpenGL(m_Window.getNativeWindow(), true);
+    ImGui_ImplOpenGL3_Init("#version 330");
 }
 
 Game::~Game()
 {
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
     exit(EXIT_SUCCESS);
 }
 
@@ -64,7 +71,30 @@ void Game::run()
         m_EventManager.processEvents();
 
         // Render scene
-        m_Renderer.render(m_Camera, m_Window.getNativeWindow());
+        Renderer::ResetStats();
+        Renderer::beginScene(m_Camera);
+
+        // Things to be drawn
+        Renderer::drawCube(glm::vec3(5, 0, 5), glm::vec3(0, 0, 0), glm::vec3(10, 0, 10));
+
+        // End scene
+        Renderer::endScene(m_Window.getNativeWindow());
+
+        // Gui begin
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        // Gui render
+        static bool open = true;
+
+        ImGui::Begin("Hello, ImGui!", &open);
+        std::string drawCallsText = "Draw calls: " + std::to_string(Renderer::GetStats().DrawCalls);
+        ImGui::Text("%s", drawCallsText.c_str());
+        ImGui::End();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         // For the next frame, the "last time" will be "now"
         lastTime = currentTime;
