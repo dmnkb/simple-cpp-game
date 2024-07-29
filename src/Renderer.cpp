@@ -5,65 +5,82 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
-static const char* vertex_shader_text = "#version 330\n"
+static const char* vertex_shader_text = "#version 330 core\n"
+                                        "layout(location = 0) in vec3 a_Position;\n"
+                                        "layout(location = 1) in vec2 a_TexCoord;\n"
                                         "uniform mat4 u_ViewProjection;\n"
-                                        "uniform vec3 a_Position;\n"
-                                        "in vec3 vPos;\n"
-                                        "in vec2 vUV;\n"
-                                        "out vec2 UV;\n"
+                                        "out vec2 v_TexCoord;\n"
                                         "void main()\n"
                                         "{\n"
                                         "    gl_Position = u_ViewProjection * vec4(a_Position, 1.0);\n"
-                                        "    UV = vUV;\n"
+                                        "    v_TexCoord = a_TexCoord;\n"
                                         "}\n";
 
-static const char* fragment_shader_text = "#version 330\n"
-                                          "in vec2 UV;\n"
+static const char* fragment_shader_text = "#version 330 core\n"
+                                          "in vec2 v_TexCoord;\n"
                                           "out vec4 fragment;\n"
                                           "uniform sampler2D myTextureSampler;\n"
                                           "void main()\n"
                                           "{\n"
-                                          //   "    vec4 texColor = texture(myTextureSampler, UV);\n"
-                                          "    vec4 texColor = vec4(1.0, 1.0, 1.0, 1.0);\n"
+                                          "    vec4 texColor = texture(myTextureSampler, v_TexCoord);\n"
                                           "    fragment = texColor;\n"
                                           "}\n";
 
-int Renderer::m_FBWidth = 0;
-int Renderer::m_FBHeight = 0;
-std::shared_ptr<Shader> Renderer::m_Shader = nullptr;
-std::unique_ptr<SceneData> Renderer::s_SceneData = std::make_unique<SceneData>();
-RendererData Renderer::s_Data;
-
-const uint32_t RendererData::MaxCubes = 20000;
-const uint32_t RendererData::MaxVertices = RendererData::MaxCubes * 8;
-const uint32_t RendererData::MaxIndices = RendererData::MaxCubes * 36;
-
-uint32_t cubeIndices[] = {
-    // Front face
-    0, 1, 2, 2, 3, 0,
-    // Back face
-    4, 5, 6, 6, 7, 4,
-    // Left face
-    4, 0, 3, 3, 7, 4,
-    // Right face
-    1, 5, 6, 6, 2, 1,
-    // Top face
-    3, 2, 6, 6, 7, 3,
-    // Bottom face
-    4, 5, 1, 1, 0, 4};
-
-Renderer::Renderer(glm::vec2 frameBufferDimensions) : m_TextureManager()
+struct CubeVertex
 {
-    m_FBWidth = frameBufferDimensions.x;
-    m_FBHeight = frameBufferDimensions.y;
-    m_Shader = std::make_shared<Shader>(vertex_shader_text, fragment_shader_text);
+    glm::vec3 Position;
+    glm::vec2 TexCoord;
+    float TexIndex;
+};
 
+struct SceneData
+{
+    glm::mat4 ViewProjectionMatrix;
+};
+
+struct RendererData
+{
+    static const uint32_t MaxCubes = 20000;
+    static const uint32_t MaxVertices;
+    static const uint32_t MaxIndices;
+
+    std::shared_ptr<VertexArray> CubeVertexArray;
+    std::shared_ptr<VertexBuffer> CubeVertexBuffer;
+
+    uint32_t CubeIndexCount = 0;
+    CubeVertex* CubeVertexBufferBase = nullptr;
+    CubeVertex* CubeVertexBufferPtr = nullptr;
+
+    uint32_t TextureSlotIndex = 1; // Start at 1 because 0 is reserved for the default white texture
+    std::array<std::shared_ptr<Texture>, 32> TextureSlots;
+
+    Renderer::Statistics Stats;
+
+    struct CameraData
+    {
+        glm::mat4 ViewProjection;
+    };
+
+    CameraData camData;
+
+    std::shared_ptr<Shader> shader;
+};
+
+const uint32_t RendererData::MaxIndices = RendererData::MaxCubes * 36;
+const uint32_t RendererData::MaxVertices = RendererData::MaxCubes * 8;
+
+static RendererData s_Data;
+
+void Renderer::init()
+{
     glClearColor(0.2902f, 0.4196f, 0.9647f, 1.0f);
     glEnable(GL_DEPTH_TEST);
 
     s_Data.CubeVertexArray = std::make_shared<VertexArray>();
     s_Data.CubeVertexBuffer = std::make_shared<VertexBuffer>(s_Data.MaxVertices * sizeof(CubeVertex));
     s_Data.CubeVertexArray->addVertexBuffer(s_Data.CubeVertexBuffer);
+
+    s_Data.shader = std::make_shared<Shader>(vertex_shader_text, fragment_shader_text);
 
     // Define the layout manually
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(CubeVertex), (void*)offsetof(CubeVertex, Position));
@@ -75,11 +92,11 @@ Renderer::Renderer(glm::vec2 frameBufferDimensions) : m_TextureManager()
     glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(CubeVertex), (void*)offsetof(CubeVertex, TexIndex));
     glEnableVertexAttribArray(2);
 
-    s_Data.CubeVertexBufferBase = new CubeVertex[s_Data.MaxIndices];
+    s_Data.CubeVertexBufferBase = new CubeVertex[RendererData::MaxVertices];
 
     uint32_t* cubeIndices = new uint32_t[s_Data.MaxIndices];
     uint32_t offset = 0;
-    for (uint32_t i = 0; i < s_Data.MaxIndices; i += 36)
+    for (uint32_t i = 0; i < RendererData::MaxIndices; i += 36)
     {
         // Front face
         cubeIndices[i + 0] = offset + 0;
@@ -132,19 +149,17 @@ Renderer::Renderer(glm::vec2 frameBufferDimensions) : m_TextureManager()
     delete[] cubeIndices;
 }
 
-Renderer::~Renderer()
+void Renderer::shutdown()
 {
     delete[] s_Data.CubeVertexBufferBase;
 }
 
 void Renderer::beginScene(Camera& camera)
 {
-    s_SceneData->ViewProjectionMatrix = camera.getProjectionMatrix();
-    glViewport(0, 0, m_FBWidth, m_FBHeight);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    s_Data.camData.ViewProjection = camera.getProjectionMatrix();
 
-    m_Shader->bind();
-    m_Shader->setUniformMatrix4fv("u_ViewProjection", s_SceneData->ViewProjectionMatrix);
+    s_Data.shader->bind();
+    s_Data.shader->setUniformMatrix4fv("u_ViewProjection", s_Data.camData.ViewProjection);
 
     startBatch();
 }
@@ -188,25 +203,25 @@ void Renderer::drawCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale)
         s_Data.TextureSlotIndex++;
     }
 
-    glm::vec4 cubeVertices[8] = {
+    glm::vec3 cubeVertices[8] = {
         // Front face
-        glm::vec4(-0.5f, -0.5f, 0.5f, 1.0f), // Bottom-left
-        glm::vec4(0.5f, -0.5f, 0.5f, 1.0f),  // Bottom-right
-        glm::vec4(0.5f, 0.5f, 0.5f, 1.0f),   // Top-right
-        glm::vec4(-0.5f, 0.5f, 0.5f, 1.0f),  // Top-left
+        glm::vec3(-0.5f, -0.5f, 0.5f), // Bottom-left
+        glm::vec3(0.5f, -0.5f, 0.5f),  // Bottom-right
+        glm::vec3(0.5f, 0.5f, 0.5f),   // Top-right
+        glm::vec3(-0.5f, 0.5f, 0.5f),  // Top-left
 
         // Back face
-        glm::vec4(-0.5f, -0.5f, -0.5f, 1.0f), // Bottom-left
-        glm::vec4(0.5f, -0.5f, -0.5f, 1.0f),  // Bottom-right
-        glm::vec4(0.5f, 0.5f, -0.5f, 1.0f),   // Top-right
-        glm::vec4(-0.5f, 0.5f, -0.5f, 1.0f)   // Top-left
+        glm::vec3(-0.5f, -0.5f, -0.5f), // Bottom-left
+        glm::vec3(0.5f, -0.5f, -0.5f),  // Bottom-right
+        glm::vec3(0.5f, 0.5f, -0.5f),   // Top-right
+        glm::vec3(-0.5f, 0.5f, -0.5f)   // Top-left
     };
 
     glm::vec2 textureCoords[] = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
 
     for (int i = 0; i < 8; i++)
     {
-        s_Data.CubeVertexBufferPtr->Position = transform * cubeVertices[i];
+        s_Data.CubeVertexBufferPtr->Position = transform * glm::vec4(cubeVertices[i], 1.0f);
         s_Data.CubeVertexBufferPtr->TexCoord = textureCoords[i % 4];
         s_Data.CubeVertexBufferPtr->TexIndex = textureIndex;
         s_Data.CubeVertexBufferPtr++;
@@ -235,7 +250,7 @@ void Renderer::flush()
     // for (uint32_t i = 0; i < s_Data.TextureSlotIndex; i++)
     //     s_Data.TextureSlots[i]->bind(i);
 
-    m_Shader->bind();
+    s_Data.shader->bind();
     draw(s_Data.CubeVertexArray, s_Data.CubeIndexCount);
     s_Data.Stats.DrawCalls++;
 }
@@ -249,10 +264,10 @@ void Renderer::draw(const std::shared_ptr<VertexArray>& vertexArray, uint32_t in
 
 void Renderer::ResetStats()
 {
-    s_Data.Stats = {0};
+    memset(&s_Data.Stats, 0, sizeof(Statistics));
 }
 
-Statistics Renderer::GetStats()
+Renderer::Statistics Renderer::GetStats()
 {
-    return Renderer::s_Data.Stats;
+    return s_Data.Stats;
 }

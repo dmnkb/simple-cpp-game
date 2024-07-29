@@ -7,6 +7,7 @@
 #include "imgui_impl_opengl3.h"
 #include "pch.h"
 #include <GLFW/glfw3.h>
+#include <glad/glad.h>
 #include <glm/glm.hpp>
 
 // FIXME: to be updated on window resize
@@ -19,7 +20,8 @@ CameraProps camProps = {45.0f * (M_PI / 180.0f), ((float)windowWidth / windowHei
 
 Game::Game() : m_Window(windowProps, m_EventManager), m_Camera(camProps), m_Player(m_Camera, m_EventManager)
 {
-    m_Renderer = std::make_shared<Renderer>(m_Window.getFrameBufferDimensions());
+    Renderer::init();
+
     m_EventManager.registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
 
     IMGUI_CHECKVERSION();
@@ -66,19 +68,19 @@ void Game::run()
             glfwSetWindowTitle(m_Window.getNativeWindow(), title.c_str());
         }
 
+        glViewport(0, 0, m_Window.getFrameBufferDimensions().x, m_Window.getFrameBufferDimensions().y);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         // Update scene
         m_Player.update(m_DeltaTime);
         m_EventManager.processEvents();
 
         // Render scene
-        Renderer::ResetStats();
         Renderer::beginScene(m_Camera);
+        Renderer::ResetStats();
 
         // Things to be drawn
         Renderer::drawCube(glm::vec3(5, 0, 5), glm::vec3(0, 0, 0), glm::vec3(10, 0, 10));
-
-        // End scene
-        Renderer::endScene(m_Window.getNativeWindow());
 
         // Gui begin
         ImGui_ImplOpenGL3_NewFrame();
@@ -90,11 +92,15 @@ void Game::run()
 
         ImGui::Begin("Hello, ImGui!", &open);
         std::string drawCallsText = "Draw calls: " + std::to_string(Renderer::GetStats().DrawCalls);
+        std::cout << drawCallsText << std::endl;
         ImGui::Text("%s", drawCallsText.c_str());
         ImGui::End();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        // End scene
+        Renderer::endScene(m_Window.getNativeWindow());
 
         // For the next frame, the "last time" will be "now"
         lastTime = currentTime;
