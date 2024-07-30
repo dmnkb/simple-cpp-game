@@ -82,9 +82,10 @@ void Game::run()
         Renderer::beginScene(m_Camera);
 
         // Things to be drawn
-        Renderer::drawCube(glm::vec3(10, 0, 0), glm::vec3(0, 0, 0), glm::vec3(2, 2, 2));
-        Renderer::drawCube(glm::vec3(-10, 0, 0), glm::vec3(0, 0, 0), glm::vec3(2, 2, 2));
-        Renderer::drawCube(glm::vec3(0, 0, 0), glm::vec3(0, 45, 0), glm::vec3(2, 3, 2));
+        Renderer::drawCube(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(2, 2, 2));
+        Renderer::drawCube(glm::vec3(-5, 0, 0), glm::vec3(0, 0, 0), glm::vec3(2, 2, 2));
+        Renderer::drawCube(glm::vec3(5, 0, 0), glm::vec3(0, 0, 0), glm::vec3(2, 2, 2));
+        Renderer::drawCube(glm::vec3(0, 5, 0), glm::vec3(0, 0, 0), glm::vec3(2, 2, 2));
 
         // Gui begin
         ImGui_ImplOpenGL3_NewFrame();

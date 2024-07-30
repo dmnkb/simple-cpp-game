@@ -10,15 +10,17 @@
 struct Vertex
 {
     glm::vec3 Position;
+    glm::vec2 UV;
 };
 
 struct RendererData
 {
-    static const uint32_t maxCubes = 2; // for debugging purposes
+    static const uint32_t maxCubes = 4; // for debugging purposes
     static const uint32_t maxIndices = maxCubes * 36;
     static const uint32_t maxVertices = maxCubes * 8;
 
     GLuint vertexArray, vertexBuffer, indexBuffer;
+    uint32_t indices[maxIndices];
 
     glm::mat4 viewProjectionMatrix;
     glm::mat4 viewMatrix;
@@ -54,7 +56,8 @@ void Renderer::init()
 
     glGenBuffers(1, &s_Data.vertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, s_Data.vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * RendererData::maxVertices, nullptr, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices) * RendererData::maxVertices, nullptr, GL_DYNAMIC_DRAW);
+    // glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * RendererData::maxVertices, nullptr, GL_DYNAMIC_DRAW);
 
     glGenBuffers(1, &s_Data.indexBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s_Data.indexBuffer);
@@ -117,11 +120,14 @@ void Renderer::init()
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     const size_t POSITION_SIZE = 3;
-    const size_t STRIDE = POSITION_SIZE * sizeof(GLfloat);
+    const size_t UV_SIZE = 2;
+    const size_t STRIDE = (POSITION_SIZE + UV_SIZE) * sizeof(GLfloat);
 
-    // Position attribute
     glVertexAttribPointer(0, POSITION_SIZE, GL_FLOAT, GL_FALSE, STRIDE, (GLvoid*)0);
     glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, UV_SIZE, GL_FLOAT, GL_FALSE, STRIDE, (GLvoid*)(3 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(1);
 
     s_Data.vertexBufferBase = new Vertex[RendererData::maxVertices];
     s_Data.shader = std::make_shared<Shader>(vertex_shader_text, fragment_shader_text);
@@ -168,9 +174,11 @@ void Renderer::drawCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale)
     // Loop through the static vertices array and transform each vertex
     for (int i = 0; i < 8; i++)
     {
-        glm::vec3 vertex(vertices[i * 5], vertices[i * 5 + 1], vertices[i * 5 + 2]); // Extract vertex position
+        glm::vec3 vertex(vertices[i * 5], vertices[i * 5 + 1], vertices[i * 5 + 2]);
+        glm::vec2 uv(vertices[i * 5 + 3], vertices[i * 5 + 4]);
         glm::vec4 transformedVertex = transform * glm::vec4(vertex, 1.0f);
         s_Data.vertexBufferPtr->Position = glm::vec3(transformedVertex);
+        s_Data.vertexBufferPtr->UV = uv;
         s_Data.vertexBufferPtr++;
     }
 
@@ -193,7 +201,6 @@ void Renderer::nextBatch()
 void Renderer::flush()
 {
     uint32_t dataSize = (uint32_t)((uint8_t*)s_Data.vertexBufferPtr - (uint8_t*)s_Data.vertexBufferBase);
-    glBindBuffer(GL_ARRAY_BUFFER, s_Data.vertexBuffer);
     glBufferSubData(GL_ARRAY_BUFFER, 0, dataSize, s_Data.vertexBufferBase);
 
     s_Data.shader->bind();

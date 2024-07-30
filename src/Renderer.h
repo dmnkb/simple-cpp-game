@@ -9,13 +9,13 @@
 
 static const char* vertex_shader_text = "#version 330 core\n"
                                         "layout(location = 0) in vec3 a_Position;\n"
+                                        "layout(location = 1) in vec2 a_UV;\n"
                                         "uniform mat4 u_ViewProjection;\n"
-                                        "in vec2 vUV;\n"
                                         "out vec2 UV;\n"
                                         "void main()\n"
                                         "{\n"
                                         "    gl_Position = u_ViewProjection * vec4(a_Position, 1.0);\n"
-                                        "    UV = vUV;\n"
+                                        "    UV = a_UV;\n"
                                         "}\n";
 
 static const char* fragment_shader_text = "#version 330\n"
@@ -25,7 +25,7 @@ static const char* fragment_shader_text = "#version 330\n"
                                           "void main()\n"
                                           "{\n"
                                           "    vec4 texColor = texture(myTextureSampler, UV);\n"
-                                          "    fragment = texColor;\n"
+                                          "    fragment = mix(vec4(1.0, 0.0, 0.0, 1.0), texColor, 1.0);\n"
                                           "}\n";
 
 class Renderer
