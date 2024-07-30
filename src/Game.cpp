@@ -9,6 +9,7 @@
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 // FIXME: to be updated on window resize
 const int windowWidth = 640;
@@ -81,11 +82,9 @@ void Game::run()
         Renderer::beginScene(m_Camera);
 
         // Things to be drawn
-        Renderer::drawCube(glm::vec3(5, 0, 5), glm::vec3(0, 0, 0), glm::vec3(10, 0, 10));
-        Renderer::drawCube(glm::vec3(5, 0, 5), glm::vec3(0, 0, 0), glm::vec3(10, 0, 10));
-        Renderer::drawCube(glm::vec3(5, 0, 5), glm::vec3(0, 0, 0), glm::vec3(10, 0, 10));
-        Renderer::drawCube(glm::vec3(5, 0, 5), glm::vec3(0, 0, 0), glm::vec3(10, 0, 10));
-        Renderer::drawCube(glm::vec3(5, 0, 5), glm::vec3(0, 0, 0), glm::vec3(10, 0, 10));
+        Renderer::drawCube(glm::vec3(10, 0, 0), glm::vec3(0, 0, 0), glm::vec3(2, 2, 2));
+        Renderer::drawCube(glm::vec3(-10, 0, 0), glm::vec3(0, 0, 0), glm::vec3(2, 2, 2));
+        Renderer::drawCube(glm::vec3(0, 0, 0), glm::vec3(0, 45, 0), glm::vec3(2, 3, 2));
 
         // Gui begin
         ImGui_ImplOpenGL3_NewFrame();
@@ -100,6 +99,8 @@ void Game::run()
         ImGui::Text("%s", drawCallsText.c_str());
         std::string vertCountText = "Vertices: " + std::to_string(previousVertexCount);
         ImGui::Text("%s", vertCountText.c_str());
+        std::string vpmString = "VPM: " + glm::to_string(Renderer::getVPM());
+        ImGui::Text("%s", vpmString.c_str());
         ImGui::End();
 
         ImGui::Render();
@@ -109,11 +110,11 @@ void Game::run()
         Renderer::endScene(m_Window.getNativeWindow());
 
         // Store the current stats for the next frame
-        previousDrawCalls = Renderer::GetStats().DrawCalls;
-        previousVertexCount = Renderer::GetStats().VertexCount;
+        previousDrawCalls = Renderer::getStats().drawCalls;
+        previousVertexCount = Renderer::getStats().vertexCount;
 
         // Reset stats for the next frame
-        Renderer::ResetStats();
+        Renderer::resetStats();
 
         // For the next frame, the "last time" will be "now"
         lastTime = currentTime;

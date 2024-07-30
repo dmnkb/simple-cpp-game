@@ -25,7 +25,5 @@ class Game
     double m_DeltaTime, m_FPSUpdateTime = 0.0;
     int m_FrameCount = 0;
 
-    std::shared_ptr<Cube> m_Cube;
-
     bool m_CanDisableCursor = true;
 };

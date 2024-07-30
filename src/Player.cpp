@@ -50,6 +50,7 @@ void Player::onMouseMoveEvent(Event* event)
 
 void Player::update(double deltaTime)
 {
+
     // Rotation
     float mouseSpeed = .3;
 

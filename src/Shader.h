@@ -19,6 +19,7 @@ class Shader
 
     void setUniformMatrix4fv(const char* name, const glm::mat4 value);
     void setUniform1i(const char* name, GLint v0);
+    void setIntArray(const char* name, GLint* values, GLsizei count);
 
   private:
     const GLuint m_ProgramID;
