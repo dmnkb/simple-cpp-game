@@ -188,9 +188,6 @@ void Renderer::beginScene(Camera& camera)
 void Renderer::endScene(GLFWwindow*& window)
 {
     flush();
-
-    glfwSwapBuffers(window);
-    glfwPollEvents();
 }
 
 void Renderer::drawCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale)

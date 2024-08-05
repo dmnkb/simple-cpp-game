@@ -52,9 +52,7 @@ void Game::run()
     while (m_Window.isWindowOpen)
     {
         // Calculate delta time
-        // glfwGetTime is called only once, the first time this function is called
         static double lastTime = glfwGetTime();
-
         double currentTime = glfwGetTime();
         m_DeltaTime = float(currentTime - lastTime);
 
@@ -63,7 +61,6 @@ void Game::run()
         if (currentTime - m_FPSUpdateTime >= 1.0)
         {
             double fps = double(m_FrameCount) / (currentTime - m_FPSUpdateTime);
-
             m_FPSUpdateTime = currentTime;
             m_FrameCount = 0;
 
@@ -71,6 +68,7 @@ void Game::run()
             glfwSetWindowTitle(m_Window.getNativeWindow(), title.c_str());
         }
 
+        // Clear the frame buffer and depth buffer
         glViewport(0, 0, m_Window.getFrameBufferDimensions().x, m_Window.getFrameBufferDimensions().y);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -81,34 +79,40 @@ void Game::run()
         // Render scene
         Renderer::beginScene(m_Camera);
 
-        // Things to be drawn
-        Renderer::drawCube(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(2, 2, 2));
+        // Draw cubes
+        if (i > 360)
+            i = 0;
+        i += .5 * m_DeltaTime;
+
+        Renderer::drawCube(glm::vec3(0, 0, 0), glm::vec3(0, i * 100, 0), glm::vec3(2, 2, 2));
         Renderer::drawCube(glm::vec3(-5, 0, 0), glm::vec3(0, 0, 0), glm::vec3(2, 2, 2));
         Renderer::drawCube(glm::vec3(5, 0, 0), glm::vec3(0, 0, 0), glm::vec3(2, 2, 2));
-        Renderer::drawCube(glm::vec3(0, 5, 0), glm::vec3(0, 0, 0), glm::vec3(2, 2, 2));
+        Renderer::drawCube(glm::vec3(0, (sin(i) * 2) + 5, 0), glm::vec3(0, 0, 0), glm::vec3(2, 2, 2));
 
-        // Gui begin
+        // End scene
+        Renderer::endScene(m_Window.getNativeWindow());
+
+        // Start new ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // Gui render
+        // Render ImGui elements
         static bool open = true;
-
         ImGui::Begin("Hello, ImGui!", &open);
         std::string drawCallsText = "Draw calls: " + std::to_string(previousDrawCalls);
         ImGui::Text("%s", drawCallsText.c_str());
         std::string vertCountText = "Vertices: " + std::to_string(previousVertexCount);
         ImGui::Text("%s", vertCountText.c_str());
-        std::string vpmString = "VPM: " + glm::to_string(Renderer::getVPM());
-        ImGui::Text("%s", vpmString.c_str());
         ImGui::End();
 
+        // Render ImGui
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        // End scene
-        Renderer::endScene(m_Window.getNativeWindow());
+        // Swap buffers and poll events
+        glfwSwapBuffers(m_Window.getNativeWindow());
+        glfwPollEvents();
 
         // Store the current stats for the next frame
         previousDrawCalls = Renderer::getStats().drawCalls;
@@ -117,7 +121,7 @@ void Game::run()
         // Reset stats for the next frame
         Renderer::resetStats();
 
-        // For the next frame, the "last time" will be "now"
+        // Update last time for next frame
         lastTime = currentTime;
     }
 }
