@@ -17,7 +17,7 @@ struct RendererData
 {
     static const uint32_t maxCubes = 4; // for debugging purposes
     static const uint32_t maxIndices = maxCubes * 36;
-    static const uint32_t maxVertices = maxCubes * 25; // FIXME: Should be 24. (One-by-off error somewhere)
+    static const uint32_t maxVertices = maxCubes * 24;
 
     GLuint vertexArray, vertexBuffer, indexBuffer;
     uint32_t indices[maxIndices];
@@ -217,8 +217,7 @@ void Renderer::drawCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale)
         s_Data.vertexBufferPtr->UV = uv;
         s_Data.vertexBufferPtr++;
 
-        if (s_Data.vertexBufferPtr - s_Data.vertexBufferBase >=
-            RendererData::maxVertices) // Ensure we are within bounds
+        if (s_Data.vertexBufferPtr - s_Data.vertexBufferBase > RendererData::maxVertices) // Ensure we are within bounds
         {
             std::cerr << "Vertex buffer pointer out of bounds" << std::endl;
             exit(EXIT_FAILURE);
@@ -227,6 +226,7 @@ void Renderer::drawCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale)
 
     s_Data.indexCount += 36;
     s_Data.vertexCount += 24;
+    stats.vertexCount += 24;
 }
 
 void Renderer::startBatch()
@@ -270,6 +270,7 @@ void Renderer::draw()
 void Renderer::resetStats()
 {
     stats.drawCalls = 0;
+    stats.vertexCount = 0;
 }
 
 Renderer::Statistics Renderer::getStats()
