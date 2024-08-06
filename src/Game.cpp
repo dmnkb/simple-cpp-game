@@ -48,6 +48,7 @@ void Game::run()
     float i = 0.f;
     int previousDrawCalls = 0;
     int previousVertexCount = 0;
+    int previousCubeCount = 0;
 
     while (m_Window.isWindowOpen)
     {
@@ -84,10 +85,17 @@ void Game::run()
             i = 0;
         i += .5 * m_DeltaTime;
 
-        Renderer::drawCube(glm::vec3(0, 0, 0), glm::vec3(0, i * 100, 0), glm::vec3(2, 2, 2));
-        Renderer::drawCube(glm::vec3(-5, 0, 0), glm::vec3(0, 0, 0), glm::vec3(2, 2, 2));
-        Renderer::drawCube(glm::vec3(5, 0, 0), glm::vec3(0, 0, 0), glm::vec3(2, 2, 2));
-        Renderer::drawCube(glm::vec3(0, (sin(i) * 2) + 5, 0), glm::vec3(0, 0, 0), glm::vec3(2, 2, 2));
+        static const int count = 50;
+
+        for (int y = -count / 2; y < count / 2; y++)
+        {
+            for (int x = -count / 2; x < count / 2; x++)
+            {
+                float distanceFromCenter = std::sqrt(x * x + y * y);         // Distance from the center in 2D
+                float angle = i * (100 + std::sin(distanceFromCenter) * 50); // Sinusoidal variation
+                Renderer::drawCube(glm::vec3(x, y, 0), glm::vec3(0, angle, 0), glm::vec3(.5));
+            }
+        }
 
         // End scene
         Renderer::endScene(m_Window.getNativeWindow());
@@ -104,6 +112,8 @@ void Game::run()
         ImGui::Text("%s", drawCallsText.c_str());
         std::string vertCountText = "Vertices: " + std::to_string(previousVertexCount);
         ImGui::Text("%s", vertCountText.c_str());
+        std::string cubeCountText = "Cubes: " + std::to_string(previousCubeCount);
+        ImGui::Text("%s", cubeCountText.c_str());
         ImGui::End();
 
         // Render ImGui
@@ -117,6 +127,7 @@ void Game::run()
         // Store the current stats for the next frame
         previousDrawCalls = Renderer::getStats().drawCalls;
         previousVertexCount = Renderer::getStats().vertexCount;
+        previousCubeCount = Renderer::getStats().cubeCount;
 
         // Reset stats for the next frame
         Renderer::resetStats();

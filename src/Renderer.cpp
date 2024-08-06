@@ -15,7 +15,7 @@ struct Vertex
 
 struct RendererData
 {
-    static const uint32_t maxCubes = 4; // for debugging purposes
+    static const uint32_t maxCubes = 10000; // for debugging purposes
     static const uint32_t maxIndices = maxCubes * 36;
     static const uint32_t maxVertices = maxCubes * 24;
 
@@ -227,6 +227,7 @@ void Renderer::drawCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale)
     s_Data.indexCount += 36;
     s_Data.vertexCount += 24;
     stats.vertexCount += 24;
+    stats.cubeCount++;
 }
 
 void Renderer::startBatch()
@@ -271,6 +272,7 @@ void Renderer::resetStats()
 {
     stats.drawCalls = 0;
     stats.vertexCount = 0;
+    stats.cubeCount = 0;
 }
 
 Renderer::Statistics Renderer::getStats()

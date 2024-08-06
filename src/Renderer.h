@@ -45,6 +45,7 @@ class Renderer
     {
         uint32_t drawCalls = 0;
         uint32_t vertexCount = 0;
+        uint32_t cubeCount = 0;
     };
 
     static Statistics getStats();
