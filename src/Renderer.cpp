@@ -7,34 +7,6 @@
 #include <glm/gtx/string_cast.hpp>
 #include <memory>
 
-struct Vertex
-{
-    glm::vec3 Position;
-    glm::vec2 UV;
-};
-
-struct RendererData
-{
-    static const uint32_t maxCubes = 10000; // for debugging purposes
-    static const uint32_t maxIndices = maxCubes * 36;
-    static const uint32_t maxVertices = maxCubes * 24;
-
-    GLuint vertexArray, vertexBuffer, indexBuffer;
-    uint32_t indices[maxIndices];
-
-    glm::mat4 viewProjectionMatrix;
-    glm::mat4 viewMatrix;
-    std::shared_ptr<Shader> shader;
-
-    uint32_t indexCount, vertexCount = 0;
-    Vertex* vertexBufferBase = nullptr;
-    Vertex* vertexBufferPtr = nullptr;
-};
-
-static RendererData s_Data;
-
-Renderer::Statistics stats;
-
 static const GLfloat vertices[] = {
     // Back face
     -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, // A 0
@@ -72,6 +44,74 @@ static const GLfloat vertices[] = {
     0.5f, 0.5f, 0.5f, 1.0f, 1.0f,   // G 22
     -0.5f, 0.5f, 0.5f, 0.0f, 1.0f   // H 23
 };
+
+static const GLfloat normals[] = {
+    // Back face normals
+    0.0f, 0.0f, -1.0f, // A 0
+    0.0f, 0.0f, -1.0f, // B 1
+    0.0f, 0.0f, -1.0f, // C 2
+    0.0f, 0.0f, -1.0f, // D 3
+
+    // Front face normals
+    0.0f, 0.0f, 1.0f, // E 4
+    0.0f, 0.0f, 1.0f, // F 5
+    0.0f, 0.0f, 1.0f, // G 6
+    0.0f, 0.0f, 1.0f, // H 7
+
+    // Left face normals
+    -1.0f, 0.0f, 0.0f, // A 8
+    -1.0f, 0.0f, 0.0f, // D 9
+    -1.0f, 0.0f, 0.0f, // H 10
+    -1.0f, 0.0f, 0.0f, // E 11
+
+    // Right face normals
+    1.0f, 0.0f, 0.0f, // B 12
+    1.0f, 0.0f, 0.0f, // C 13
+    1.0f, 0.0f, 0.0f, // G 14
+    1.0f, 0.0f, 0.0f, // F 15
+
+    // Bottom face normals
+    0.0f, -1.0f, 0.0f, // A 16
+    0.0f, -1.0f, 0.0f, // B 17
+    0.0f, -1.0f, 0.0f, // F 18
+    0.0f, -1.0f, 0.0f, // E 19
+
+    // Top face normals
+    0.0f, 1.0f, 0.0f, // D 20
+    0.0f, 1.0f, 0.0f, // C 21
+    0.0f, 1.0f, 0.0f, // G 22
+    0.0f, 1.0f, 0.0f, // H 23
+};
+
+struct Vertex
+{
+    glm::vec3 Position;
+    glm::vec2 UV;
+    glm::vec3 Normal;
+};
+
+struct RendererData
+{
+    static const uint32_t maxCubes = 10000; // for debugging purposes
+    static const uint32_t maxIndices = maxCubes * 36;
+    static const uint32_t maxVertices = maxCubes * 24;
+
+    GLuint vertexArray, vertexBuffer, indexBuffer;
+    uint32_t indices[maxIndices];
+
+    glm::mat4 viewProjectionMatrix;
+    glm::mat4 viewMatrix;
+    glm::vec3 camPos;
+    std::shared_ptr<Shader> shader;
+
+    uint32_t indexCount, vertexCount = 0;
+    Vertex* vertexBufferBase = nullptr;
+    Vertex* vertexBufferPtr = nullptr;
+};
+
+static RendererData s_Data;
+
+Renderer::Statistics stats;
 
 void Renderer::init()
 {
@@ -145,15 +185,14 @@ void Renderer::init()
 
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    const size_t POSITION_SIZE = 3;
-    const size_t UV_SIZE = 2;
-    const size_t STRIDE = (POSITION_SIZE + UV_SIZE) * sizeof(GLfloat);
-
-    glVertexAttribPointer(0, POSITION_SIZE, GL_FLOAT, GL_FALSE, STRIDE, (GLvoid*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Position));
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, UV_SIZE, GL_FLOAT, GL_FALSE, STRIDE, (GLvoid*)(3 * sizeof(GLfloat)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, UV));
     glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+    glEnableVertexAttribArray(2);
 
     s_Data.vertexBufferBase = new Vertex[RendererData::maxVertices];
     if (s_Data.vertexBufferBase == nullptr)
@@ -180,6 +219,7 @@ void Renderer::shutdown()
 void Renderer::beginScene(Camera& camera)
 {
     s_Data.viewMatrix = camera.getViewMatrix();
+    s_Data.camPos = camera.getPosition();
     s_Data.viewProjectionMatrix = camera.getProjectionMatrix();
 
     startBatch();
@@ -201,7 +241,8 @@ void Renderer::drawCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale)
                           glm::rotate(glm::mat4(1.0f), glm::radians(rotation.z), {0.0f, 0.0f, 1.0f}) *
                           glm::scale(glm::mat4(1.0f), scale);
 
-    // Loop through the static vertices array and transform each vertex
+    glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(transform)));
+
     for (int i = 0; i < 24; i++)
     {
         if (i * 5 + 4 >= sizeof(vertices) / sizeof(vertices[0])) // Ensure we are within bounds
@@ -212,9 +253,14 @@ void Renderer::drawCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale)
 
         glm::vec3 vertex(vertices[i * 5], vertices[i * 5 + 1], vertices[i * 5 + 2]);
         glm::vec2 uv(vertices[i * 5 + 3], vertices[i * 5 + 4]);
+        glm::vec3 normal(normals[i * 3], normals[i * 3 + 1], normals[i * 3 + 2]);
+
         glm::vec4 transformedVertex = transform * glm::vec4(vertex, 1.0f);
+        glm::vec3 transformedNormal = normalMatrix * normal;
+
         s_Data.vertexBufferPtr->Position = glm::vec3(transformedVertex);
         s_Data.vertexBufferPtr->UV = uv;
+        s_Data.vertexBufferPtr->Normal = transformedNormal;
         s_Data.vertexBufferPtr++;
 
         if (s_Data.vertexBufferPtr - s_Data.vertexBufferBase > RendererData::maxVertices) // Ensure we are within bounds
@@ -255,7 +301,10 @@ void Renderer::flush()
 
     s_Data.shader->bind();
     glm::mat4 viewProjection = s_Data.viewProjectionMatrix * s_Data.viewMatrix;
+
     s_Data.shader->setUniformMatrix4fv("u_ViewProjection", viewProjection);
+    s_Data.shader->setUniform3fv("viewPos", s_Data.camPos);
+    s_Data.shader->setUniform3fv("lightPos", glm::vec3(10, 10, 10));
 
     draw();
 
