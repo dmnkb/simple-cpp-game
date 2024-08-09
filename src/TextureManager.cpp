@@ -4,26 +4,22 @@
 #define STB_IMAGE_STATIC
 #include <stb_image.h>
 
-std::unordered_map<std::string, Texture> TextureManager::s_textureCache;
+std::unordered_map<std::string, std::shared_ptr<Texture>> TextureManager::s_textureCache;
+std::unordered_map<GLuint, std::shared_ptr<Texture>> TextureManager::s_textureIDMap;
 
 TextureManager::~TextureManager()
 {
     for (const auto& pair : s_textureCache)
     {
-        glDeleteTextures(1, &pair.second.id);
+        glDeleteTextures(1, &pair.second->id);
     }
 }
 
 Texture TextureManager::loadTexture(const std::string path)
 {
-    printf("Loading texture: %s\n", path.c_str());
-    Texture texture;
-
     // Return cached texture
     if (s_textureCache.find(path) != s_textureCache.end())
-    {
-        return s_textureCache[path];
-    }
+        return *s_textureCache[path];
 
     // Load texture
     if (!std::filesystem::exists(path))
@@ -31,11 +27,7 @@ Texture TextureManager::loadTexture(const std::string path)
         fprintf(stderr, "[ERROR] Texture file not found: %s\n", path.c_str());
     }
 
-    unsigned char* data = stbi_load(path.c_str(), &texture.texWidth, &texture.texHeight, &texture.nrChannels, 0);
-    if (!data)
-    {
-        fprintf(stderr, "[ERROR] Failed to load texture\n");
-    }
+    Texture texture;
 
     glGenTextures(1, &texture.id);
     glBindTexture(GL_TEXTURE_2D, texture.id);
@@ -45,26 +37,30 @@ Texture TextureManager::loadTexture(const std::string path)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    GLenum format;
-    if (texture.nrChannels == 1)
-        format = GL_RED;
-    else if (texture.nrChannels == 3)
-        format = GL_RGB;
-    else if (texture.nrChannels == 4)
-        format = GL_RGBA;
+    unsigned char* data = stbi_load(path.c_str(), &texture.texWidth, &texture.texHeight, &texture.nrChannels, 0);
+    if (data)
+    {
+        GLenum format = GL_RGB;
+        if (texture.nrChannels == 1)
+            format = GL_RED;
+        else if (texture.nrChannels == 3)
+            format = GL_RGB;
+        else if (texture.nrChannels == 4)
+            format = GL_RGBA;
+
+        glTexImage2D(GL_TEXTURE_2D, 0, format, texture.texWidth, texture.texHeight, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
     else
     {
-        std::cerr << "[ERROR] Unsupported number of channels: " << texture.nrChannels << std::endl;
-        stbi_image_free(data);
-        return texture;
+        std::cout << "Failed to load texture: " << path << std::endl;
     }
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture.texWidth, texture.texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
     stbi_image_free(data);
 
-    s_textureCache[path] = texture;
+    auto sharedTexture = std::make_shared<Texture>(texture);
+    s_textureCache[path] = sharedTexture;
+    s_textureIDMap[texture.id] = sharedTexture;
+
     return texture;
 }
 
@@ -72,7 +68,7 @@ void TextureManager::deleteTexture(const GLuint& textureID)
 {
     for (const auto& [key, value] : s_textureCache)
     {
-        if (value.id == textureID)
+        if (value->id == textureID)
         {
             glDeleteTextures(1, &textureID);
             s_textureCache.erase(key);
@@ -80,4 +76,16 @@ void TextureManager::deleteTexture(const GLuint& textureID)
         }
     }
     std::cerr << "[ERROR] Can't delete texture ID " << textureID << "as it was not found." << std::endl;
+}
+
+std::shared_ptr<Texture> TextureManager::getTextureByID(GLuint textureID)
+{
+    auto it = s_textureIDMap.find(textureID);
+    if (it != s_textureIDMap.end())
+    {
+        return it->second;
+    }
+
+    std::cerr << "[ERROR] Can't resolve texture ID " << textureID << std::endl;
+    return nullptr;
 }

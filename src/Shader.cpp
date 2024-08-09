@@ -60,11 +60,34 @@ void Shader::setUniformMatrix4fv(const char* name, const glm::mat4 value)
         glUniformMatrix4fv(location, 1, GL_FALSE, (const GLfloat*)&value);
 }
 
+void Shader::setUniformMatrix3fv(const char* name, const glm::mat3 value)
+{
+    auto location = getCachedLocation(name);
+    if (location != -1)
+        glUniformMatrix4fv(location, 1, GL_FALSE, (const GLfloat*)&value);
+}
+
+void Shader::setUniform3fv(const char* name, const glm::vec3 value)
+{
+    auto location = getCachedLocation(name);
+    if (location != -1)
+        glUniform3fv(location, 1, (const GLfloat*)&value);
+}
+
 void Shader::setUniform1i(const char* name, GLint v0)
 {
     auto location = getCachedLocation(name);
     if (location != -1)
         glUniform1i(location, v0);
+}
+
+void Shader::setIntArray(const char* name, GLint* values, GLsizei count)
+{
+    GLint location = getCachedLocation(name);
+    if (location != -1)
+    {
+        glUniform1iv(location, count, values);
+    }
 }
 
 GLint Shader::getCachedLocation(const char* name)

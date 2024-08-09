@@ -1,67 +1,80 @@
 #pragma once
 
 #include "Camera.h"
-#include "Cube.h"
 #include "EventManager.h"
 #include "Shader.h"
 #include "TextureManager.h"
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
+static const char* vertex_shader_text = "#version 330 core\n"
+                                        "layout(location = 0) in vec3 a_Position;\n"
+                                        "layout(location = 1) in vec2 a_UV;\n"
+                                        "layout(location = 2) in vec3 a_Normal;\n"
+                                        "uniform mat4 u_ViewProjection;\n"
+                                        "out vec2 v_UV;\n"
+                                        "out vec3 FragPos;\n"
+                                        "out vec3 v_Normal;\n"
+                                        "void main()\n"
+                                        "{\n"
+                                        "    v_UV = a_UV;\n"
+                                        "    v_Normal = normalize(a_Normal);\n"
+                                        "    FragPos = a_Position;\n"
+                                        "    gl_Position = u_ViewProjection * vec4(FragPos, 1.0);\n"
+                                        "}\n";
+
+static const char* fragment_shader_text =
+    "#version 330 core\n"
+    "out vec4 FragColor;\n"
+    "in vec2 v_UV;\n"
+    "in vec3 v_Normal;\n"
+    "in vec3 FragPos;\n"
+    "uniform sampler2D myTextureSampler;\n"
+    "uniform vec3 viewPos;\n"
+    "uniform vec3 lightPos;\n"
+    "void main()\n"
+    "{\n"
+    "    vec3 norm = normalize(v_Normal);\n"
+    "    vec3 lightDir = normalize(lightPos - FragPos);\n"
+    "    float lightness = max(dot(norm, lightDir), 0.0);\n"
+    "    vec3 ambient = vec3(0.5, 0.5, 0.5);\n"
+    "    vec3 viewDir    = normalize(viewPos - FragPos);\n"
+    "    vec3 halfwayDir = normalize(lightDir + viewDir);\n"
+    "    float spec = pow(max(dot(v_Normal, halfwayDir), 0.0), 256);\n"
+    "    vec3 specular = vec3(1.0, 1.0, 1.0) * spec;\n"
+    "    vec3 lighting = ambient + lightness;\n"
+    "    vec4 textureColor = texture(myTextureSampler, v_UV);\n"
+    "    FragColor = textureColor * vec4(vec3(lighting), 1.0) + vec4(specular, 1.0);\n"
+    "}\n";
+
 class Renderer
 {
   public:
-    Renderer(glm::vec2 frameBufferDimensions);
-    ~Renderer();
+    static void init();
+    static void shutdown();
 
-    void render(Camera& m_Camera, GLFWwindow*& m_Window);
+    static void beginScene(Camera& camera);
+    static void endScene(GLFWwindow*& window);
 
-    // TODO:
-    // An arbitrary mesh to be rendered without batching
-    // addMesh()
-
-    // TODO:
-    // Called each frame. (What's supposed to be drawn is controlled by the actual cube entity)
-    // Should update the batched cube vertex and index buffer to be drawn on render()
-    // static void submitCube(position, rotation, scale, texture);
-
-    std::shared_ptr<Cube> addCube(glm::vec3 position);
-
-    // Will be obsolete once submitCube is in place, since the game / scene / level should keep track of
-    // all entites which in turn decide what's submitted to the renderer.
-    void removeCube(glm::vec3 position);
+    static void drawCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale);
 
     bool isWindowOpen = false;
 
-    // TODO:
     struct Statistics
     {
-        uint32_t DrawCalls = 0;
-
-        // uint32_t GetTotalVertexCount() const
-        // {
-        //     return cubeCount * 8;
-        // }
-        // uint32_t GetTotalIndexCount() const
-        // {
-        //     return cubeCount * 36;
-        // }
+        uint32_t drawCalls = 0;
+        uint32_t vertexCount = 0;
+        uint32_t cubeCount = 0;
     };
-    static void ResetStats();
-    static Statistics GetStats();
+
+    static Statistics getStats();
+    static void resetStats();
+
+    static glm::mat4 getVPM();
 
   private:
-    // TODO:
-    // batchCubes()
-    // nextBatch()
-
-    // static instance pointer to handle events
-    static Renderer* instance;
-
-    int m_FBWidth, m_FBHeight = 0;
-    TextureManager m_TextureManager;
-    std::shared_ptr<Shader> m_Shader;
-
-    // TODO: remove
-    std::vector<std::shared_ptr<Cube>> m_Cubes;
+    static void startBatch();
+    static void nextBatch();
+    static void flush();
+    static void draw();
 };

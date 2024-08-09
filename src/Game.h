@@ -16,16 +16,14 @@ class Game
     void onKeyEvent(Event* event);
 
   private:
-    EventManager m_EventManager;
     Window m_Window;
+    std::shared_ptr<Renderer> m_Renderer;
+    EventManager m_EventManager;
     Camera m_Camera;
-    Renderer m_Renderer;
     Player m_Player;
 
     double m_DeltaTime, m_FPSUpdateTime = 0.0;
     int m_FrameCount = 0;
-
-    std::shared_ptr<Cube> m_Cube;
 
     bool m_CanDisableCursor = true;
 };

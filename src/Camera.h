@@ -37,6 +37,11 @@ class Camera
         return glm::lookAt(m_Position, m_Target, up);
     }
 
+    glm::vec3 getPosition() const
+    {
+        return m_Position;
+    }
+
   private:
     float m_Fov;
     float m_Aspect;

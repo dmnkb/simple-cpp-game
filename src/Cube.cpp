@@ -8,15 +8,13 @@ Cube::Cube(const GLuint textureID, std::shared_ptr<Shader> shader, glm::vec3 pos
     : m_Shader(shader), m_TextureID(textureID), m_Position(position)
 {
     glGenVertexArrays(1, &m_VertexArray);
-    glGenBuffers(1, &m_VertexBuffer);
-    glGenBuffers(1, &m_IndexBuffer);
-
-    // Bind the VAO first, then bind and set VBO and attribute ponter
     glBindVertexArray(m_VertexArray);
 
+    glGenBuffers(1, &m_VertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, m_VertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
+    glGenBuffers(1, &m_IndexBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IndexBuffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
@@ -58,11 +56,12 @@ void Cube::draw(const Camera& camera)
     // Combine with view and projection matrices
     glm::mat4 projectionMatrix = camera.getProjectionMatrix();
     glm::mat4 viewMatrix = camera.getViewMatrix();
-    glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;
+    glm::mat4 viewProjectionMatrix = projectionMatrix * viewMatrix;
 
     // Bind the shader and set uniforms
     m_Shader->bind();
-    m_Shader->setUniformMatrix4fv("MVP", modelViewProjectionMatrix);
+    m_Shader->setUniformMatrix4fv("u_ViewProjection", viewProjectionMatrix);
+    m_Shader->setUniformMatrix4fv("u_Transform", modelMatrix);
 
     // Draw the cube
     glBindVertexArray(m_VertexArray);
