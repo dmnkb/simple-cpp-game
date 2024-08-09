@@ -50,6 +50,8 @@ void Game::run()
     int previousVertexCount = 0;
     int previousCubeCount = 0;
 
+    double fps = 0.0;
+
     while (m_Window.isWindowOpen)
     {
         // Calculate delta time
@@ -57,16 +59,12 @@ void Game::run()
         double currentTime = glfwGetTime();
         m_DeltaTime = float(currentTime - lastTime);
 
-        // Print FPS every second
         m_FrameCount++;
         if (currentTime - m_FPSUpdateTime >= 1.0)
         {
-            double fps = double(m_FrameCount) / (currentTime - m_FPSUpdateTime);
+            fps = double(m_FrameCount) / (currentTime - m_FPSUpdateTime);
             m_FPSUpdateTime = currentTime;
             m_FrameCount = 0;
-
-            std::string title = "FPS: " + std::to_string(fps);
-            glfwSetWindowTitle(m_Window.getNativeWindow(), title.c_str());
         }
 
         // Clear the frame buffer and depth buffer
@@ -108,6 +106,8 @@ void Game::run()
         // Render ImGui elements
         static bool open = true;
         ImGui::Begin("Hello, ImGui!", &open);
+        std::string fpsText = "FPS: " + std::to_string(fps);
+        ImGui::Text("%s", fpsText.c_str());
         std::string drawCallsText = "Draw calls: " + std::to_string(previousDrawCalls);
         ImGui::Text("%s", drawCallsText.c_str());
         std::string vertCountText = "Vertices: " + std::to_string(previousVertexCount);
