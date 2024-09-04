@@ -22,6 +22,8 @@ class Game
     Camera m_Camera;
     Player m_Player;
 
+    GLuint m_texture0, m_texture1 = 0;
+
     double m_DeltaTime, m_FPSUpdateTime = 0.0;
     int m_FrameCount = 0;
 

@@ -1,6 +1,7 @@
 #include "Game.h"
 #include "EventManager.h"
 #include "Renderer.h"
+#include "TextureManager.h"
 #include "Window.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -32,6 +33,13 @@ Game::Game() : m_Window(windowProps, m_EventManager), m_Camera(camProps), m_Play
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(m_Window.getNativeWindow(), true);
     ImGui_ImplOpenGL3_Init("#version 330");
+
+    auto tex0 = TextureManager::loadTexture("assets/texture_02.png");
+    tex0.bind(1);
+    m_texture0 = tex0.id;
+    auto tex1 = TextureManager::loadTexture("assets/texture_01.png");
+    tex1.bind(2);
+    m_texture1 = tex1.id;
 }
 
 Game::~Game()
@@ -91,7 +99,8 @@ void Game::run()
             {
                 float distanceFromCenter = std::sqrt(x * x + y * y);         // Distance from the center in 2D
                 float angle = i * (100 + std::sin(distanceFromCenter) * 50); // Sinusoidal variation
-                Renderer::drawCube(glm::vec3(x, y, 0), glm::vec3(0, angle, 0), glm::vec3(.5));
+                Renderer::submitCube(glm::vec3(x, y, 0), glm::vec3(0, angle, 0), glm::vec3(.5),
+                                     x % 2 == 0 ? m_texture0 : m_texture1);
             }
         }
 

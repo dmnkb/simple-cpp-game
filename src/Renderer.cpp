@@ -88,6 +88,7 @@ struct Vertex
     glm::vec3 Position;
     glm::vec2 UV;
     glm::vec3 Normal;
+    glm::float32 textureID;
 };
 
 struct RendererData
@@ -102,7 +103,10 @@ struct RendererData
     glm::mat4 viewProjectionMatrix;
     glm::mat4 viewMatrix;
     glm::vec3 camPos;
+    // TODO: unique_ptr?
     std::shared_ptr<Shader> shader;
+    // TODO: Get texture slot count by driver?
+    GLint textureIDs[16];
 
     uint32_t indexCount, vertexCount = 0;
     Vertex* vertexBufferBase = nullptr;
@@ -194,6 +198,9 @@ void Renderer::init()
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
     glEnableVertexAttribArray(2);
 
+    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, textureID));
+    glEnableVertexAttribArray(3);
+
     s_Data.vertexBufferBase = new Vertex[RendererData::maxVertices];
     if (s_Data.vertexBufferBase == nullptr)
     {
@@ -203,12 +210,6 @@ void Renderer::init()
     s_Data.vertexBufferPtr = s_Data.vertexBufferBase;
 
     s_Data.shader = std::make_shared<Shader>(vertex_shader_text, fragment_shader_text);
-
-    // Bind texture and set uniform
-    auto textureID = TextureManager::loadTexture("assets/texture_02.png").id;
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, textureID);
-    s_Data.shader->setUniform1i("myTextureSampler", 0);
 }
 
 void Renderer::shutdown()
@@ -230,7 +231,7 @@ void Renderer::endScene(GLFWwindow*& window)
     flush();
 }
 
-void Renderer::drawCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale)
+void Renderer::submitCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale, glm::float32 textureID)
 {
     if (s_Data.indexCount >= RendererData::maxIndices)
         nextBatch();
@@ -261,6 +262,16 @@ void Renderer::drawCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale)
         s_Data.vertexBufferPtr->Position = glm::vec3(transformedVertex);
         s_Data.vertexBufferPtr->UV = uv;
         s_Data.vertexBufferPtr->Normal = transformedNormal;
+        s_Data.vertexBufferPtr->textureID = textureID;
+
+        // FIXME: OpenGL textureIDs might not count like
+        // 0, 1, 2, ... and might therefore not be good
+        // for indexing
+        s_Data.textureIDs[static_cast<int>(textureID)] = textureID;
+
+        glActiveTexture(textureID + GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, textureID);
+
         s_Data.vertexBufferPtr++;
 
         if (s_Data.vertexBufferPtr - s_Data.vertexBufferBase > RendererData::maxVertices) // Ensure we are within bounds
@@ -297,14 +308,17 @@ void Renderer::flush()
         exit(EXIT_FAILURE);
     }
 
+    // Upload vertex buffer
     glBufferSubData(GL_ARRAY_BUFFER, 0, dataSize, s_Data.vertexBufferBase);
 
+    // Bind shader and set uniforms
     s_Data.shader->bind();
     glm::mat4 viewProjection = s_Data.viewProjectionMatrix * s_Data.viewMatrix;
 
     s_Data.shader->setUniformMatrix4fv("u_ViewProjection", viewProjection);
     s_Data.shader->setUniform3fv("viewPos", s_Data.camPos);
     s_Data.shader->setUniform3fv("lightPos", glm::vec3(10, 10, 10));
+    s_Data.shader->setUniform1iv("u_Textures", s_Data.textureIDs);
 
     draw();
 

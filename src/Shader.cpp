@@ -81,6 +81,13 @@ void Shader::setUniform1i(const char* name, GLint v0)
         glUniform1i(location, v0);
 }
 
+void Shader::setUniform1iv(const char* name, GLint samplerIDs[16])
+{
+    auto location = getCachedLocation(name);
+    if (location != -1)
+        glUniform1iv(location, 16, samplerIDs);
+}
+
 void Shader::setIntArray(const char* name, GLint* values, GLsizei count)
 {
     GLint location = getCachedLocation(name);
