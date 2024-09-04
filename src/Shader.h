@@ -21,10 +21,11 @@ class Shader
     void setUniformMatrix3fv(const char* name, const glm::mat3 value);
     void setUniform3fv(const char* name, const glm::vec3 value);
     void setUniform1i(const char* name, GLint v0);
+    void setUniform1iv(const char* name, GLint samplerIDs[16]);
     void setIntArray(const char* name, GLint* values, GLsizei count);
 
   private:
-    const GLuint m_ProgramID;
+    GLuint m_ProgramID;
     GLuint m_VertexShaderID;
     GLuint m_FragmentShaderID;
 

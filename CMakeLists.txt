@@ -13,15 +13,18 @@ add_subdirectory(vendor/glad EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/glm EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/imgui)
 
-target_link_libraries("${CMAKE_PROJECT_NAME}" 
+target_link_libraries(${CMAKE_PROJECT_NAME}
     PRIVATE glfw 
     PRIVATE glad 
     PRIVATE glm
     PRIVATE imgui
 )
 
-target_include_directories("${CMAKE_PROJECT_NAME}" 
-    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/"
+target_include_directories(${PROJECT_NAME} PRIVATE 
+    ${CMAKE_SOURCE_DIR}/src
+    # ${CMAKE_SOURCE_DIR}/src/scene
+    ${CMAKE_SOURCE_DIR}/include  # Add the include directory
+    # Add more directories if needed
 )
 
 file(COPY assets DESTINATION ${CMAKE_BINARY_DIR})
