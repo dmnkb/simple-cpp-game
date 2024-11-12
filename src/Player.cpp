@@ -6,7 +6,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 Player::Player(Camera& camera, EventManager& eventManager)
-    : m_Camera(camera), m_Position(15, 5, 15), m_Rotation(225, -15), m_camChange(0, 0)
+    : m_Camera(camera), m_Position(0, 0, 30), m_Rotation(180, 0), m_camChange(0, 0)
 {
     eventManager.registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
     eventManager.registerListeners(typeid(MouseMoveEvent).name(),
@@ -50,7 +50,6 @@ void Player::onMouseMoveEvent(Event* event)
 
 void Player::update(double deltaTime)
 {
-
     // Rotation
     float mouseSpeed = .3;
 
@@ -68,7 +67,7 @@ void Player::update(double deltaTime)
     m_Direction = glm::normalize(m_Direction);
 
     // Position
-    float speed = 5.0f * deltaTime;
+    float speed = 10.0f * deltaTime;
 
     if (isKeyPressed(GLFW_KEY_W))
     {

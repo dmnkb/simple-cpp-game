@@ -122,6 +122,9 @@ void Renderer::init()
     glClearColor(0.2902f, 0.4196f, 0.9647f, 1.0f);
     glEnable(GL_DEPTH_TEST);
 
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+
     glGenVertexArrays(1, &s_Data.vertexArray);
     glBindVertexArray(s_Data.vertexArray);
 
@@ -137,12 +140,12 @@ void Renderer::init()
     for (uint32_t i = 0; i < RendererData::maxIndices; i += 36)
     {
         // Back face
-        indices[i + 0] = offset + 0;
+        indices[i + 0] = offset + 2;
         indices[i + 1] = offset + 1;
-        indices[i + 2] = offset + 2;
-        indices[i + 3] = offset + 2;
+        indices[i + 2] = offset + 0;
+        indices[i + 3] = offset + 0;
         indices[i + 4] = offset + 3;
-        indices[i + 5] = offset + 0;
+        indices[i + 5] = offset + 2;
 
         // Front face
         indices[i + 6] = offset + 4;
@@ -153,12 +156,12 @@ void Renderer::init()
         indices[i + 11] = offset + 4;
 
         // Left face
-        indices[i + 12] = offset + 8;
+        indices[i + 12] = offset + 10;
         indices[i + 13] = offset + 9;
-        indices[i + 14] = offset + 10;
-        indices[i + 15] = offset + 10;
+        indices[i + 14] = offset + 8;
+        indices[i + 15] = offset + 8;
         indices[i + 16] = offset + 11;
-        indices[i + 17] = offset + 8;
+        indices[i + 17] = offset + 10;
 
         // Right face
         indices[i + 18] = offset + 12;
@@ -177,12 +180,12 @@ void Renderer::init()
         indices[i + 29] = offset + 16;
 
         // Top face
-        indices[i + 30] = offset + 20;
+        indices[i + 30] = offset + 22;
         indices[i + 31] = offset + 21;
-        indices[i + 32] = offset + 22;
-        indices[i + 33] = offset + 22;
+        indices[i + 32] = offset + 20;
+        indices[i + 33] = offset + 20;
         indices[i + 34] = offset + 23;
-        indices[i + 35] = offset + 20;
+        indices[i + 35] = offset + 22;
 
         offset += 24; // 24 unique vertices for a cube
     }
@@ -317,7 +320,7 @@ void Renderer::flush()
 
     s_Data.shader->setUniformMatrix4fv("u_ViewProjection", viewProjection);
     s_Data.shader->setUniform3fv("viewPos", s_Data.camPos);
-    s_Data.shader->setUniform3fv("lightPos", glm::vec3(10, 10, 10));
+    s_Data.shader->setUniform3fv("lightPos", glm::vec3(20, 20, 10));
     s_Data.shader->setUniform1iv("u_Textures", s_Data.textureIDs);
 
     draw();

@@ -17,8 +17,7 @@ const int windowWidth = 640;
 const int windowHeigth = 480;
 
 WindowProps windowProps = {windowWidth, windowHeigth, "Simple CPP Game", NULL, NULL};
-CameraProps camProps = {45.0f * (M_PI / 180.0f), ((float)windowWidth / windowHeigth), 0.1f, 100.0f, glm::vec3(5, 2, 5),
-                        glm::vec3(0, 0, 0)};
+CameraProps camProps = {45.0f * (M_PI / 180.0f), ((float)windowWidth / windowHeigth), 0.1f, 100.0f};
 
 Game::Game() : m_Window(windowProps, m_EventManager), m_Camera(camProps), m_Player(m_Camera, m_EventManager)
 {
@@ -123,6 +122,8 @@ void Game::run()
         ImGui::Text("%s", vertCountText.c_str());
         std::string cubeCountText = "Cubes: " + std::to_string(previousCubeCount);
         ImGui::Text("%s", cubeCountText.c_str());
+        std::string roation = "Rotation: " + glm::to_string(m_Player.getRotation());
+        ImGui::Text("%s", roation.c_str());
         ImGui::End();
 
         // Render ImGui

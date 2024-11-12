@@ -15,6 +15,11 @@ class Player
     void update(double deltaTime);
     bool isKeyPressed(unsigned int key);
 
+    glm::vec2 getRotation()
+    {
+        return m_Rotation;
+    }
+
     void setIsCursorDisabled(bool disabled)
     {
         m_IsCursorDisabled = disabled;

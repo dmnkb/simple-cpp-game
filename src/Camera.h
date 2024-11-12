@@ -6,7 +6,7 @@
 struct CameraProps
 {
     float fov, aspect, near, far;
-    glm::vec3 defaultPosition, defaultTarget;
+    glm::vec3 defaultPosition, defaultTarget = glm::vec3(0, 0, 0);
 };
 
 class Camera
