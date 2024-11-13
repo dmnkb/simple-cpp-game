@@ -6,7 +6,7 @@
 struct Texture
 {
     GLuint id;
-    int texWidth, texHeight, nrChannels;
+    int texWidth, texHeight, channelCount;
 
     void bind(uint32_t slot = 0) const
     {

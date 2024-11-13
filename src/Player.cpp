@@ -6,7 +6,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 Player::Player(Camera& camera, EventManager& eventManager)
-    : m_Camera(camera), m_Position(0, 0, 30), m_Rotation(180, 0), m_camChange(0, 0)
+    : m_Camera(camera), m_Position(0, 20, 0), m_Rotation(45, -20), m_camChange(0, 0)
 {
     eventManager.registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
     eventManager.registerListeners(typeid(MouseMoveEvent).name(),

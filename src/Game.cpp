@@ -17,7 +17,7 @@ const int windowWidth = 640;
 const int windowHeigth = 480;
 
 WindowProps windowProps = {windowWidth, windowHeigth, "Simple CPP Game", NULL, NULL};
-CameraProps camProps = {45.0f * (M_PI / 180.0f), ((float)windowWidth / windowHeigth), 0.1f, 100.0f};
+CameraProps camProps = {45.0f * (M_PI / 180.0f), ((float)windowWidth / windowHeigth), 0.1f, 1000.0f};
 
 Game::Game() : m_Window(windowProps, m_EventManager), m_Camera(camProps), m_Player(m_Camera, m_EventManager)
 {
@@ -32,13 +32,6 @@ Game::Game() : m_Window(windowProps, m_EventManager), m_Camera(camProps), m_Play
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(m_Window.getNativeWindow(), true);
     ImGui_ImplOpenGL3_Init("#version 330");
-
-    auto tex0 = TextureManager::loadTexture("assets/texture_02.png");
-    tex0.bind(1);
-    m_texture0 = tex0.id;
-    auto tex1 = TextureManager::loadTexture("assets/texture_01.png");
-    tex1.bind(2);
-    m_texture1 = tex1.id;
 }
 
 Game::~Game()
@@ -85,23 +78,8 @@ void Game::run()
         // Render scene
         Renderer::beginScene(m_Camera);
 
-        // Draw cubes
-        if (i > 360)
-            i = 0;
-        i += .5 * m_DeltaTime;
-
-        static const int count = 50;
-
-        for (int y = -count / 2; y < count / 2; y++)
-        {
-            for (int x = -count / 2; x < count / 2; x++)
-            {
-                float distanceFromCenter = std::sqrt(x * x + y * y);         // Distance from the center in 2D
-                float angle = i * (100 + std::sin(distanceFromCenter) * 50); // Sinusoidal variation
-                Renderer::submitCube(glm::vec3(x, y, 0), glm::vec3(0, angle, 0), glm::vec3(.5),
-                                     x % 2 == 0 ? m_texture0 : m_texture1);
-            }
-        }
+        // Render level
+        m_Level.update();
 
         // End scene
         Renderer::endScene(m_Window.getNativeWindow());

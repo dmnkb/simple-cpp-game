@@ -2,6 +2,7 @@
 
 #include "Camera.h"
 #include "EventManager.h"
+#include "Level.h"
 #include "Player.h"
 #include "Renderer.h"
 #include "Window.h"
@@ -21,6 +22,7 @@ class Game
     EventManager m_EventManager;
     Camera m_Camera;
     Player m_Player;
+    Level m_Level;
 
     GLuint m_texture0, m_texture1 = 0;
 

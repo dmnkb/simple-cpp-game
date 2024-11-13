@@ -37,15 +37,15 @@ Texture TextureManager::loadTexture(const std::string path)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    unsigned char* data = stbi_load(path.c_str(), &texture.texWidth, &texture.texHeight, &texture.nrChannels, 0);
+    unsigned char* data = stbi_load(path.c_str(), &texture.texWidth, &texture.texHeight, &texture.channelCount, 0);
     if (data)
     {
         GLenum format = GL_RGB;
-        if (texture.nrChannels == 1)
+        if (texture.channelCount == 1)
             format = GL_RED;
-        else if (texture.nrChannels == 3)
+        else if (texture.channelCount == 3)
             format = GL_RGB;
-        else if (texture.nrChannels == 4)
+        else if (texture.channelCount == 4)
             format = GL_RGBA;
 
         glTexImage2D(GL_TEXTURE_2D, 0, format, texture.texWidth, texture.texHeight, 0, format, GL_UNSIGNED_BYTE, data);
