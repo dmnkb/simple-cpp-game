@@ -48,7 +48,7 @@ void Player::onMouseMoveEvent(Event* event)
     }
 }
 
-void Player::update(double deltaTime)
+void Player::update(double deltaTime, Level& level)
 {
     // Rotation
     float mouseSpeed = .3;
@@ -68,27 +68,52 @@ void Player::update(double deltaTime)
 
     // Position
     float speed = 10.0f * deltaTime;
+    glm::vec3 newPosition = m_Position;
 
     if (isKeyPressed(GLFW_KEY_W))
     {
-        m_Position += speed * m_Direction;
+        newPosition += speed * m_Direction;
     }
     if (isKeyPressed(GLFW_KEY_S))
     {
-        m_Position -= speed * m_Direction;
+        newPosition -= speed * m_Direction;
     }
     if (isKeyPressed(GLFW_KEY_A))
     {
         glm::vec3 leftDirection = glm::normalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), m_Direction));
-        m_Position += speed * leftDirection;
+        newPosition += speed * leftDirection;
     }
     if (isKeyPressed(GLFW_KEY_D))
     {
         glm::vec3 rightDirection = glm::normalize(glm::cross(m_Direction, glm::vec3(0.0f, 1.0f, 0.0f)));
-        m_Position += speed * rightDirection;
+        newPosition += speed * rightDirection;
     }
 
-    // Update both
+    // Collision detection
+    const float height = 1.8f;
+    const float halfWidth = .3f;
+    m_boundingBox = {glm::vec3(newPosition - halfWidth), glm::vec3(newPosition + halfWidth)};
+
+    bool collides = false;
+
+    std::vector<glm::vec2> cubesWithinRadius = level.getCubesInsideRadius(newPosition, 3);
+    for (auto& cube : cubesWithinRadius)
+    {
+        BoundingBox cubeAABB = {glm::vec3(cube.x - .5, -.5, cube.y - .5), glm::vec3(cube.x + .5, .5, cube.y + .5)};
+        if (checkCollision(m_boundingBox, cubeAABB))
+        {
+            collides = true;
+            break;
+        }
+    }
+
+    // Update new position
+    if (!collides)
+    {
+        m_Position = newPosition;
+    }
+
+    // Update camera
     m_Camera.setPosition(m_Position);
     m_Camera.lookAt(m_Position + m_Direction);
 }

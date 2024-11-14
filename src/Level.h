@@ -1,3 +1,5 @@
+#pragma once
+
 #include "pch.h"
 #include <array>
 #include <glad/glad.h>
@@ -9,6 +11,7 @@ class Level
   public:
     Level();
     std::vector<glm::vec2> getCoordsByTextureFile(const std::string filename);
+    std::vector<glm::vec2> getCubesInsideRadius(const glm::vec3 origin, const int radius);
     void update();
 
   private:

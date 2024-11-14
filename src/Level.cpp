@@ -5,6 +5,18 @@
 #define STB_IMAGE_STATIC
 #include <stb_image.h>
 
+Level::Level()
+{
+    auto tex0 = TextureManager::loadTexture("assets/texture_02.png");
+    tex0.bind(1);
+    m_texture0 = tex0.id;
+    auto tex1 = TextureManager::loadTexture("assets/texture_01.png");
+    tex1.bind(2);
+    m_texture1 = tex1.id;
+
+    m_coords = getCoordsByTextureFile("assets/poisson.png");
+}
+
 std::vector<glm::vec2> Level::getCoordsByTextureFile(const std::string filename)
 {
     assert(std::filesystem::exists(filename) && "Level texture file not found");
@@ -21,7 +33,7 @@ std::vector<glm::vec2> Level::getCoordsByTextureFile(const std::string filename)
         for (int x = 0; x < texWidth; x++)
         {
             int pixelIndex = (y * texWidth + x) * channelCount;
-            auto pixel = data[pixelIndex];
+            auto pixel = static_cast<int>(data[pixelIndex]);
             if (pixel)
                 coords.push_back(glm::vec2({x, y}));
             i++;
@@ -32,16 +44,10 @@ std::vector<glm::vec2> Level::getCoordsByTextureFile(const std::string filename)
     return coords;
 }
 
-Level::Level()
+std::vector<glm::vec2> Level::getCubesInsideRadius(const glm::vec3 origin, const int radius)
 {
-    auto tex0 = TextureManager::loadTexture("assets/texture_02.png");
-    tex0.bind(1);
-    m_texture0 = tex0.id;
-    auto tex1 = TextureManager::loadTexture("assets/texture_01.png");
-    tex1.bind(2);
-    m_texture1 = tex1.id;
-
-    m_coords = getCoordsByTextureFile("assets/poisson.png");
+    // TODO: Return only the cubes inside the radius
+    return m_coords;
 }
 
 void Level::update()

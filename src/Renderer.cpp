@@ -93,7 +93,7 @@ struct Vertex
 
 struct RendererData
 {
-    static const uint32_t maxCubes = 10000; // for debugging purposes
+    static const uint32_t maxCubes = 10000;
     static const uint32_t maxIndices = maxCubes * 36;
     static const uint32_t maxVertices = maxCubes * 24;
 

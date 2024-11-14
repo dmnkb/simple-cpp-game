@@ -1,7 +1,9 @@
 #pragma once
 
+#include "AABB.h"
 #include "Camera.h"
 #include "EventManager.h"
+#include "Level.h"
 #include "pch.h"
 #include <glm/glm.hpp>
 
@@ -12,7 +14,7 @@ class Player
 
     void onKeyEvent(Event* event);
     void onMouseMoveEvent(Event* event);
-    void update(double deltaTime);
+    void update(double deltaTime, Level& level);
     bool isKeyPressed(unsigned int key);
 
     glm::vec2 getRotation()
@@ -30,9 +32,12 @@ class Player
     glm::vec3 m_Position;
     glm::vec2 m_Rotation;
     glm::vec3 m_Direction;
+
+    BoundingBox m_boundingBox;
+
     glm::vec2 m_camChange;
     glm::vec2 m_cursorPositionOld;
-    std::deque<double> m_DeltaTimeHistory;
     std::vector<unsigned int> m_PressedKeys;
+    std::deque<double> m_DeltaTimeHistory;
     bool m_IsCursorDisabled = true;
 };

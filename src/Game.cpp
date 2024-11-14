@@ -72,7 +72,7 @@ void Game::run()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Update scene
-        m_Player.update(m_DeltaTime);
+        m_Player.update(m_DeltaTime, m_Level);
         m_EventManager.processEvents();
 
         // Render scene
