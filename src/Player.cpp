@@ -50,8 +50,8 @@ void Player::onMouseMoveEvent(Event* event)
 
 void Player::update(double deltaTime, Level& level)
 {
-    // Rotation
-    float mouseSpeed = .3;
+    // --- Rotation ---
+    float mouseSpeed = 0.3f;
 
     m_Rotation.x += m_camChange.x * mouseSpeed;
     m_Rotation.y += m_camChange.y * mouseSpeed;
@@ -67,9 +67,9 @@ void Player::update(double deltaTime, Level& level)
     m_Direction = glm::normalize(m_Direction);
 
     // Movement
-    const float speed = 10.0f * deltaTime;
-    const float jumpForce = 5.f * deltaTime;
-    const float gravity = -.05f * deltaTime;
+    const float speed = 5.0f;
+    const float jumpForce = 5.0f;
+    const float gravity = -9.8f;
 
     auto movementVector = glm::vec3(0.0f);
 
@@ -101,7 +101,7 @@ void Player::update(double deltaTime, Level& level)
 
     // Gravity
     if (!m_onGround)
-        m_verticalVelocity += gravity;
+        m_verticalVelocity += gravity * deltaTime;
     else
         m_verticalVelocity = 0.0f;
 
@@ -136,7 +136,9 @@ void Player::update(double deltaTime, Level& level)
     }
 
     // Final Position Update
-    m_Position += movementVector + glm::vec3(0.0f, m_verticalVelocity, 0.0f);
+    movementVector *= deltaTime;
+    m_Position += movementVector * glm::vec3({1.0f, 0.0f, 1.0f});
+    m_Position.y += m_verticalVelocity * deltaTime;
 
     // Camera Update
     glm::vec3 adjustedCameraPosition = m_Position + glm::vec3(0.0f, height, 0.0f);
