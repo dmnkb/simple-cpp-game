@@ -28,16 +28,23 @@ class Player
     }
 
   private:
-    Camera& m_Camera;
+    // Core player attributes
     glm::vec3 m_Position;
-    glm::vec2 m_Rotation;
     glm::vec3 m_Direction;
-
+    glm::vec2 m_Rotation;
     BoundingBox m_boundingBox;
+    bool m_onGround = false;
+    float m_verticalVelocity = 0;
 
+    // Camera
+    Camera& m_Camera;
     glm::vec2 m_camChange;
     glm::vec2 m_cursorPositionOld;
-    std::vector<unsigned int> m_PressedKeys;
-    std::deque<double> m_DeltaTimeHistory;
     bool m_IsCursorDisabled = true;
+
+    // Input handling
+    std::vector<unsigned int> m_PressedKeys;
+
+    // Performance/Timing
+    std::deque<double> m_DeltaTimeHistory;
 };

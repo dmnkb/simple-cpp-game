@@ -66,9 +66,12 @@ void Player::update(double deltaTime, Level& level)
     m_Direction.z = cos(pitchRadians) * cos(yawRadians);
     m_Direction = glm::normalize(m_Direction);
 
-    // Position
-    float speed = 10.0f * deltaTime;
-    glm::vec3 movementVector = {0.f, 0.f, 0.f};
+    // Movement
+    const float speed = 10.0f * deltaTime;
+    const float jumpForce = 5.f * deltaTime;
+    const float gravity = -.05f * deltaTime;
+
+    auto movementVector = glm::vec3(0.0f);
 
     if (isKeyPressed(GLFW_KEY_W))
     {
@@ -89,30 +92,56 @@ void Player::update(double deltaTime, Level& level)
         movementVector += speed * rightDirection;
     }
 
-    // Collision detection
-    const float height = 1.8f;
-    const float halfWidth = .3f;
-    m_boundingBox = {glm::vec3((m_Position + movementVector) - halfWidth),
-                     glm::vec3((m_Position + movementVector) + halfWidth)};
-
-    auto cubesWithinRadius = level.getCubesInsideRadius((m_Position + movementVector), 3);
-    for (auto& cube : cubesWithinRadius)
+    // Jumping
+    if (isKeyPressed(GLFW_KEY_SPACE) && m_onGround)
     {
-        BoundingBox cubeAABB = {glm::vec3(cube.x - .5, -.5, cube.y - .5), glm::vec3(cube.x + .5, .5, cube.y + .5)};
+        m_verticalVelocity = jumpForce;
+        m_onGround = false;
+    }
+
+    // Gravity
+    if (!m_onGround)
+        m_verticalVelocity += gravity;
+    else
+        m_verticalVelocity = 0.0f;
+
+    // Collision Detection
+    const float height = 1.8f;
+    const float halfWidth = 0.3f;
+    m_boundingBox = {glm::vec3(m_Position.x - halfWidth, m_Position.y, m_Position.z - halfWidth),
+                     glm::vec3(m_Position.x + halfWidth, m_Position.y + height, m_Position.z + halfWidth)};
+
+    m_onGround = false; // Reset ground state
+
+    auto cubesWithinRadius = level.getCubesInsideRadius(m_Position + movementVector, 3);
+    for (const auto& cube : cubesWithinRadius)
+    {
+        BoundingBox cubeAABB = {glm::vec3(cube.x - 0.5f, -0.5f, cube.y - 0.5f),
+                                glm::vec3(cube.x + 0.5f, 0.5f, cube.y + 0.5f)};
+
         if (checkCollision(m_boundingBox, cubeAABB))
         {
             auto collisionSide = getCollisionSide(m_boundingBox, cubeAABB);
+
+            // Check if player is standing on the ground
+            if (collisionSide.y > 0.0f)
+                m_onGround = true;
+
+            // Cancel-out movement vector components based on collision
             movementVector *= 1.0f - glm::abs(collisionSide);
+
+            // Prevent further checks since collision has been handled
             break;
         }
     }
 
-    // Update new position
-    m_Position += movementVector;
+    // Final Position Update
+    m_Position += movementVector + glm::vec3(0.0f, m_verticalVelocity, 0.0f);
 
-    // Update camera
-    m_Camera.setPosition(m_Position);
-    m_Camera.lookAt(m_Position + m_Direction);
+    // Camera Update
+    glm::vec3 adjustedCameraPosition = m_Position + glm::vec3(0.0f, height, 0.0f);
+    m_Camera.setPosition(adjustedCameraPosition);
+    m_Camera.lookAt(adjustedCameraPosition + m_Direction);
 }
 
 bool Player::isKeyPressed(unsigned int key)
