@@ -17,6 +17,10 @@ class Player
     void update(double deltaTime, Level& level);
     bool isKeyPressed(unsigned int key);
 
+    glm::vec3 getPosition()
+    {
+        return m_Position;
+    }
     glm::vec2 getRotation()
     {
         return m_Rotation;
@@ -29,9 +33,9 @@ class Player
 
   private:
     // Core player attributes
-    glm::vec3 m_Position;
-    glm::vec3 m_Direction;
-    glm::vec2 m_Rotation;
+    glm::vec3 m_Position = glm::vec3({0, 20, 0});
+    glm::vec2 m_Rotation = glm::vec2({45, -20});
+    glm::vec3 m_Direction = glm::vec3(0.f);
     BoundingBox m_boundingBox;
     bool m_onGround = false;
     float m_verticalVelocity = 0;

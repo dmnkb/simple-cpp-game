@@ -5,8 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-Player::Player(Camera& camera, EventManager& eventManager)
-    : m_Camera(camera), m_Position(0, 20, 0), m_Rotation(45, -20), m_camChange(0, 0)
+Player::Player(Camera& camera, EventManager& eventManager) : m_Camera(camera), m_camChange(0, 0)
 {
     eventManager.registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
     eventManager.registerListeners(typeid(MouseMoveEvent).name(),
@@ -50,7 +49,7 @@ void Player::onMouseMoveEvent(Event* event)
 
 void Player::update(double deltaTime, Level& level)
 {
-    // --- Rotation ---
+    // Rotation
     float mouseSpeed = 0.3f;
 
     m_Rotation.x += m_camChange.x * mouseSpeed;
@@ -68,7 +67,7 @@ void Player::update(double deltaTime, Level& level)
 
     // Movement
     const float speed = 5.0f;
-    const float jumpForce = 5.0f;
+    const float jumpForce = 8.0f;
     const float gravity = -9.8f;
 
     auto movementVector = glm::vec3(0.0f);
@@ -125,10 +124,19 @@ void Player::update(double deltaTime, Level& level)
 
             // Check if player is standing on the ground
             if (collisionSide.y > 0.0f)
+            {
                 m_onGround = true;
+                m_Position.y = cubeAABB.max.y; // Snap player to the top of the cube
+            }
 
-            // Cancel-out movement vector components based on collision
-            movementVector *= 1.0f - glm::abs(collisionSide);
+            // Project movement vector onto the collision plane
+            glm::vec3 collisionNormal = collisionSide; // Use the collision side as the normal
+            float dotProduct = glm::dot(movementVector, collisionNormal);
+
+            if (dotProduct < 0.0f) // Only resolve if moving into the collision plane
+            {
+                movementVector -= dotProduct * collisionNormal;
+            }
 
             // Prevent further checks since collision has been handled
             break;
@@ -139,6 +147,13 @@ void Player::update(double deltaTime, Level& level)
     movementVector *= deltaTime;
     m_Position += movementVector * glm::vec3({1.0f, 0.0f, 1.0f});
     m_Position.y += m_verticalVelocity * deltaTime;
+
+    // Hack to make the player stop at Y: -1
+    if (m_Position.y <= -1.f)
+    {
+        m_onGround = true;
+        m_Position = glm::vec3({m_Position.x, -1.f, m_Position.z});
+    }
 
     // Camera Update
     glm::vec3 adjustedCameraPosition = m_Position + glm::vec3(0.0f, height, 0.0f);

@@ -100,6 +100,8 @@ void Game::run()
         ImGui::Text("%s", vertCountText.c_str());
         std::string cubeCountText = "Cubes: " + std::to_string(previousCubeCount);
         ImGui::Text("%s", cubeCountText.c_str());
+        std::string position = "Position: " + glm::to_string(m_Player.getPosition());
+        ImGui::Text("%s", position.c_str());
         std::string roation = "Rotation: " + glm::to_string(m_Player.getRotation());
         ImGui::Text("%s", roation.c_str());
         ImGui::End();
