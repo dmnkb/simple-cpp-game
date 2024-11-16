@@ -68,50 +68,47 @@ void Player::update(double deltaTime, Level& level)
 
     // Position
     float speed = 10.0f * deltaTime;
-    glm::vec3 newPosition = m_Position;
+    glm::vec3 movementVector = {0.f, 0.f, 0.f};
 
     if (isKeyPressed(GLFW_KEY_W))
     {
-        newPosition += speed * m_Direction;
+        movementVector += speed * m_Direction;
     }
     if (isKeyPressed(GLFW_KEY_S))
     {
-        newPosition -= speed * m_Direction;
+        movementVector -= speed * m_Direction;
     }
     if (isKeyPressed(GLFW_KEY_A))
     {
         glm::vec3 leftDirection = glm::normalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), m_Direction));
-        newPosition += speed * leftDirection;
+        movementVector += speed * leftDirection;
     }
     if (isKeyPressed(GLFW_KEY_D))
     {
         glm::vec3 rightDirection = glm::normalize(glm::cross(m_Direction, glm::vec3(0.0f, 1.0f, 0.0f)));
-        newPosition += speed * rightDirection;
+        movementVector += speed * rightDirection;
     }
 
     // Collision detection
     const float height = 1.8f;
     const float halfWidth = .3f;
-    m_boundingBox = {glm::vec3(newPosition - halfWidth), glm::vec3(newPosition + halfWidth)};
+    m_boundingBox = {glm::vec3((m_Position + movementVector) - halfWidth),
+                     glm::vec3((m_Position + movementVector) + halfWidth)};
 
-    bool collides = false;
-
-    std::vector<glm::vec2> cubesWithinRadius = level.getCubesInsideRadius(newPosition, 3);
+    auto cubesWithinRadius = level.getCubesInsideRadius((m_Position + movementVector), 3);
     for (auto& cube : cubesWithinRadius)
     {
         BoundingBox cubeAABB = {glm::vec3(cube.x - .5, -.5, cube.y - .5), glm::vec3(cube.x + .5, .5, cube.y + .5)};
         if (checkCollision(m_boundingBox, cubeAABB))
         {
-            collides = true;
+            auto collisionSide = getCollisionSide(m_boundingBox, cubeAABB);
+            movementVector *= 1.0f - glm::abs(collisionSide);
             break;
         }
     }
 
     // Update new position
-    if (!collides)
-    {
-        m_Position = newPosition;
-    }
+    m_Position += movementVector;
 
     // Update camera
     m_Camera.setPosition(m_Position);
