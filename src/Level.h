@@ -11,6 +11,7 @@ class Level
   public:
     Level();
     std::vector<glm::vec2> getCoordsByTextureFile(const std::string filename);
+    // TODO: consider spacial hashing instead
     std::vector<glm::vec2> getCubesInsideRadius(const glm::vec3 origin, const int radius);
     void update();
 

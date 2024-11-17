@@ -234,7 +234,8 @@ void Renderer::endScene(GLFWwindow*& window)
     flush();
 }
 
-void Renderer::submitCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale, glm::float32 textureID)
+void Renderer::submitCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale, glm::float32 textureID,
+                          float tilingAmount)
 {
     if (s_Data.indexCount >= RendererData::maxIndices)
         nextBatch();
@@ -264,6 +265,7 @@ void Renderer::submitCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scal
 
         s_Data.vertexBufferPtr->Position = glm::vec3(transformedVertex);
         s_Data.vertexBufferPtr->UV = uv;
+        s_Data.vertexBufferPtr->UV *= tilingAmount;
         s_Data.vertexBufferPtr->Normal = transformedNormal;
         s_Data.vertexBufferPtr->textureID = textureID;
 

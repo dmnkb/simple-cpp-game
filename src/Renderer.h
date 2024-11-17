@@ -61,7 +61,8 @@ class Renderer
     static void beginScene(Camera& camera);
     static void endScene(GLFWwindow*& window);
 
-    static void submitCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale, glm::float32 textureID);
+    static void submitCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale, glm::float32 textureID,
+                           float tilingAmount = 1);
 
     bool isWindowOpen = false;
 

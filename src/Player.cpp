@@ -105,6 +105,7 @@ void Player::update(double deltaTime, Level& level)
         m_verticalVelocity = 0.0f;
 
     // Collision Detection
+    m_collisionPairCheckCount = 0;
     const float height = 1.8f;
     const float halfWidth = 0.3f;
     m_boundingBox = {glm::vec3(m_Position.x - halfWidth, m_Position.y, m_Position.z - halfWidth),
@@ -112,9 +113,10 @@ void Player::update(double deltaTime, Level& level)
 
     m_onGround = false; // Reset ground state
 
-    auto cubesWithinRadius = level.getCubesInsideRadius(m_Position + movementVector, 3);
+    auto cubesWithinRadius = level.getCubesInsideRadius(m_Position + movementVector, 10);
     for (const auto& cube : cubesWithinRadius)
     {
+        m_collisionPairCheckCount++;
         BoundingBox cubeAABB = {glm::vec3(cube.x - 0.5f, -0.5f, cube.y - 0.5f),
                                 glm::vec3(cube.x + 0.5f, 0.5f, cube.y + 0.5f)};
 
@@ -123,10 +125,11 @@ void Player::update(double deltaTime, Level& level)
             auto collisionSide = getCollisionSide(m_boundingBox, cubeAABB);
 
             // Check if player is standing on the ground
-            if (collisionSide.y > 0.0f)
+            if (collisionSide.y > 0.0f && m_verticalVelocity < 0)
             {
                 m_onGround = true;
                 m_Position.y = cubeAABB.max.y; // Snap player to the top of the cube
+                m_verticalVelocity = 0;
             }
 
             // Project movement vector onto the collision plane

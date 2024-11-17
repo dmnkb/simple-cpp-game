@@ -46,8 +46,17 @@ std::vector<glm::vec2> Level::getCoordsByTextureFile(const std::string filename)
 
 std::vector<glm::vec2> Level::getCubesInsideRadius(const glm::vec3 origin, const int radius)
 {
-    // TODO: Return only the cubes inside the radius
-    return m_coords;
+    std::vector<glm::vec2> result;
+    glm::vec2 origin2D = glm::vec2(origin.x, origin.z);
+
+    for (const auto& coord : m_coords)
+    {
+        if (glm::distance(origin2D, coord) <= radius)
+        {
+            result.push_back(coord);
+        }
+    }
+    return result;
 }
 
 void Level::update()
@@ -57,8 +66,8 @@ void Level::update()
     {
         float x = coord.x;
         float z = coord.y;
-        Renderer::submitCube(glm::vec3(x, 0, z), glm::vec3(0, 0, 0), glm::vec3(1),
-                             i % 2 == 0 ? m_texture0 : m_texture1);
+        Renderer::submitCube(glm::vec3(x, 0, z), glm::vec3(0, 0, 0), glm::vec3(1), m_texture0);
         i++;
     }
+    Renderer::submitCube(glm::vec3(49.5, -1, 49.5), glm::vec3(0, 0, 0), glm::vec3({100, 1, 100}), m_texture1, 100);
 }

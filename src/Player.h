@@ -25,6 +25,10 @@ class Player
     {
         return m_Rotation;
     }
+    int getCollisionPairCheckCount()
+    {
+        return m_collisionPairCheckCount;
+    }
 
     void setIsCursorDisabled(bool disabled)
     {
@@ -49,6 +53,6 @@ class Player
     // Input handling
     std::vector<unsigned int> m_PressedKeys;
 
-    // Performance/Timing
-    std::deque<double> m_DeltaTimeHistory;
+    // Performance
+    int m_collisionPairCheckCount = 0;
 };

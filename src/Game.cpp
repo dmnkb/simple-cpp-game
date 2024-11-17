@@ -104,6 +104,9 @@ void Game::run()
         ImGui::Text("%s", position.c_str());
         std::string roation = "Rotation: " + glm::to_string(m_Player.getRotation());
         ImGui::Text("%s", roation.c_str());
+        std::string numCollisionPars =
+            "Collision paris checked: " + std::to_string(m_Player.getCollisionPairCheckCount());
+        ImGui::Text("%s", numCollisionPars.c_str());
         ImGui::End();
 
         // Render ImGui
