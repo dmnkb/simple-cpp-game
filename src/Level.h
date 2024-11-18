@@ -21,7 +21,7 @@ class Level
   public:
     Level();
     std::vector<glm::vec2> getCoordsByTextureFile(const std::string filename);
-    std::vector<glm::vec2> getCubesInPlayerCell(const glm::vec3 origin);
+    std::vector<glm::vec2> getCubesInCell(const glm::vec2 origin);
     int getCellSize()
     {
         return m_cellSize;
@@ -31,6 +31,6 @@ class Level
   private:
     GLuint m_texture0, m_texture1 = 0;
     std::vector<glm::vec2> m_coords;
-    int m_cellSize = 8;
+    int m_cellSize = 16;
     std::unordered_map<std::pair<int, int>, std::vector<glm::vec2>, PairHash> m_CoordsMap;
 };

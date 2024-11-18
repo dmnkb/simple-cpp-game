@@ -113,38 +113,50 @@ void Player::update(double deltaTime, Level& level)
 
     m_onGround = false; // Reset ground state
 
-    auto cubesInCell = level.getCubesInPlayerCell(m_Position);
-    for (const auto& cube : cubesInCell)
+    // Expand collision checking to neighbouring cells
+    //
+    //    [x]
+    // [x][x][x]
+    //    [x]
+    //
+    glm::vec2 collisionCellMap[5] = {{0, 0}, {-1, 0}, {0, 1}, {1, 0}, {0, -1}};
+    auto cellSize = level.getCellSize();
+    for (int i = 0; i < 5; i++)
     {
-        m_collisionPairCheckCount++;
-        BoundingBox cubeAABB = {glm::vec3(cube.x - 0.5f, -0.5f, cube.y - 0.5f),
-                                glm::vec3(cube.x + 0.5f, 0.5f, cube.y + 0.5f)};
-
-        if (checkCollision(m_boundingBox, cubeAABB))
+        auto cubesInCell = level.getCubesInCell(glm::vec2(m_Position.x, m_Position.z) +
+                                                collisionCellMap[i] * (static_cast<float>(cellSize) / 2.f));
+        for (const auto& cube : cubesInCell)
         {
-            auto collisionSide = getCollisionSide(m_boundingBox, cubeAABB);
+            m_collisionPairCheckCount++;
+            BoundingBox cubeAABB = {glm::vec3(cube.x - 0.5f, -0.5f, cube.y - 0.5f),
+                                    glm::vec3(cube.x + 0.5f, 0.5f, cube.y + 0.5f)};
 
-            // Check if player is standing on the ground
-            if (collisionSide.y > 0.0f && m_verticalVelocity < 0)
+            if (checkCollision(m_boundingBox, cubeAABB))
             {
-                m_onGround = true;
-                m_Position.y = cubeAABB.max.y; // Snap player to the top of the cube
-                m_verticalVelocity = 0;
+                auto collisionSide = getCollisionSide(m_boundingBox, cubeAABB);
+
+                // Check if player is standing on the ground
+                if (collisionSide.y > 0.0f && m_verticalVelocity < 0)
+                {
+                    m_onGround = true;
+                    m_Position.y = cubeAABB.max.y; // Snap player to the top of the cube
+                    m_verticalVelocity = 0;
+                }
+
+                // Project movement vector onto the collision plane
+                glm::vec3 collisionNormal = collisionSide; // Use the collision side as the normal
+                float dotProduct = glm::dot(movementVector, collisionNormal);
+
+                if (dotProduct < 0.0f) // Only resolve if moving into the collision plane
+                {
+                    movementVector -= dotProduct * collisionNormal;
+                }
+
+                // Prevent further checks since collision has been handled
+                break;
             }
-
-            // Project movement vector onto the collision plane
-            glm::vec3 collisionNormal = collisionSide; // Use the collision side as the normal
-            float dotProduct = glm::dot(movementVector, collisionNormal);
-
-            if (dotProduct < 0.0f) // Only resolve if moving into the collision plane
-            {
-                movementVector -= dotProduct * collisionNormal;
-            }
-
-            // Prevent further checks since collision has been handled
-            break;
         }
-    }
+    };
 
     // Final Position Update
     movementVector *= deltaTime;

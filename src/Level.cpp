@@ -37,8 +37,8 @@ std::vector<glm::vec2> Level::getCoordsByTextureFile(const std::string filename)
             if (pixel)
             {
                 coords.push_back(glm::vec2({x, y}));
-                int cellX = static_cast<int>(std::floor(x / m_cellSize));
-                int cellY = static_cast<int>(std::floor(y / m_cellSize));
+                int cellX = static_cast<int>(std::floor((x + .5) / m_cellSize));
+                int cellY = static_cast<int>(std::floor((y + .5) / m_cellSize));
                 m_CoordsMap[{cellX, cellY}].push_back(glm::vec2(x, y));
             }
             i++;
@@ -49,22 +49,19 @@ std::vector<glm::vec2> Level::getCoordsByTextureFile(const std::string filename)
     return coords;
 }
 
-std::vector<glm::vec2> Level::getCubesInPlayerCell(const glm::vec3 origin)
+std::vector<glm::vec2> Level::getCubesInCell(const glm::vec2 origin)
 {
+#if true
     std::vector<glm::vec2> result;
 
-    // TODO: check also for pairs around player
-
-    int cellX = static_cast<int>(std::floor((origin.x) / m_cellSize));
-    int cellY = static_cast<int>(std::floor((origin.z) / m_cellSize));
+    int cellX = static_cast<int>(std::floor((origin.x + .5) / m_cellSize));
+    int cellY = static_cast<int>(std::floor((origin.y + .5) / m_cellSize));
 
     std::pair<int, int> cellKey(cellX, cellY);
 
     auto it = m_CoordsMap.find(cellKey);
     if (it != m_CoordsMap.end())
-    {
         result.insert(result.end(), it->second.begin(), it->second.end());
-    }
 
     for (const auto& coord : result)
     {
@@ -74,6 +71,9 @@ std::vector<glm::vec2> Level::getCubesInPlayerCell(const glm::vec3 origin)
     }
 
     return result;
+#else
+    return m_coords;
+#endif
 }
 
 void Level::update()
