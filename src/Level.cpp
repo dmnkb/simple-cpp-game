@@ -63,13 +63,6 @@ std::vector<glm::vec2> Level::getCubesInCell(const glm::vec2 origin)
     if (it != m_CoordsMap.end())
         result.insert(result.end(), it->second.begin(), it->second.end());
 
-    for (const auto& coord : result)
-    {
-        auto x = coord.x;
-        auto z = coord.y;
-        Renderer::submitCube(glm::vec3(x, 0, z), glm::vec3(0, 0, 0), glm::vec3(1), m_texture0);
-    }
-
     return result;
 #else
     return m_coords;
@@ -83,7 +76,7 @@ void Level::update()
     {
         float x = coord.x;
         float z = coord.y;
-        Renderer::submitCube(glm::vec3(x, 0, z), glm::vec3(0, 0, 0), glm::vec3(1), m_texture1);
+        Renderer::submitCube(glm::vec3(x, 0, z), glm::vec3(0, 0, 0), glm::vec3(1), m_texture0);
         i++;
     }
     Renderer::submitCube(glm::vec3(49.5, -1, 49.5), glm::vec3(0, 0, 0), glm::vec3({100, 1, 100}), m_texture1, 100);
