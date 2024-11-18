@@ -113,8 +113,8 @@ void Player::update(double deltaTime, Level& level)
 
     m_onGround = false; // Reset ground state
 
-    auto cubesWithinRadius = level.getCubesInsideRadius(m_Position + movementVector, 10);
-    for (const auto& cube : cubesWithinRadius)
+    auto cubesInCell = level.getCubesInPlayerCell(m_Position);
+    for (const auto& cube : cubesInCell)
     {
         m_collisionPairCheckCount++;
         BoundingBox cubeAABB = {glm::vec3(cube.x - 0.5f, -0.5f, cube.y - 0.5f),

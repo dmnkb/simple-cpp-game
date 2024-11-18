@@ -71,12 +71,12 @@ void Game::run()
         glViewport(0, 0, m_Window.getFrameBufferDimensions().x, m_Window.getFrameBufferDimensions().y);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // Render scene
+        Renderer::beginScene(m_Camera);
+
         // Update scene
         m_Player.update(m_DeltaTime, m_Level);
         m_EventManager.processEvents();
-
-        // Render scene
-        Renderer::beginScene(m_Camera);
 
         // Render level
         m_Level.update();

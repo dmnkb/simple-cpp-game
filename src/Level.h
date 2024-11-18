@@ -6,16 +6,31 @@
 #include <glm/glm.hpp>
 #include <vector>
 
+struct PairHash
+{
+    template <typename T1, typename T2> std::size_t operator()(const std::pair<T1, T2>& pair) const
+    {
+        std::hash<T1> hasher1;
+        std::hash<T2> hasher2;
+        return hasher1(pair.first) ^ (hasher2(pair.second) << 1);
+    }
+};
+
 class Level
 {
   public:
     Level();
     std::vector<glm::vec2> getCoordsByTextureFile(const std::string filename);
-    // TODO: consider spacial hashing instead
-    std::vector<glm::vec2> getCubesInsideRadius(const glm::vec3 origin, const int radius);
+    std::vector<glm::vec2> getCubesInPlayerCell(const glm::vec3 origin);
+    int getCellSize()
+    {
+        return m_cellSize;
+    }
     void update();
 
   private:
     GLuint m_texture0, m_texture1 = 0;
     std::vector<glm::vec2> m_coords;
+    int m_cellSize = 8;
+    std::unordered_map<std::pair<int, int>, std::vector<glm::vec2>, PairHash> m_CoordsMap;
 };
