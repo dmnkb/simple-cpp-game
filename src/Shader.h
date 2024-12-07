@@ -4,19 +4,33 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
+struct ShaderSource
+{
+    std::string vertexShader;
+    std::string fragmentShader;
+};
+
 class Shader
 {
   public:
     // TODO: Read in shader file
-    Shader(const char* vertexShader, const char* fragmentShader);
+    Shader(const char* vertexShaderPath, const char* fragmentShaderPath);
     ~Shader();
+
+    std::optional<ShaderSource> readShaderFiles(const char* vertexShaderPath, const char* fragmentShaderPath);
 
     void bind();
     void unbind();
 
+    GLuint getProgramID()
+    {
+        return m_ProgramID;
+    }
+
     void setVertexAttribute(const char* name, GLint size, GLenum type, GLboolean normalized, GLsizei stride,
                             const void* pointer);
 
+    void setUniformFloat(const char* name, const float value);
     void setUniformMatrix4fv(const char* name, const glm::mat4 value);
     void setUniformMatrix3fv(const char* name, const glm::mat3 value);
     void setUniform3fv(const char* name, const glm::vec3 value);

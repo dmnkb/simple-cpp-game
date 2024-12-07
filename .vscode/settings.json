@@ -61,6 +61,11 @@
         "map": "cpp",
         "chrono": "cpp",
         "functional": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "execution": "cpp",
+        "memory": "cpp",
+        "print": "cpp",
+        "queue": "cpp",
+        "stack": "cpp"
     }
 }

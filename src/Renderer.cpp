@@ -111,6 +111,9 @@ struct RendererData
     uint32_t indexCount, vertexCount = 0;
     Vertex* vertexBufferBase = nullptr;
     Vertex* vertexBufferPtr = nullptr;
+
+    GLuint uboLights;
+    std::vector<Light> lights;
 };
 
 static RendererData s_Data;
@@ -212,7 +215,26 @@ void Renderer::init()
     }
     s_Data.vertexBufferPtr = s_Data.vertexBufferBase;
 
-    s_Data.shader = std::make_shared<Shader>(vertex_shader_text, fragment_shader_text);
+    s_Data.shader = std::make_shared<Shader>("assets/phong.vs", "assets/phong.fs");
+
+    unsigned int NUM_LIGHTS = 256;
+
+    // Create and bind the Uniform Buffer Object
+    glGenBuffers(1, &s_Data.uboLights);
+    glBindBuffer(GL_UNIFORM_BUFFER, s_Data.uboLights);
+
+    // Allocate memory for the UBO (empty for now)
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(Light) * NUM_LIGHTS, nullptr, GL_DYNAMIC_DRAW);
+
+    // Link the UBO to binding point 0 (match shader layout)
+    GLuint uboBindingPoint = 0;
+    GLuint blockIndex = glGetUniformBlockIndex(s_Data.shader->getProgramID(), "LightsBlock");
+    assert(blockIndex != GL_INVALID_INDEX && "LightsBlock not found in shader!");
+
+    glUniformBlockBinding(s_Data.shader->getProgramID(), blockIndex, uboBindingPoint);
+
+    // Bind the UBO to the binding point
+    glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, s_Data.uboLights);
 }
 
 void Renderer::shutdown()
@@ -294,6 +316,11 @@ void Renderer::submitCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scal
     stats.cubeCount++;
 }
 
+void Renderer::submitLights(const std::vector<Light>& lights)
+{
+    s_Data.lights = lights;
+}
+
 void Renderer::startBatch()
 {
     s_Data.indexCount = 0;
@@ -324,8 +351,19 @@ void Renderer::flush()
 
     s_Data.shader->setUniformMatrix4fv("u_ViewProjection", viewProjection);
     s_Data.shader->setUniform3fv("viewPos", s_Data.camPos);
-    s_Data.shader->setUniform3fv("lightPos", glm::vec3(20, 20, 10));
     s_Data.shader->setUniform1iv("u_Textures", s_Data.textureIDs);
+
+    // Lights
+    const unsigned int numLights = s_Data.lights.size();
+    Light lights[numLights];
+
+    // Copy data from the vector to the array
+    for (int i = 0; i < numLights; i++)
+        lights[i] = s_Data.lights[i];
+
+    glBindBuffer(GL_UNIFORM_BUFFER, s_Data.uboLights);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(lights), lights); // Update entire buffer
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     draw();
 

@@ -19,7 +19,7 @@ const int windowHeigth = 480;
 WindowProps windowProps = {windowWidth, windowHeigth, "Simple CPP Game", NULL, NULL};
 CameraProps camProps = {45.0f * (M_PI / 180.0f), ((float)windowWidth / windowHeigth), 0.1f, 1000.0f};
 
-Game::Game() : m_Window(windowProps, m_EventManager), m_Camera(camProps), m_Player(m_Camera, m_EventManager)
+Game::Game() : m_Window(windowProps, m_EventManager), m_Camera(camProps), m_Player(m_Camera, m_EventManager), m_scene()
 {
     Renderer::init();
 
@@ -71,17 +71,16 @@ void Game::run()
         glViewport(0, 0, m_Window.getFrameBufferDimensions().x, m_Window.getFrameBufferDimensions().y);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Render scene
         Renderer::beginScene(m_Camera);
 
-        // Update scene
+        m_scene.update();
+
         m_Player.update(m_DeltaTime, m_Level);
+
         m_EventManager.processEvents();
 
-        // Render level
         m_Level.update();
 
-        // End scene
         Renderer::endScene(m_Window.getNativeWindow());
 
         // Start new ImGui frame
@@ -105,7 +104,7 @@ void Game::run()
         std::string roation = "Rotation: " + glm::to_string(m_Player.getRotation());
         ImGui::Text("%s", roation.c_str());
         std::string numCollisionPars =
-            "Collision paris checked: " + std::to_string(m_Player.getCollisionPairCheckCount());
+            "Collision pairs checked: " + std::to_string(m_Player.getCollisionPairCheckCount());
         ImGui::Text("%s", numCollisionPars.c_str());
         ImGui::End();
 

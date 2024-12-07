@@ -1,17 +1,23 @@
 #include "Shader.h"
 #include "pch.h"
 
-Shader::Shader(const char* vertexShader, const char* fragmentShader) : m_ProgramID(glCreateProgram())
+Shader::Shader(const char* vertexShaderPath, const char* fragmentShaderPath) : m_ProgramID(glCreateProgram())
 {
+    auto shaders = readShaderFiles(vertexShaderPath, fragmentShaderPath);
+    auto vertexShaderText = ((*shaders).vertexShader).c_str();
+    auto fragmentShaderText = (*shaders).fragmentShader.c_str();
+    assert(vertexShaderText && "[ERROR] in Shader::Shader: vertexShader is falsy.");
+    assert(fragmentShaderText && "[ERROR] in Shader::Shader: fragmentShader is falsy.");
+
     printf("Create vertex shader\n");
     m_VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(m_VertexShaderID, 1, &vertexShader, NULL);
+    glShaderSource(m_VertexShaderID, 1, &vertexShaderText, NULL);
     glCompileShader(m_VertexShaderID);
     checkShaderCompilation(m_VertexShaderID);
 
     printf("Create fragment shader\n");
     m_FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(m_FragmentShaderID, 1, &fragmentShader, NULL);
+    glShaderSource(m_FragmentShaderID, 1, &fragmentShaderText, NULL);
     glCompileShader(m_FragmentShaderID);
     checkShaderCompilation(m_FragmentShaderID);
 
@@ -28,6 +34,41 @@ Shader::~Shader()
     glDeleteShader(m_VertexShaderID);
     glDeleteShader(m_VertexShaderID);
     glDeleteProgram(m_ProgramID);
+}
+
+std::optional<ShaderSource> Shader::readShaderFiles(const char* vertexShaderPath, const char* fragmentShaderPath)
+{
+    // 1. retrieve the vertex/fragment source code from filePath
+    std::string vertexCode;
+    std::string fragmentCode;
+    std::ifstream vShaderFile;
+    std::ifstream fShaderFile;
+    // ensure ifstream objects can throw exceptions:
+    vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    try
+    {
+        // open files
+        vShaderFile.open(vertexShaderPath);
+        fShaderFile.open(fragmentShaderPath);
+        std::stringstream vShaderStream, fShaderStream;
+        // read file's buffer contents into streams
+        vShaderStream << vShaderFile.rdbuf();
+        fShaderStream << fShaderFile.rdbuf();
+        // close file handlers
+        vShaderFile.close();
+        fShaderFile.close();
+        // convert stream into string
+        vertexCode = vShaderStream.str();
+        fragmentCode = fShaderStream.str();
+    }
+    catch (std::ifstream::failure e)
+    {
+        assert(false && "Shader::readShaderFiles: Shader file not succesfully read.");
+        return std::nullopt;
+    }
+
+    return ShaderSource({vertexCode, fragmentCode});
 }
 
 void Shader::bind()
@@ -53,6 +94,13 @@ void Shader::setVertexAttribute(const char* name, GLint size, GLenum type, GLboo
     }
 }
 
+void Shader::setUniformFloat(const char* name, const float value)
+{
+    auto location = getCachedLocation(name);
+    if (location != -1)
+        glUniform1f(location, value);
+}
+
 void Shader::setUniformMatrix4fv(const char* name, const glm::mat4 value)
 {
     auto location = getCachedLocation(name);
@@ -70,6 +118,10 @@ void Shader::setUniformMatrix3fv(const char* name, const glm::mat3 value)
 void Shader::setUniform3fv(const char* name, const glm::vec3 value)
 {
     auto location = getCachedLocation(name);
+    // GLint location = glGetUniformLocation(m_ProgramID, name);
+
+    // std::cout << "name: " << name << ", location: " << location << "\n";
+
     if (location != -1)
         glUniform3fv(location, 1, (const GLfloat*)&value);
 }

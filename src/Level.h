@@ -20,7 +20,7 @@ class Level
 {
   public:
     Level();
-    std::vector<glm::vec2> getCoordsByTextureFile(const std::string filename);
+    std::optional<std::vector<glm::vec2>> getCoordsByTextureFile(const std::string filename);
     std::vector<glm::vec2> getCubesInCell(const glm::vec2 origin);
     int getCellSize()
     {

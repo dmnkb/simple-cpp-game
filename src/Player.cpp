@@ -5,6 +5,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#define DEBUG_MOVEMENT true
+
 Player::Player(Camera& camera, EventManager& eventManager) : m_Camera(camera), m_camChange(0, 0)
 {
     eventManager.registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
@@ -65,8 +67,12 @@ void Player::update(double deltaTime, Level& level)
     m_Direction.z = cos(pitchRadians) * cos(yawRadians);
     m_Direction = glm::normalize(m_Direction);
 
-    // Movement
+// Movement
+#if DEBUG_MOVEMENT
+    const float speed = 20.0f;
+#else
     const float speed = 5.0f;
+#endif
     const float jumpForce = 8.0f;
     const float gravity = -9.8f;
 
@@ -98,11 +104,13 @@ void Player::update(double deltaTime, Level& level)
         m_onGround = false;
     }
 
+#if !DEBUG_MOVEMENT
     // Gravity
     if (!m_onGround)
         m_verticalVelocity += gravity * deltaTime;
     else
         m_verticalVelocity = 0.0f;
+#endif
 
     // Collision Detection
     m_collisionPairCheckCount = 0;
@@ -160,14 +168,18 @@ void Player::update(double deltaTime, Level& level)
 
     // Final Position Update
     movementVector *= deltaTime;
+#if DEBUG_MOVEMENT
+    m_Position += movementVector;
+#else
     m_Position += movementVector * glm::vec3({1.0f, 0.0f, 1.0f});
+#endif
     m_Position.y += m_verticalVelocity * deltaTime;
 
     // Hack to make the player stop at Y: -1
-    if (m_Position.y <= -1.f)
+    if (m_Position.y <= -.5f)
     {
         m_onGround = true;
-        m_Position = glm::vec3({m_Position.x, -1.f, m_Position.z});
+        m_Position = glm::vec3({m_Position.x, -.5f, m_Position.z});
     }
 
     // Camera Update

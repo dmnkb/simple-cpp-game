@@ -5,6 +5,7 @@
 #include "Level.h"
 #include "Player.h"
 #include "Renderer.h"
+#include "Scene.h"
 #include "Window.h"
 
 class Game
@@ -22,6 +23,7 @@ class Game
     EventManager m_EventManager;
     Camera m_Camera;
     Player m_Player;
+    Scene m_scene;
     Level m_Level;
 
     GLuint m_texture0, m_texture1 = 0;

@@ -14,17 +14,28 @@ Level::Level()
     tex1.bind(2);
     m_texture1 = tex1.id;
 
-    m_coords = getCoordsByTextureFile("assets/poisson.png");
+    if (auto coords = getCoordsByTextureFile("assets/poisson.png"))
+    {
+        m_coords = *coords;
+    }
 }
 
-std::vector<glm::vec2> Level::getCoordsByTextureFile(const std::string filename)
+std::optional<std::vector<glm::vec2>> Level::getCoordsByTextureFile(const std::string filename)
 {
-    assert(std::filesystem::exists(filename) && "Level texture file not found");
+    if (!std::filesystem::exists(filename))
+    {
+        std::cerr << "[ERROR] Level texture file not found\n";
+        return std::nullopt;
+    }
 
     int texWidth, texHeight, channelCount;
     unsigned char* data = stbi_load(filename.c_str(), &texWidth, &texHeight, &channelCount, 0);
 
-    assert((data != nullptr && texWidth > 0 && texHeight > 0) && "Level texture corrupted");
+    if (!(data != nullptr && texWidth > 0 && texHeight > 0))
+    {
+        std::cerr << "[ERROR] Level texture corrupted\n";
+        return std::nullopt;
+    }
 
     int i = 0;
     std::vector<glm::vec2> coords;
