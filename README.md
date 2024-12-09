@@ -7,7 +7,7 @@ I build this game to learn the basics of game development in C++. I aim to adher
 - [x] First person controller
 - [x] Dear ImGUI
 - [x] Player has gravity and AABB collision detection
-- Lighting
+- [ ] Lighting
     - [x] Blinn-Phong lighting model
     - [x] Dynamics amount of lights (using UBO)
     - [ ] Spot lights
