@@ -22,6 +22,7 @@ I build this game to learn the basics of game development in C++. I aim to adher
 - [ ] Integrate Bullet Physics
 - [ ] Rendering a heightmap from a texture
 - [ ] Skeletal animation and GPU skinning
+- [ ] Sounds using miniaudio
 
 
 
