@@ -29,7 +29,7 @@ class Level
     void update();
 
   private:
-    GLuint m_texture0, m_texture1 = 0;
+    GLuint m_texture0 = 0;
     std::vector<glm::vec2> m_coords;
     int m_cellSize = 16;
     std::unordered_map<std::pair<int, int>, std::vector<glm::vec2>, PairHash> m_CoordsMap;

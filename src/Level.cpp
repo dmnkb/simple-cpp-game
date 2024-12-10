@@ -7,12 +7,9 @@
 
 Level::Level()
 {
-    auto tex0 = TextureManager::loadTexture("assets/texture_02.png");
+    auto tex0 = TextureManager::loadTexture("assets/wall.png");
     tex0.bind(1);
     m_texture0 = tex0.id;
-    auto tex1 = TextureManager::loadTexture("assets/texture_01.png");
-    tex1.bind(2);
-    m_texture1 = tex1.id;
 
     if (auto coords = getCoordsByTextureFile("assets/poisson.png"))
     {
@@ -90,5 +87,5 @@ void Level::update()
         Renderer::submitCube(glm::vec3(x, 0, z), glm::vec3(0, 0, 0), glm::vec3(1), m_texture0);
         i++;
     }
-    Renderer::submitCube(glm::vec3(49.5, -1, 49.5), glm::vec3(0, 0, 0), glm::vec3({100, 1, 100}), m_texture1, 100);
+    Renderer::submitCube(glm::vec3(49.5, -1, 49.5), glm::vec3(0, 0, 0), glm::vec3({100, 1, 100}), m_texture0, 100);
 }
