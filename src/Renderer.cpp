@@ -112,8 +112,8 @@ struct RendererData
     Vertex* vertexBufferBase = nullptr;
     Vertex* vertexBufferPtr = nullptr;
 
+    // Uniform buffer object to upload lights to the GPU
     GLuint uboLights;
-    std::vector<Light> lights;
 };
 
 static RendererData s_Data;
@@ -291,9 +291,8 @@ void Renderer::submitCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scal
         s_Data.vertexBufferPtr->Normal = transformedNormal;
         s_Data.vertexBufferPtr->textureID = textureID;
 
-        // FIXME: OpenGL textureIDs might not count like
-        // 0, 1, 2, ... and might therefore not be good
-        // for indexing
+        // OpenGL textureIDs might not count like 0, 1, 2, ...
+        // and might therefore not be ideal for indexing.
         s_Data.textureIDs[static_cast<int>(textureID)] = textureID;
 
         glActiveTexture(textureID + GL_TEXTURE0);
@@ -318,7 +317,16 @@ void Renderer::submitCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scal
 
 void Renderer::submitLights(const std::vector<Light>& lights)
 {
-    s_Data.lights = lights;
+    const unsigned int lightCount = lights.size();
+    Light lightArray[lightCount];
+
+    // Copy data from the vector to the array
+    for (int i = 0; i < lightCount; i++)
+        lightArray[i] = lights[i];
+
+    glBindBuffer(GL_UNIFORM_BUFFER, s_Data.uboLights);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(lightArray), lightArray);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void Renderer::startBatch()
@@ -352,18 +360,6 @@ void Renderer::flush()
     s_Data.shader->setUniformMatrix4fv("u_ViewProjection", viewProjection);
     s_Data.shader->setUniform3fv("viewPos", s_Data.camPos);
     s_Data.shader->setUniform1iv("u_Textures", s_Data.textureIDs);
-
-    // Lights
-    const unsigned int numLights = s_Data.lights.size();
-    Light lights[numLights];
-
-    // Copy data from the vector to the array
-    for (int i = 0; i < numLights; i++)
-        lights[i] = s_Data.lights[i];
-
-    glBindBuffer(GL_UNIFORM_BUFFER, s_Data.uboLights);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(lights), lights); // Update entire buffer
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     draw();
 
