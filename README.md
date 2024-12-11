@@ -7,17 +7,17 @@ I build this game to learn the basics of game development in C++. I aim to adher
 - [x] First person controller
 - [x] Dear ImGUI
 - [x] Player has gravity and AABB collision detection
-- [ ] Lighting
+- [x] Lighting
     - [x] Blinn-Phong lighting model
     - [x] Dynamics amount of lights (using UBO)
-    - [ ] Spot lights
+    - [x] Spot lights
+- [ ] Refactor the renderer to become more generic (Introduce Mesh class)
 - [ ] Render pass abstraction
 - [ ] Frame buffer object abstraction
 - [ ] Shadow mapping
 - [ ] Basic deferred rendering
 - [ ] Scene graph & scene nodes
-- [ ] Simple particle system (To learn about instanced rendering)
-- [ ] Refactor the renderer to become more generic
+- [ ] Simple particle system OR grass rendering (To learn about instanced rendering)
 - [ ] Integrate Assimp mesh loading
 - [ ] Integrate Bullet Physics
 - [ ] Rendering a heightmap from a texture

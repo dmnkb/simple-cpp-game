@@ -1,11 +1,7 @@
 #pragma once
 
-#include "Camera.h"
-#include "Shader.h"
 #include "pch.h"
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtx/string_cast.hpp>
+#include <glad/glad.h>
 
 static const GLfloat vertices[] = {
     -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, // A 0
@@ -47,24 +43,16 @@ static const GLuint indices[] = {
 };
 // clang-format on
 
-class Cube
+class Mesh
 {
   public:
-    Cube(const GLuint textureID, std::shared_ptr<Shader> shader, glm::vec3 position);
-    void draw(const Camera& camera);
-    void remove();
-    // clang-format off
-    void setPosition(glm::vec3 position) { m_Position = position; }
-    void setRotation(glm::vec3 rotation) { m_Rotation = rotation; }
-    void setScale(glm::vec3 scale) {  m_Scale = scale; }
-    // clang-format on
+    Mesh(const std::string modelPath);
+    ~Mesh();
+
+    void bind();
+    void unbind();
+    void draw();
 
   private:
     GLuint m_VertexArray, m_VertexBuffer, m_IndexBuffer;
-    GLuint m_TextureID;
-    std::shared_ptr<Shader> m_Shader;
-
-    glm::vec3 m_Position = glm::vec3(0, 0, 0);
-    glm::vec3 m_Rotation = glm::vec3(0, 0, 0);
-    glm::vec3 m_Scale = glm::vec3(1, 1, 1);
 };
