@@ -1,43 +1,35 @@
 #pragma once
 
 #include "Camera.h"
-#include "EventManager.h"
 #include "Light.h"
+#include "Mesh.h"
 #include "Shader.h"
-#include "TextureManager.h"
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
+
+#define MAX_MESH_COUNT 256
+#define MAX_TRANSFORMS_PER_MESH 256
+
+/**
+ * An atomic, stateless POD (plain old data) that contains mesh, material and transform.
+ */
+struct Renderable
+{
+    std::shared_ptr<Mesh> mesh; // Geometry data
+    // std::shared_ptr<Material> material; // TODO: Shader, textures, material properties
+    std::shared_ptr<Shader> shader; // TODO: replace with material
+    glm::mat4 transform;
+};
 
 class Renderer
 {
   public:
     static void init();
-    static void shutdown();
 
+    // Setup viewMatrix & viewProjectionMatrix
     static void beginScene(Camera& camera);
-    static void endScene(GLFWwindow*& window);
 
-    static void submitCube(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale, glm::float32 textureID,
-                           float tilingAmount = 1);
     static void submitLights(const std::vector<Light>& lights);
-
-    bool isWindowOpen = false;
-
-    struct Statistics
-    {
-        uint32_t drawCalls = 0;
-        uint32_t vertexCount = 0;
-        uint32_t cubeCount = 0;
-    };
-
-    static Statistics getStats();
-    static void resetStats();
-
-    static glm::mat4 getVPM();
+    static void submitRenderable(Renderable renderable);
 
   private:
-    static void startBatch();
-    static void nextBatch();
-    static void flush();
-    static void draw();
+    static void drawInstanced();
 };

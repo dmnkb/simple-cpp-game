@@ -84,8 +84,8 @@ void Level::update()
     {
         float x = coord.x;
         float z = coord.y;
-        Renderer::submitCube(glm::vec3(x, 0, z), glm::vec3(0, 0, 0), glm::vec3(1), m_texture0);
+        // Renderer::submitCube(glm::vec3(x, 0, z), glm::vec3(0, 0, 0), glm::vec3(1), m_texture0);
         i++;
     }
-    Renderer::submitCube(glm::vec3(49.5, -1, 49.5), glm::vec3(0, 0, 0), glm::vec3({100, 1, 100}), m_texture0, 100);
+    // Renderer::submitCube(glm::vec3(49.5, -1, 49.5), glm::vec3(0, 0, 0), glm::vec3({100, 1, 100}), m_texture0, 100);
 }

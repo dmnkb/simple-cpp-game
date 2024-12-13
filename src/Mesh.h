@@ -4,32 +4,41 @@
 #include <glad/glad.h>
 
 static const GLfloat vertices[] = {
+    // Back face
     -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, // A 0
-    0.5f,  -0.5f, -0.5f, 1.0f, 0.0f, // B 1
-    0.5f,  0.5f,  -0.5f, 1.0f, 1.0f, // C 2
-    -0.5f, 0.5f,  -0.5f, 0.0f, 1.0f, // D 3
-    -0.5f, -0.5f, 0.5f,  0.0f, 0.0f, // E 4
-    0.5f,  -0.5f, 0.5f,  1.0f, 0.0f, // F 5
-    0.5f,  0.5f,  0.5f,  1.0f, 1.0f, // G 6
-    -0.5f, 0.5f,  0.5f,  0.0f, 1.0f, // H 7
+    0.5f, -0.5f, -0.5f, 1.0f, 0.0f,  // B 1
+    0.5f, 0.5f, -0.5f, 1.0f, 1.0f,   // C 2
+    -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,  // D 3
 
-    -0.5f, 0.5f,  -0.5f, 0.0f, 0.0f, // D 8
-    -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, // A 9
-    -0.5f, -0.5f, 0.5f,  1.0f, 1.0f, // E 10
-    -0.5f, 0.5f,  0.5f,  0.0f, 1.0f, // H 11
-    0.5f,  -0.5f, -0.5f, 0.0f, 0.0f, // B 12
-    0.5f,  0.5f,  -0.5f, 1.0f, 0.0f, // C 13
-    0.5f,  0.5f,  0.5f,  1.0f, 1.0f, // G 14
-    0.5f,  -0.5f, 0.5f,  0.0f, 1.0f, // F 15
+    // Front face
+    -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, // E 4
+    0.5f, -0.5f, 0.5f, 1.0f, 0.0f,  // F 5
+    0.5f, 0.5f, 0.5f, 1.0f, 1.0f,   // G 6
+    -0.5f, 0.5f, 0.5f, 0.0f, 1.0f,  // H 7
 
+    // Left face
+    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, // A 8
+    -0.5f, 0.5f, -0.5f, 1.0f, 0.0f,  // D 9
+    -0.5f, 0.5f, 0.5f, 1.0f, 1.0f,   // H 10
+    -0.5f, -0.5f, 0.5f, 0.0f, 1.0f,  // E 11
+
+    // Right face
+    0.5f, -0.5f, -0.5f, 0.0f, 0.0f, // B 12
+    0.5f, 0.5f, -0.5f, 1.0f, 0.0f,  // C 13
+    0.5f, 0.5f, 0.5f, 1.0f, 1.0f,   // G 14
+    0.5f, -0.5f, 0.5f, 0.0f, 1.0f,  // F 15
+
+    // Bottom face
     -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, // A 16
-    0.5f,  -0.5f, -0.5f, 1.0f, 0.0f, // B 17
-    0.5f,  -0.5f, 0.5f,  1.0f, 1.0f, // F 18
-    -0.5f, -0.5f, 0.5f,  0.0f, 1.0f, // E 19
-    0.5f,  0.5f,  -0.5f, 0.0f, 0.0f, // C 20
-    -0.5f, 0.5f,  -0.5f, 1.0f, 0.0f, // D 21
-    -0.5f, 0.5f,  0.5f,  1.0f, 1.0f, // H 22
-    0.5f,  0.5f,  0.5f,  0.0f, 1.0f, // G 23
+    0.5f, -0.5f, -0.5f, 1.0f, 0.0f,  // B 17
+    0.5f, -0.5f, 0.5f, 1.0f, 1.0f,   // F 18
+    -0.5f, -0.5f, 0.5f, 0.0f, 1.0f,  // E 19
+
+    // Top face
+    -0.5f, 0.5f, -0.5f, 0.0f, 0.0f, // D 20
+    0.5f, 0.5f, -0.5f, 1.0f, 0.0f,  // C 21
+    0.5f, 0.5f, 0.5f, 1.0f, 1.0f,   // G 22
+    -0.5f, 0.5f, 0.5f, 0.0f, 1.0f   // H 23
 };
 
 // clang-format off
@@ -43,15 +52,54 @@ static const GLuint indices[] = {
 };
 // clang-format on
 
+// TODO: use!
+static const GLfloat normals[] = {
+    // Back face normals
+    0.0f, 0.0f, -1.0f, // A 0
+    0.0f, 0.0f, -1.0f, // B 1
+    0.0f, 0.0f, -1.0f, // C 2
+    0.0f, 0.0f, -1.0f, // D 3
+
+    // Front face normals
+    0.0f, 0.0f, 1.0f, // E 4
+    0.0f, 0.0f, 1.0f, // F 5
+    0.0f, 0.0f, 1.0f, // G 6
+    0.0f, 0.0f, 1.0f, // H 7
+
+    // Left face normals
+    -1.0f, 0.0f, 0.0f, // A 8
+    -1.0f, 0.0f, 0.0f, // D 9
+    -1.0f, 0.0f, 0.0f, // H 10
+    -1.0f, 0.0f, 0.0f, // E 11
+
+    // Right face normals
+    1.0f, 0.0f, 0.0f, // B 12
+    1.0f, 0.0f, 0.0f, // C 13
+    1.0f, 0.0f, 0.0f, // G 14
+    1.0f, 0.0f, 0.0f, // F 15
+
+    // Bottom face normals
+    0.0f, -1.0f, 0.0f, // A 16
+    0.0f, -1.0f, 0.0f, // B 17
+    0.0f, -1.0f, 0.0f, // F 18
+    0.0f, -1.0f, 0.0f, // E 19
+
+    // Top face normals
+    0.0f, 1.0f, 0.0f, // D 20
+    0.0f, 1.0f, 0.0f, // C 21
+    0.0f, 1.0f, 0.0f, // G 22
+    0.0f, 1.0f, 0.0f, // H 23
+};
+
 class Mesh
 {
   public:
-    Mesh(const std::string modelPath);
+    Mesh(const std::string& modelPath = "");
     ~Mesh();
 
-    void bind();
+    void bind(GLuint instanceBuffer = 0);
     void unbind();
-    void draw();
+    GLsizei getIndexCount() const;
 
   private:
     GLuint m_VertexArray, m_VertexBuffer, m_IndexBuffer;

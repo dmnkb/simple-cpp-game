@@ -46,6 +46,7 @@ Game::~Game()
 void Game::run()
 {
     float i = 0.f;
+    // TODO: fill with meaning
     int previousDrawCalls = 0;
     int previousVertexCount = 0;
     int previousCubeCount = 0;
@@ -67,6 +68,7 @@ void Game::run()
             m_FrameCount = 0;
         }
 
+        // TODO: Move into renderer
         // Clear the frame buffer and depth buffer
         glViewport(0, 0, m_Window.getFrameBufferDimensions().x, m_Window.getFrameBufferDimensions().y);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -79,9 +81,7 @@ void Game::run()
 
         m_EventManager.processEvents();
 
-        m_Level.update();
-
-        Renderer::endScene(m_Window.getNativeWindow());
+        // m_Level.update();
 
         // Start new ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -116,13 +116,14 @@ void Game::run()
         glfwSwapBuffers(m_Window.getNativeWindow());
         glfwPollEvents();
 
+        // TODO: re-introduce stats
         // Store the current stats for the next frame
-        previousDrawCalls = Renderer::getStats().drawCalls;
-        previousVertexCount = Renderer::getStats().vertexCount;
-        previousCubeCount = Renderer::getStats().cubeCount;
+        // previousDrawCalls = Renderer::getStats().drawCalls;
+        // previousVertexCount = Renderer::getStats().vertexCount;
+        // previousCubeCount = Renderer::getStats().cubeCount;
 
         // Reset stats for the next frame
-        Renderer::resetStats();
+        // Renderer::resetStats();
 
         // Update last time for next frame
         lastTime = currentTime;

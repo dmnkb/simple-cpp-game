@@ -13,6 +13,11 @@ struct Texture
         glActiveTexture(GL_TEXTURE0 + slot);
         glBindTexture(GL_TEXTURE_2D, id);
     }
+    void unbind(uint32_t slot = 0) const
+    {
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 };
 
 class TextureManager

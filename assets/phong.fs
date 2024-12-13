@@ -20,12 +20,13 @@ struct Light
 out vec4 FragColor;
 in vec2 v_UV;
 in vec3 v_Normal;
-in float v_TextureID;
 in vec3 FragPos;
-uniform sampler2D u_Textures[16];
+// TODO: (re-)add textures
+// uniform sampler2D u_Textures[16];
 uniform vec3 viewPos;
 
 #define NUM_LIGHTS 256
+// binding = 0 is not supported on MacOS as it's introduced in OpenGL 4.2
 layout(std140) uniform LightsBlock
 {
     Light lights[NUM_LIGHTS];
@@ -107,7 +108,8 @@ void main()
         }
     }
 
-    int index = int(v_TextureID);
-    vec4 texColor = texture(u_Textures[index], v_UV);
-    FragColor = texColor * vec4(resultColor + ambient, 1.0);
+    // int index = int(v_TextureID);
+    // vec4 texColor = texture(u_Textures[index], v_UV);
+    // FragColor = texColor * vec4(resultColor + ambient, 1.0);
+    FragColor = vec4(resultColor + ambient, 1.0);
 }
