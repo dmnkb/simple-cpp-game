@@ -27,6 +27,8 @@ void Renderer::init()
 {
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
 
+    enableOpenGLDebugOutput();
+
     glClearColor(0.2902f, 0.4196f, 0.9647f, 1.0f);
     glEnable(GL_DEPTH_TEST);
 
@@ -109,9 +111,10 @@ void Renderer::submitLights(const std::vector<Light>& lights)
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
+#define PRINT_ERRORS 1
+
 void Renderer::drawInstanced()
 {
-#define PRINT_ERRORS 1
 
     GLenum error = glGetError();
     for (const auto& [mesh, transforms] : s_Data.meshBatches)
@@ -174,7 +177,7 @@ void Renderer::drawInstanced()
         // Draw the mesh instances
         glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndexCount(), GL_UNSIGNED_INT, nullptr, instanceCount);
 
-#if 0
+#if PRINT_ERRORS
         error = glGetError();
         if (error != GL_NO_ERROR)
         {
@@ -185,5 +188,41 @@ void Renderer::drawInstanced()
         // Unbind mesh and buffers
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         mesh->unbind();
+    }
+}
+
+// Debug callback function for OpenGL errors
+void GLAPIENTRY Renderer::debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
+                                        const GLchar* message, const void* userParam)
+{
+    // Print the error information
+    std::cerr << "OpenGL Debug Message: " << message << std::endl;
+
+    // You can filter the severity if you want to handle it more specifically
+    if (severity == GL_DEBUG_SEVERITY_HIGH)
+    {
+        std::cerr << "High Severity: " << message << std::endl;
+    }
+}
+
+void Renderer::enableOpenGLDebugOutput()
+{
+    // Only enable if OpenGL version supports debugging (4.3+)
+    GLint majorVersion, minorVersion;
+    glGetIntegerv(GL_MAJOR_VERSION, &majorVersion);
+    glGetIntegerv(GL_MINOR_VERSION, &minorVersion);
+
+    // Enable debugging if the OpenGL version is 4.3 or greater
+    if (majorVersion > 4 || (majorVersion == 4 && minorVersion >= 3))
+    {
+        glEnable(GL_DEBUG_OUTPUT);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+        glDebugMessageCallback(debugCallback, nullptr);
+        glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+        std::cout << "OpenGL Debug Output Enabled" << std::endl;
+    }
+    else
+    {
+        std::cout << "OpenGL Debug Output not supported for this context." << std::endl;
     }
 }
