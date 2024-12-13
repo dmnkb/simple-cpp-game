@@ -1,7 +1,6 @@
 #include "Game.h"
 #include "EventManager.h"
 #include "Renderer.h"
-#include "TextureManager.h"
 #include "Window.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -49,7 +48,6 @@ void Game::run()
     // TODO: fill with meaning
     int previousDrawCalls = 0;
     int previousVertexCount = 0;
-    int previousCubeCount = 0;
 
     double fps = 0.0;
 
@@ -77,11 +75,9 @@ void Game::run()
 
         m_scene.update();
 
-        m_Player.update(m_DeltaTime, m_Level);
+        m_Player.update(m_DeltaTime);
 
         m_EventManager.processEvents();
-
-        // m_Level.update();
 
         // Start new ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -96,16 +92,10 @@ void Game::run()
         std::string drawCallsText = "Draw calls: " + std::to_string(previousDrawCalls);
         ImGui::Text("%s", drawCallsText.c_str());
         std::string vertCountText = "Vertices: " + std::to_string(previousVertexCount);
-        ImGui::Text("%s", vertCountText.c_str());
-        std::string cubeCountText = "Cubes: " + std::to_string(previousCubeCount);
-        ImGui::Text("%s", cubeCountText.c_str());
         std::string position = "Position: " + glm::to_string(m_Player.getPosition());
         ImGui::Text("%s", position.c_str());
         std::string roation = "Rotation: " + glm::to_string(m_Player.getRotation());
         ImGui::Text("%s", roation.c_str());
-        std::string numCollisionPars =
-            "Collision pairs checked: " + std::to_string(m_Player.getCollisionPairCheckCount());
-        ImGui::Text("%s", numCollisionPars.c_str());
         ImGui::End();
 
         // Render ImGui

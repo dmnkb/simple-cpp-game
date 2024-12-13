@@ -3,7 +3,6 @@
 #include "AABB.h"
 #include "Camera.h"
 #include "EventManager.h"
-#include "Level.h"
 #include "pch.h"
 #include <glm/glm.hpp>
 
@@ -14,7 +13,7 @@ class Player
 
     void onKeyEvent(Event* event);
     void onMouseMoveEvent(Event* event);
-    void update(double deltaTime, Level& level);
+    void update(double deltaTime);
     bool isKeyPressed(unsigned int key);
 
     glm::vec3 getPosition()
@@ -24,10 +23,6 @@ class Player
     glm::vec2 getRotation()
     {
         return m_Rotation;
-    }
-    int getCollisionPairCheckCount()
-    {
-        return m_collisionPairCheckCount;
     }
 
     void setIsCursorDisabled(bool disabled)
@@ -40,8 +35,6 @@ class Player
     glm::vec3 m_Position = glm::vec3({0, 20, 0});
     glm::vec2 m_Rotation = glm::vec2({45, -20});
     glm::vec3 m_Direction = glm::vec3(0.f);
-    BoundingBox m_boundingBox;
-    bool m_onGround = false;
     float m_verticalVelocity = 0;
 
     // Camera
