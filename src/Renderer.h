@@ -26,6 +26,7 @@ class Renderer
 
     // Setup viewMatrix & viewProjectionMatrix
     static void beginScene(Camera& camera);
+    static void update();
 
     static void submitLights(const std::vector<Light>& lights);
     static void submitRenderable(Renderable renderable);

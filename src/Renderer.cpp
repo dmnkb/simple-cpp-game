@@ -1,7 +1,10 @@
 #include "Renderer.h"
+#include "Shader.h"
 #include "pch.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp>
+
 struct RendererData
 {
     glm::mat4 viewProjectionMatrix;
@@ -12,6 +15,8 @@ struct RendererData
     // A Renderable pool might be more meory efficiant
     std::unordered_map<std::shared_ptr<Mesh>, std::vector<glm::mat4>> meshBatches;
 
+    // TODO: remove later
+    std::unique_ptr<Shader> shader;
     GLuint instanceBuffer;
     GLuint uboLights;
 };
@@ -30,6 +35,10 @@ void Renderer::init()
 
     // Buffer for instanced rendering
     glGenBuffers(1, &s_Data.instanceBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, s_Data.instanceBuffer);
+
+    // FIXME: Temporary shader
+    s_Data.shader = std::make_unique<Shader>("assets/phong.vs", "assets/phong.fs");
 
     // Lighting
     unsigned int NUM_LIGHTS = 256;
@@ -59,6 +68,27 @@ void Renderer::beginScene(Camera& camera)
     s_Data.viewProjectionMatrix = camera.getProjectionMatrix();
 }
 
+void Renderer::update()
+{
+    // FIXME: bind shader per batch
+    s_Data.shader->bind();
+
+    glm::mat4 viewProjection = s_Data.viewProjectionMatrix * s_Data.viewMatrix;
+
+    s_Data.shader->setUniformMatrix4fv("u_ViewProjection", viewProjection);
+    s_Data.shader->setUniform3fv("viewPos", s_Data.camPos);
+
+    // GLint activeAttributes;
+    // glGetProgramiv(s_Data.shader->getProgramID(), GL_ACTIVE_ATTRIBUTES, &activeAttributes);
+    // std::cout << "Active Attributes: " << activeAttributes << std::endl;
+
+    drawInstanced();
+    s_Data.shader->unbind();
+
+    // Clear the mesh batches after drawing
+    s_Data.meshBatches.clear();
+}
+
 void Renderer::submitRenderable(Renderable renderable)
 {
     // TODO: Assert data completeness
@@ -81,8 +111,19 @@ void Renderer::submitLights(const std::vector<Light>& lights)
 
 void Renderer::drawInstanced()
 {
+#define PRINT_ERRORS 1
+
+    GLenum error = glGetError();
     for (const auto& [mesh, transforms] : s_Data.meshBatches)
     {
+        if (!mesh)
+        {
+            std::cerr << "Invalid mesh in batch!" << std::endl;
+        }
+#if PRINT_ERRORS
+        std::cout << "Mesh batch size: " << transforms.size() << std::endl;
+#endif
+
         // Ensure mesh is valid
         if (!mesh || transforms.empty())
             continue;
@@ -91,12 +132,27 @@ void Renderer::drawInstanced()
         size_t instanceCount = transforms.size();
 
         // Bind the mesh (assumes mesh->bind() sets up VAO, VBOs, etc.)
-        mesh->bind();
+        mesh->bind(s_Data.instanceBuffer);
+
+#if PRINT_ERRORS
+        if (error != GL_NO_ERROR)
+        {
+            std::cerr << "OpenGL error (1): " << error << std::endl;
+            error = GL_NO_ERROR;
+        }
+#endif
 
         // Upload instance transforms to the GPU (assumes a buffer is prepared for this)
         // Example: bind and update an instance buffer
-        glBindBuffer(GL_ARRAY_BUFFER, s_Data.instanceBuffer);
         glBufferData(GL_ARRAY_BUFFER, transforms.size() * sizeof(glm::mat4), transforms.data(), GL_DYNAMIC_DRAW);
+
+#if PRINT_ERRORS
+        if (error != GL_NO_ERROR)
+        {
+            std::cerr << "OpenGL error (2): " << error << std::endl;
+            error = GL_NO_ERROR;
+        }
+#endif
 
         // Ensure the instance buffer is associated with a vertex attribute
         // Assuming location 3 is for instance transforms (mat4 uses 4 locations)
@@ -107,8 +163,24 @@ void Renderer::drawInstanced()
             glVertexAttribDivisor(3 + i, 1); // One instance per transform
         }
 
+#if PRINT_ERRORS
+        if (error != GL_NO_ERROR)
+        {
+            std::cerr << "OpenGL error (3): " << error << std::endl;
+            error = GL_NO_ERROR;
+        }
+#endif
+
         // Draw the mesh instances
         glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndexCount(), GL_UNSIGNED_INT, nullptr, instanceCount);
+
+#if 0
+        error = glGetError();
+        if (error != GL_NO_ERROR)
+        {
+            std::cerr << "OpenGL error (4): " << error << std::endl;
+        }
+#endif
 
         // Unbind mesh and buffers
         glBindBuffer(GL_ARRAY_BUFFER, 0);

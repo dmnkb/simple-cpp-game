@@ -43,8 +43,22 @@ void Mesh::bind(GLuint instanceBuffer)
 {
     glBindVertexArray(m_VertexArray);
 
+    // Check the current VAO binding
+#if 0
+    GLuint currentVAO;
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, (GLint*)&currentVAO);
+    std::cout << "Current VAO: " << currentVAO << std::endl;
+    endif;
+#endif
     // Bind instance buffer and set up attributes
     glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer);
+
+    // Check the current array buffer binding
+#if 0
+    GLuint currentBuffer;
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, (GLint*)&currentBuffer);
+    std::cout << "Current Array Buffer: " << currentBuffer << std::endl;
+#endif
 
     // Instance matrix attributes (column-major)
     for (int i = 0; i < 4; ++i)

@@ -79,6 +79,8 @@ void Game::run()
 
         m_EventManager.processEvents();
 
+        Renderer::update();
+
         // Start new ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
