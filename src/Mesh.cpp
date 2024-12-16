@@ -1,13 +1,5 @@
 #include "Mesh.h"
 #include "pch.h"
-#include <glm/glm.hpp>
-
-struct Vertex
-{
-    glm::vec3 Position;
-    glm::vec2 UV;
-    glm::vec3 Normal;
-};
 
 // Constructor
 Mesh::Mesh(const std::string& modelPath)
@@ -23,17 +15,14 @@ Mesh::Mesh(const std::string& modelPath)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IndexBuffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    const size_t POSITION_SIZE = 3;
-    const size_t UV_SIZE = 2;
-    const size_t STRIDE = (POSITION_SIZE + UV_SIZE) * sizeof(GLfloat);
-
-    // Position attribute
-    glVertexAttribPointer(0, POSITION_SIZE, GL_FLOAT, GL_FALSE, STRIDE, (GLvoid*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Position));
     glEnableVertexAttribArray(0);
 
-    // UV attribute
-    glVertexAttribPointer(1, UV_SIZE, GL_FLOAT, GL_FALSE, STRIDE, (GLvoid*)(3 * sizeof(GLfloat)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, UV));
     glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+    glEnableVertexAttribArray(2);
 
     // Unbind VBO and VAO
     glBindBuffer(GL_ARRAY_BUFFER, 0);

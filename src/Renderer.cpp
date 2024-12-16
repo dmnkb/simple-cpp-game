@@ -35,6 +35,7 @@ struct RendererData
     glm::vec3 camPos;
 
     GLuint instanceBuffer;
+    Light lightArray[256];
     GLuint uboLights;
 
     RenderQueue renderQueue;
@@ -61,14 +62,6 @@ void Renderer::init()
     // Lighting
     unsigned int NUM_LIGHTS = 256;
 
-    // Link the UBO to binding point 0 (match shader layout)
-    // TODO: Cache the block index since the shaders are only available during the update loop
-    // GLuint uboBindingPoint = 0;
-    // GLuint blockIndex = glGetUniformBlockIndex(s_Data.shader->getProgramID(), "LightsBlock");
-    // assert(blockIndex != GL_INVALID_INDEX && "LightsBlock not found in shader!");
-
-    // glUniformBlockBinding(s_Data.shader->getProgramID(), blockIndex, uboBindingPoint);
-
     // Create and bind the Uniform Buffer Object
     glGenBuffers(1, &s_Data.uboLights);
     glBindBuffer(GL_UNIFORM_BUFFER, s_Data.uboLights);
@@ -84,25 +77,12 @@ void Renderer::beginScene(Camera& camera)
 {
     s_Data.viewMatrix = camera.getViewMatrix();
     s_Data.viewProjectionMatrix = camera.getProjectionMatrix();
+    s_Data.camPos = camera.getPosition();
 }
 
 void Renderer::update()
 {
-    // FIXME: bind shader per batch
-    // s_Data.shader->bind();
-
-    // glm::mat4 viewProjection = s_Data.viewProjectionMatrix * s_Data.viewMatrix;
-
-    // s_Data.shader->setUniformMatrix4fv("u_ViewProjection", viewProjection);
-    // s_Data.shader->setUniform3fv("viewPos", s_Data.camPos);
-
-    // GLint activeAttributes;
-    // glGetProgramiv(s_Data.shader->getProgramID(), GL_ACTIVE_ATTRIBUTES, &activeAttributes);
-    // std::cout << "Active Attributes: " << activeAttributes << std::endl;
-
     draw();
-    // drawInstanced();
-    // s_Data.shader->unbind();
 
     // Clear the mesh batches after drawing
     s_Data.renderQueue.opaque.clear();
@@ -111,22 +91,24 @@ void Renderer::update()
 
 void Renderer::submitRenderable(Renderable renderable)
 {
-    // TODO: Assert data completeness
+    if (!renderable.mesh || !renderable.shader)
+    {
+        if (!renderable.mesh)
+            std::cerr << "Invalid mesh in batch!" << std::endl;
+        if (!renderable.shader)
+            std::cerr << "Invalid shader in batch!" << std::endl;
+        return;
+    }
+
     s_Data.renderQueue.opaque[renderable.shader][renderable.mesh].push_back(renderable.transform);
 }
 
 void Renderer::submitLights(const std::vector<Light>& lights)
 {
     const unsigned int lightCount = lights.size();
-    Light lightArray[lightCount];
 
-    // Copy data from the vector to the array
     for (int i = 0; i < lightCount; i++)
-        lightArray[i] = lights[i];
-
-    glBindBuffer(GL_UNIFORM_BUFFER, s_Data.uboLights);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(lightArray), lightArray);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        s_Data.lightArray[i] = lights[i];
 }
 
 void Renderer::draw()
@@ -134,33 +116,34 @@ void Renderer::draw()
     for (const auto& [shader, meshMap] : s_Data.renderQueue.opaque)
     {
         shader->bind();
-        // Set view and projection matrices
-        glm::mat4 projectionMatrix = s_Data.viewProjectionMatrix;
-        glm::mat4 viewMatrix = s_Data.viewMatrix;
-        glm::mat4 viewProjectionMatrix = projectionMatrix * viewMatrix;
+
+        glm::mat4 viewProjectionMatrix = s_Data.viewProjectionMatrix * s_Data.viewMatrix;
 
         shader->setUniformMatrix4fv("u_ViewProjection", viewProjectionMatrix);
+        shader->setUniform3fv("viewPos", s_Data.camPos);
+
+        GLuint uboBindingPoint = 0;
+        GLuint blockIndex = glGetUniformBlockIndex(shader->getProgramID(), "LightsBlock");
+        assert(blockIndex != GL_INVALID_INDEX && "LightsBlock not found in shader!");
+
+        glUniformBlockBinding(shader->getProgramID(), blockIndex, uboBindingPoint);
+        glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, s_Data.uboLights);
+
+        glBindBuffer(GL_UNIFORM_BUFFER, s_Data.uboLights);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(s_Data.lightArray), s_Data.lightArray);
 
         for (const auto& [mesh, transforms] : meshMap)
         {
             mesh->bind(s_Data.instanceBuffer);
             for (const auto& transform : transforms)
             {
-                if (!mesh || !shader || transforms.empty())
-                {
-                    if (!mesh)
-                        std::cerr << "Invalid mesh in batch!" << std::endl;
-                    if (!shader)
-                        std::cerr << "Invalid shader in batch!" << std::endl;
-                    continue;
-                }
-
                 shader->setUniformMatrix4fv("u_Transform", transform);
-
                 glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
             }
             mesh->unbind();
         }
+
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
         shader->unbind();
     }
 }
