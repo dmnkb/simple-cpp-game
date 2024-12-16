@@ -9,8 +9,14 @@ Scene::Scene()
     auto shader = std::make_shared<Shader>("assets/phong.vs", "assets/phong.fs");
     auto texture = TextureManager::loadTexture("assets/wall.png");
 
-    m_meshSceneNodes.emplace_back(
-        std::make_unique<MeshSceneNode>(mesh, "MeshSceneNode Name", nullptr, shader, texture));
+    auto sceneNode = std::make_unique<MeshSceneNode>(mesh, "MeshSceneNode Name", nullptr, shader, texture);
+    sceneNode->setPosition(glm::vec3(0, 0, 0));
+
+    auto sceneNode2 = std::make_unique<MeshSceneNode>(mesh, "MeshSceneNode Name", nullptr, shader, texture);
+    sceneNode2->setPosition(glm::vec3(3, 0, 0));
+
+    m_meshSceneNodes.emplace_back(std::move(sceneNode));
+    m_meshSceneNodes.emplace_back(std::move(sceneNode2));
 
     // m_lights.push_back({
     //     glm::vec3(80, 20, 50), // Position

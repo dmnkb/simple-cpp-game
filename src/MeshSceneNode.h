@@ -26,8 +26,4 @@ class MeshSceneNode : public SceneNode
     std::shared_ptr<Mesh> m_mesh;
     std::shared_ptr<Shader> m_shader;
     Texture m_texture;
-
-    glm::vec3 m_localScale = glm::vec3(1.0f);
-    glm::vec3 m_localRot = glm::vec3(1.0f);
-    glm::vec3 m_localPos = glm::vec3(1.0f);
 };

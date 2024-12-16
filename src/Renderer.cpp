@@ -5,20 +5,39 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 
+/**
+ * transparent
+ * L    Material
+ *      L   Mesh (sorted from far to near)
+ *          L vector<glm::mat4>
+ * opaque
+ * L    Material
+ *      L   Mesh (sorted from far to near)
+ *          L vector<glm::mat4>
+ */
+struct RenderQueue
+{
+    // clang-format off
+    std::unordered_map<std::shared_ptr<Shader>, 
+        std::unordered_map<std::shared_ptr<Mesh>, 
+            std::vector<glm::mat4>>> transparent;
+            
+    std::unordered_map<std::shared_ptr<Shader>, 
+        std::unordered_map<std::shared_ptr<Mesh>, 
+            std::vector<glm::mat4>>> opaque;
+    // clang-format on
+};
+
 struct RendererData
 {
     glm::mat4 viewProjectionMatrix;
     glm::mat4 viewMatrix;
     glm::vec3 camPos;
 
-    // TODO: Consider a pair of Mesh and Material as hash. Transforms should be sorted from far to near
-    // A Renderable pool might be more meory efficiant
-    std::unordered_map<std::shared_ptr<Mesh>, std::vector<glm::mat4>> meshBatches;
-
-    // TODO: remove later
-    std::unique_ptr<Shader> shader;
     GLuint instanceBuffer;
     GLuint uboLights;
+
+    RenderQueue renderQueue;
 };
 
 static RendererData s_Data;
@@ -38,9 +57,6 @@ void Renderer::init()
     // Buffer for instanced rendering
     glGenBuffers(1, &s_Data.instanceBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, s_Data.instanceBuffer);
-
-    // FIXME: Temporary shader
-    s_Data.shader = std::make_unique<Shader>("assets/phong.vs", "assets/phong.fs");
 
     // Lighting
     unsigned int NUM_LIGHTS = 256;
@@ -73,28 +89,30 @@ void Renderer::beginScene(Camera& camera)
 void Renderer::update()
 {
     // FIXME: bind shader per batch
-    s_Data.shader->bind();
+    // s_Data.shader->bind();
 
-    glm::mat4 viewProjection = s_Data.viewProjectionMatrix * s_Data.viewMatrix;
+    // glm::mat4 viewProjection = s_Data.viewProjectionMatrix * s_Data.viewMatrix;
 
-    s_Data.shader->setUniformMatrix4fv("u_ViewProjection", viewProjection);
-    s_Data.shader->setUniform3fv("viewPos", s_Data.camPos);
+    // s_Data.shader->setUniformMatrix4fv("u_ViewProjection", viewProjection);
+    // s_Data.shader->setUniform3fv("viewPos", s_Data.camPos);
 
     // GLint activeAttributes;
     // glGetProgramiv(s_Data.shader->getProgramID(), GL_ACTIVE_ATTRIBUTES, &activeAttributes);
     // std::cout << "Active Attributes: " << activeAttributes << std::endl;
 
-    drawInstanced();
-    s_Data.shader->unbind();
+    draw();
+    // drawInstanced();
+    // s_Data.shader->unbind();
 
     // Clear the mesh batches after drawing
-    s_Data.meshBatches.clear();
+    s_Data.renderQueue.opaque.clear();
+    s_Data.renderQueue.transparent.clear();
 }
 
 void Renderer::submitRenderable(Renderable renderable)
 {
     // TODO: Assert data completeness
-    s_Data.meshBatches[renderable.mesh].push_back(renderable.transform);
+    s_Data.renderQueue.opaque[renderable.shader][renderable.mesh].push_back(renderable.transform);
 }
 
 void Renderer::submitLights(const std::vector<Light>& lights)
@@ -111,84 +129,120 @@ void Renderer::submitLights(const std::vector<Light>& lights)
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
+void Renderer::draw()
+{
+    for (const auto& [shader, meshMap] : s_Data.renderQueue.opaque)
+    {
+        shader->bind();
+        // Set view and projection matrices
+        glm::mat4 projectionMatrix = s_Data.viewProjectionMatrix;
+        glm::mat4 viewMatrix = s_Data.viewMatrix;
+        glm::mat4 viewProjectionMatrix = projectionMatrix * viewMatrix;
+
+        shader->setUniformMatrix4fv("u_ViewProjection", viewProjectionMatrix);
+
+        for (const auto& [mesh, transforms] : meshMap)
+        {
+            mesh->bind(s_Data.instanceBuffer);
+            for (const auto& transform : transforms)
+            {
+                if (!mesh || !shader || transforms.empty())
+                {
+                    if (!mesh)
+                        std::cerr << "Invalid mesh in batch!" << std::endl;
+                    if (!shader)
+                        std::cerr << "Invalid shader in batch!" << std::endl;
+                    continue;
+                }
+
+                shader->setUniformMatrix4fv("u_Transform", transform);
+
+                glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+            }
+            mesh->unbind();
+        }
+        shader->unbind();
+    }
+}
+
 #define PRINT_ERRORS 1
 
 void Renderer::drawInstanced()
 {
 
-    GLenum error = glGetError();
-    for (const auto& [mesh, transforms] : s_Data.meshBatches)
-    {
-        if (!mesh)
-        {
-            std::cerr << "Invalid mesh in batch!" << std::endl;
-        }
-#if PRINT_ERRORS
-        std::cout << "Mesh batch size: " << transforms.size() << std::endl;
-#endif
+    //     GLenum error = glGetError();
+    //     for (const auto& [mesh, transforms] : s_Data.renderQueue)
+    //     {
+    //         if (!mesh)
+    //         {
+    //             std::cerr << "Invalid mesh in batch!" << std::endl;
+    //         }
+    // #if PRINT_ERRORS
+    //         std::cout << "Mesh batch size: " << transforms.size() << std::endl;
+    // #endif
 
-        // Ensure mesh is valid
-        if (!mesh || transforms.empty())
-            continue;
+    //         // Ensure mesh is valid
+    //         if (!mesh || transforms.empty())
+    //             continue;
 
-        // The number of instances to render is the size of the transforms vector
-        size_t instanceCount = transforms.size();
+    //         // The number of instances to render is the size of the transforms vector
+    //         size_t instanceCount = transforms.size();
 
-        // Bind the mesh (assumes mesh->bind() sets up VAO, VBOs, etc.)
-        mesh->bind(s_Data.instanceBuffer);
+    //         // Bind the mesh (assumes mesh->bind() sets up VAO, VBOs, etc.)
+    //         mesh->bind(s_Data.instanceBuffer);
 
-#if PRINT_ERRORS
-        if (error != GL_NO_ERROR)
-        {
-            std::cerr << "OpenGL error (1): " << error << std::endl;
-            error = GL_NO_ERROR;
-        }
-#endif
+    // #if PRINT_ERRORS
+    //         if (error != GL_NO_ERROR)
+    //         {
+    //             std::cerr << "OpenGL error (1): " << error << std::endl;
+    //             error = GL_NO_ERROR;
+    //         }
+    // #endif
 
-        // Upload instance transforms to the GPU (assumes a buffer is prepared for this)
-        // Example: bind and update an instance buffer
-        glBufferData(GL_ARRAY_BUFFER, transforms.size() * sizeof(glm::mat4), transforms.data(), GL_DYNAMIC_DRAW);
+    //         // Upload instance transforms to the GPU (assumes a buffer is prepared for this)
+    //         // Example: bind and update an instance buffer
+    //         glBufferData(GL_ARRAY_BUFFER, transforms.size() * sizeof(glm::mat4), transforms.data(), GL_DYNAMIC_DRAW);
 
-#if PRINT_ERRORS
-        if (error != GL_NO_ERROR)
-        {
-            std::cerr << "OpenGL error (2): " << error << std::endl;
-            error = GL_NO_ERROR;
-        }
-#endif
+    // #if PRINT_ERRORS
+    //         if (error != GL_NO_ERROR)
+    //         {
+    //             std::cerr << "OpenGL error (2): " << error << std::endl;
+    //             error = GL_NO_ERROR;
+    //         }
+    // #endif
 
-        // Ensure the instance buffer is associated with a vertex attribute
-        // Assuming location 3 is for instance transforms (mat4 uses 4 locations)
-        for (int i = 0; i < 4; ++i)
-        {
-            glEnableVertexAttribArray(3 + i);
-            glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4) * i));
-            glVertexAttribDivisor(3 + i, 1); // One instance per transform
-        }
+    //         // Ensure the instance buffer is associated with a vertex attribute
+    //         // Assuming location 3 is for instance transforms (mat4 uses 4 locations)
+    //         for (int i = 0; i < 4; ++i)
+    //         {
+    //             glEnableVertexAttribArray(3 + i);
+    //             glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4) *
+    //             i)); glVertexAttribDivisor(3 + i, 1); // One instance per transform
+    //         }
 
-#if PRINT_ERRORS
-        if (error != GL_NO_ERROR)
-        {
-            std::cerr << "OpenGL error (3): " << error << std::endl;
-            error = GL_NO_ERROR;
-        }
-#endif
+    // #if PRINT_ERRORS
+    //         if (error != GL_NO_ERROR)
+    //         {
+    //             std::cerr << "OpenGL error (3): " << error << std::endl;
+    //             error = GL_NO_ERROR;
+    //         }
+    // #endif
 
-        // Draw the mesh instances
-        glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndexCount(), GL_UNSIGNED_INT, nullptr, instanceCount);
+    //         // Draw the mesh instances
+    //         glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndexCount(), GL_UNSIGNED_INT, nullptr, instanceCount);
 
-#if PRINT_ERRORS
-        error = glGetError();
-        if (error != GL_NO_ERROR)
-        {
-            std::cerr << "OpenGL error (4): " << error << std::endl;
-        }
-#endif
+    // #if PRINT_ERRORS
+    //         error = glGetError();
+    //         if (error != GL_NO_ERROR)
+    //         {
+    //             std::cerr << "OpenGL error (4): " << error << std::endl;
+    //         }
+    // #endif
 
-        // Unbind mesh and buffers
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        mesh->unbind();
-    }
+    //         // Unbind mesh and buffers
+    //         glBindBuffer(GL_ARRAY_BUFFER, 0);
+    //         mesh->unbind();
+    //     }
 }
 
 // Debug callback function for OpenGL errors

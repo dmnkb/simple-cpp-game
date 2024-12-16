@@ -28,9 +28,10 @@ class SceneNode : public std::enable_shared_from_this<SceneNode>
     void setRotation(const glm::vec3& rotation);
     void setScale(const glm::vec3& scale);
 
-  private:
+  protected:
     std::string m_name;
-    glm::vec3 m_position, m_rotation, m_scale = glm::vec3{0.0f};
+    glm::vec3 m_scale = glm::vec3{1.0f};
+    glm::vec3 m_position, m_rotation = glm::vec3{0.0f};
     std::shared_ptr<SceneNode> m_parent = nullptr;
     std::vector<std::unique_ptr<SceneNode>> m_children;
 };

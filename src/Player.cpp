@@ -5,7 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-Player::Player(Camera& camera, EventManager& eventManager) : m_Camera(camera), m_camChange(0, 0)
+Player::Player(Camera& camera, EventManager& eventManager) : m_Camera(camera)
 {
     eventManager.registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
     eventManager.registerListeners(typeid(MouseMoveEvent).name(),

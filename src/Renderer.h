@@ -32,6 +32,7 @@ class Renderer
     static void submitRenderable(Renderable renderable);
 
   private:
+    static void draw();
     static void drawInstanced();
 
     static void GLAPIENTRY debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
