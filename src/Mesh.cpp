@@ -29,8 +29,7 @@ Mesh::Mesh(const std::string& modelPath)
     glBindVertexArray(0);
 }
 
-// Bind with instance buffer
-void Mesh::bind(GLuint instanceBuffer)
+void Mesh::bind()
 {
     glBindVertexArray(m_VertexArray);
 }

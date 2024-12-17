@@ -82,7 +82,7 @@ void Renderer::beginScene(Camera& camera)
 
 void Renderer::update()
 {
-    draw();
+    drawQueue();
 
     // Clear the mesh batches after drawing
     s_Data.renderQueue.opaque.clear();
@@ -111,7 +111,40 @@ void Renderer::submitLights(const std::vector<Light>& lights)
         s_Data.lightArray[i] = lights[i];
 }
 
-void Renderer::draw()
+void Renderer::bindInstanceData(const std::vector<glm::mat4>& transforms)
+{
+    // Bind the instance buffer and upload transforms
+    glBindBuffer(GL_ARRAY_BUFFER, s_Data.instanceBuffer);
+
+    // Upload instance transforms to the buffer
+    glBufferData(GL_ARRAY_BUFFER, transforms.size() * sizeof(glm::mat4), transforms.data(), GL_DYNAMIC_DRAW);
+
+    // Set up vertex attribute pointers for instance transforms
+    // Enable attribute pointers for the mat4
+    GLsizei vec4Size = sizeof(glm::vec4);
+    for (int i = 0; i < 4; ++i)
+    {
+        glEnableVertexAttribArray(3 + i); // 3, 4, 5, 6 are the locations
+        glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(i * vec4Size));
+        glVertexAttribDivisor(3 + i, 1); // One mat4 per instance
+    }
+}
+
+void Renderer::unbindInstancBuffer()
+{
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void Renderer::drawBatch(const std::shared_ptr<Mesh>& mesh, const std::vector<glm::mat4>& transforms)
+{
+    mesh->bind();
+    bindInstanceData(transforms);
+    glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndexCount(), GL_UNSIGNED_INT, nullptr, transforms.size());
+    unbindInstancBuffer();
+    mesh->unbind();
+}
+
+void Renderer::drawQueue()
 {
     for (const auto& [shader, meshMap] : s_Data.renderQueue.opaque)
     {
@@ -134,13 +167,7 @@ void Renderer::draw()
 
         for (const auto& [mesh, transforms] : meshMap)
         {
-            mesh->bind(s_Data.instanceBuffer);
-            for (const auto& transform : transforms)
-            {
-                shader->setUniformMatrix4fv("u_Transform", transform);
-                glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-            }
-            mesh->unbind();
+            drawBatch(mesh, transforms);
         }
 
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -150,92 +177,10 @@ void Renderer::draw()
 
 #define PRINT_ERRORS 1
 
-void Renderer::drawInstanced()
-{
-
-    //     GLenum error = glGetError();
-    //     for (const auto& [mesh, transforms] : s_Data.renderQueue)
-    //     {
-    //         if (!mesh)
-    //         {
-    //             std::cerr << "Invalid mesh in batch!" << std::endl;
-    //         }
-    // #if PRINT_ERRORS
-    //         std::cout << "Mesh batch size: " << transforms.size() << std::endl;
-    // #endif
-
-    //         // Ensure mesh is valid
-    //         if (!mesh || transforms.empty())
-    //             continue;
-
-    //         // The number of instances to render is the size of the transforms vector
-    //         size_t instanceCount = transforms.size();
-
-    //         // Bind the mesh (assumes mesh->bind() sets up VAO, VBOs, etc.)
-    //         mesh->bind(s_Data.instanceBuffer);
-
-    // #if PRINT_ERRORS
-    //         if (error != GL_NO_ERROR)
-    //         {
-    //             std::cerr << "OpenGL error (1): " << error << std::endl;
-    //             error = GL_NO_ERROR;
-    //         }
-    // #endif
-
-    //         // Upload instance transforms to the GPU (assumes a buffer is prepared for this)
-    //         // Example: bind and update an instance buffer
-    //         glBufferData(GL_ARRAY_BUFFER, transforms.size() * sizeof(glm::mat4), transforms.data(), GL_DYNAMIC_DRAW);
-
-    // #if PRINT_ERRORS
-    //         if (error != GL_NO_ERROR)
-    //         {
-    //             std::cerr << "OpenGL error (2): " << error << std::endl;
-    //             error = GL_NO_ERROR;
-    //         }
-    // #endif
-
-    //         // Ensure the instance buffer is associated with a vertex attribute
-    //         // Assuming location 3 is for instance transforms (mat4 uses 4 locations)
-    //         for (int i = 0; i < 4; ++i)
-    //         {
-    //             glEnableVertexAttribArray(3 + i);
-    //             glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4) *
-    //             i)); glVertexAttribDivisor(3 + i, 1); // One instance per transform
-    //         }
-
-    // #if PRINT_ERRORS
-    //         if (error != GL_NO_ERROR)
-    //         {
-    //             std::cerr << "OpenGL error (3): " << error << std::endl;
-    //             error = GL_NO_ERROR;
-    //         }
-    // #endif
-
-    //         // Draw the mesh instances
-    //         glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndexCount(), GL_UNSIGNED_INT, nullptr, instanceCount);
-
-    // #if PRINT_ERRORS
-    //         error = glGetError();
-    //         if (error != GL_NO_ERROR)
-    //         {
-    //             std::cerr << "OpenGL error (4): " << error << std::endl;
-    //         }
-    // #endif
-
-    //         // Unbind mesh and buffers
-    //         glBindBuffer(GL_ARRAY_BUFFER, 0);
-    //         mesh->unbind();
-    //     }
-}
-
-// Debug callback function for OpenGL errors
 void GLAPIENTRY Renderer::debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
                                         const GLchar* message, const void* userParam)
 {
-    // Print the error information
     std::cerr << "OpenGL Debug Message: " << message << std::endl;
-
-    // You can filter the severity if you want to handle it more specifically
     if (severity == GL_DEBUG_SEVERITY_HIGH)
     {
         std::cerr << "High Severity: " << message << std::endl;
@@ -244,12 +189,12 @@ void GLAPIENTRY Renderer::debugCallback(GLenum source, GLenum type, GLuint id, G
 
 void Renderer::enableOpenGLDebugOutput()
 {
-    // Only enable if OpenGL version supports debugging (4.3+)
+
     GLint majorVersion, minorVersion;
     glGetIntegerv(GL_MAJOR_VERSION, &majorVersion);
     glGetIntegerv(GL_MINOR_VERSION, &minorVersion);
 
-    // Enable debugging if the OpenGL version is 4.3 or greater
+    // glDebugMessageCallback is only supported after OpoenGL V.4.3 (So not on MacOS)
     if (majorVersion > 4 || (majorVersion == 4 && minorVersion >= 3))
     {
         glEnable(GL_DEBUG_OUTPUT);

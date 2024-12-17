@@ -32,8 +32,10 @@ class Renderer
     static void submitRenderable(Renderable renderable);
 
   private:
-    static void draw();
-    static void drawInstanced();
+    static void drawQueue();
+    static void drawBatch(const std::shared_ptr<Mesh>& mesh, const std::vector<glm::mat4>& transforms);
+    static void bindInstanceData(const std::vector<glm::mat4>& transforms);
+    static void unbindInstancBuffer();
 
     static void GLAPIENTRY debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
                                          const GLchar* message, const void* userParam);

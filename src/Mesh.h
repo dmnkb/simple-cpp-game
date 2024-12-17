@@ -65,7 +65,7 @@ class Mesh
     Mesh(const std::string& modelPath = "");
     ~Mesh();
 
-    void bind(GLuint instanceBuffer = 0);
+    void bind();
     void unbind();
     GLsizei getIndexCount() const;
 

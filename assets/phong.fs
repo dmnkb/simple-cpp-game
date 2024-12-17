@@ -20,9 +20,8 @@ struct Light
 out vec4 FragColor;
 in vec2 v_UV;
 in vec3 v_Normal;
-in float v_TextureID;
-in vec3 FragPos; // Now contains world-space position
-uniform sampler2D u_Textures[16];
+in vec3 FragPos;
+uniform sampler2D u_Texture;
 uniform vec3 viewPos;
 
 #define NUM_LIGHTS 256
@@ -89,7 +88,6 @@ void main()
     vec3 ambient = vec3(0.5);
     vec3 resultColor = vec3(0.0);
 
-    // Use transformed FragPos (world space) for lighting
     for (int i = 0; i < NUM_LIGHTS; i++)
     {
         vec3 lightPos = lights[i].position;
@@ -108,7 +106,6 @@ void main()
         }
     }
 
-    int index = int(v_TextureID);
-    vec4 texColor = texture(u_Textures[index], v_UV);
+    vec4 texColor = texture(u_Texture, v_UV);
     FragColor = texColor * vec4(resultColor + ambient, 1.0);
 }
