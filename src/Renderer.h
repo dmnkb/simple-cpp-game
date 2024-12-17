@@ -8,9 +8,7 @@
 #define MAX_MESH_COUNT 256
 #define MAX_TRANSFORMS_PER_MESH 256
 
-/**
- * An atomic, stateless POD (plain old data) that contains mesh, material and transform.
- */
+// An atomic, stateless POD (plain old data) that contains mesh, material and transform.
 struct Renderable
 {
     std::shared_ptr<Mesh> mesh; // Geometry data
@@ -19,6 +17,46 @@ struct Renderable
     glm::mat4 transform;
 };
 
+/**
+ * transparent
+ * L    Material
+ *      L   Mesh (sorted from far to near)
+ *          L vector<glm::mat4>
+ * opaque
+ * L    Material
+ *      L   Mesh (sorted from far to near)
+ *          L vector<glm::mat4>
+ */
+struct RenderQueue
+{
+    // clang-format off
+    std::unordered_map<std::shared_ptr<Shader>, 
+        std::unordered_map<std::shared_ptr<Mesh>, 
+            std::vector<glm::mat4>>> transparent;
+            
+    std::unordered_map<std::shared_ptr<Shader>, 
+        std::unordered_map<std::shared_ptr<Mesh>, 
+            std::vector<glm::mat4>>> opaque;
+    // clang-format on
+};
+
+struct RendererData
+{
+    glm::mat4 viewProjectionMatrix;
+    glm::mat4 viewMatrix;
+    glm::vec3 camPos;
+
+    GLuint instanceBuffer;
+    Light lightArray[256];
+    GLuint uboLights;
+
+    RenderQueue renderQueue;
+};
+
+struct RenderStats
+{
+    int drawCallCount = 0;
+};
 class Renderer
 {
   public:
@@ -26,10 +64,13 @@ class Renderer
 
     // Setup viewMatrix & viewProjectionMatrix
     static void beginScene(Camera& camera);
-    static void update();
+    static void update(const glm::vec2& windowDimensions);
 
     static void submitLights(const std::vector<Light>& lights);
     static void submitRenderable(Renderable renderable);
+
+    const static RenderStats& getStats();
+    const static void resetStats();
 
   private:
     static void drawQueue();

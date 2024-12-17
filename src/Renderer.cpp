@@ -5,43 +5,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 
-/**
- * transparent
- * L    Material
- *      L   Mesh (sorted from far to near)
- *          L vector<glm::mat4>
- * opaque
- * L    Material
- *      L   Mesh (sorted from far to near)
- *          L vector<glm::mat4>
- */
-struct RenderQueue
-{
-    // clang-format off
-    std::unordered_map<std::shared_ptr<Shader>, 
-        std::unordered_map<std::shared_ptr<Mesh>, 
-            std::vector<glm::mat4>>> transparent;
-            
-    std::unordered_map<std::shared_ptr<Shader>, 
-        std::unordered_map<std::shared_ptr<Mesh>, 
-            std::vector<glm::mat4>>> opaque;
-    // clang-format on
-};
-
-struct RendererData
-{
-    glm::mat4 viewProjectionMatrix;
-    glm::mat4 viewMatrix;
-    glm::vec3 camPos;
-
-    GLuint instanceBuffer;
-    Light lightArray[256];
-    GLuint uboLights;
-
-    RenderQueue renderQueue;
-};
-
 static RendererData s_Data;
+static RenderStats s_Stats;
 
 void Renderer::init()
 {
@@ -80,11 +45,13 @@ void Renderer::beginScene(Camera& camera)
     s_Data.camPos = camera.getPosition();
 }
 
-void Renderer::update()
+void Renderer::update(const glm::vec2& windowDimensions)
 {
+    glViewport(0, 0, windowDimensions.x, windowDimensions.y);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     drawQueue();
 
-    // Clear the mesh batches after drawing
     s_Data.renderQueue.opaque.clear();
     s_Data.renderQueue.transparent.clear();
 }
@@ -137,6 +104,8 @@ void Renderer::unbindInstancBuffer()
 
 void Renderer::drawBatch(const std::shared_ptr<Mesh>& mesh, const std::vector<glm::mat4>& transforms)
 {
+    s_Stats.drawCallCount++;
+
     mesh->bind();
     bindInstanceData(transforms);
     glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndexCount(), GL_UNSIGNED_INT, nullptr, transforms.size());
@@ -175,7 +144,15 @@ void Renderer::drawQueue()
     }
 }
 
-#define PRINT_ERRORS 1
+const RenderStats& Renderer::getStats()
+{
+    return s_Stats;
+}
+
+const void Renderer::resetStats()
+{
+    s_Stats.drawCallCount = 0;
+}
 
 void GLAPIENTRY Renderer::debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
                                         const GLchar* message, const void* userParam)

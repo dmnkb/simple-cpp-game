@@ -3,7 +3,9 @@
 #include "Renderer.h"
 #include "TextureManager.h"
 
-Scene::Scene()
+static SceneData s_sceneData;
+
+void Scene::init()
 {
     auto mesh = std::make_shared<Mesh>("my/unused/model/path/model.glb");
     auto shader = std::make_shared<Shader>("assets/phong.vs", "assets/phong.fs");
@@ -16,10 +18,10 @@ Scene::Scene()
     auto sceneNode2 = std::make_unique<MeshSceneNode>(mesh, "MeshSceneNode Name", nullptr, shader, texture);
     sceneNode2->setPosition(glm::vec3(3, 0, 0));
 
-    m_meshSceneNodes.emplace_back(std::move(sceneNode));
-    m_meshSceneNodes.emplace_back(std::move(sceneNode2));
+    s_sceneData.m_meshSceneNodes.emplace_back(std::move(sceneNode));
+    s_sceneData.m_meshSceneNodes.emplace_back(std::move(sceneNode2));
 
-    m_lights.push_back({
+    s_sceneData.m_lights.push_back({
         glm::vec3(80, 20, 50), // Position
         0.0f,                  // Padding
         glm::vec3(1, 0, 0),    // Color: red
@@ -32,7 +34,7 @@ Scene::Scene()
         0.0f,                  // Padding
     });
 
-    m_lights.push_back({
+    s_sceneData.m_lights.push_back({
         glm::vec3(35, 15, 76),  // Position
         0.0f,                   // Padding
         glm::vec3(0, 1, 0),     // Color: green
@@ -45,7 +47,7 @@ Scene::Scene()
         0.0f,                   // Padding
     });
 
-    m_lights.push_back({
+    s_sceneData.m_lights.push_back({
         glm::vec3(35, 15, 34),  // Position
         0.0f,                   // Padding
         glm::vec3(0, 0, 1),     // Color: blue
@@ -58,7 +60,7 @@ Scene::Scene()
         0.0f,                   // Padding
     });
 
-    m_lights.push_back({
+    s_sceneData.m_lights.push_back({
         glm::vec3(50, 15, 50),   // Position
         0.0f,                    // Padding
         glm::vec3(1, 0, 1),      // Color: purple
@@ -80,12 +82,12 @@ void Scene::update()
 
 void Scene::submitLights()
 {
-    Renderer::submitLights(m_lights);
+    Renderer::submitLights(s_sceneData.m_lights);
 }
 
 void Scene::submitMeshSceneNodes()
 {
-    for (const auto& node : m_meshSceneNodes)
+    for (const auto& node : s_sceneData.m_meshSceneNodes)
     {
         Renderer::submitRenderable(node->prepareRenderable());
     }
