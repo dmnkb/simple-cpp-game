@@ -2,7 +2,7 @@
 
 #include "EventManager.h"
 #include "pch.h"
-// include order matters here
+// DON'T CHANGE – INCLUDE ORDER MATTERS HERE
 // clang-format off
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -17,6 +17,7 @@ struct WindowProps
     GLFWwindow* share;
 };
 
+// TODO: Should be static to enforce implicit singleton pattern
 class Window
 {
   public:

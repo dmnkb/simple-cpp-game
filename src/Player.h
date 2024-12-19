@@ -3,7 +3,6 @@
 #include "AABB.h"
 #include "Camera.h"
 #include "EventManager.h"
-#include "Level.h"
 #include "pch.h"
 #include <glm/glm.hpp>
 
@@ -14,7 +13,7 @@ class Player
 
     void onKeyEvent(Event* event);
     void onMouseMoveEvent(Event* event);
-    void update(double deltaTime, Level& level);
+    void update(double deltaTime);
     bool isKeyPressed(unsigned int key);
 
     glm::vec3 getPosition()
@@ -25,10 +24,6 @@ class Player
     {
         return m_Rotation;
     }
-    int getCollisionPairCheckCount()
-    {
-        return m_collisionPairCheckCount;
-    }
 
     void setIsCursorDisabled(bool disabled)
     {
@@ -37,16 +32,14 @@ class Player
 
   private:
     // Core player attributes
-    glm::vec3 m_Position = glm::vec3({0, 20, 0});
-    glm::vec2 m_Rotation = glm::vec2({45, -20});
+    glm::vec3 m_Position = glm::vec3({-10, 10, -10});
+    glm::vec2 m_Rotation = glm::vec2({45, 0});
     glm::vec3 m_Direction = glm::vec3(0.f);
-    BoundingBox m_boundingBox;
-    bool m_onGround = false;
     float m_verticalVelocity = 0;
 
     // Camera
     Camera& m_Camera;
-    glm::vec2 m_camChange;
+    glm::vec2 m_camChange = glm::vec2(0, 0);
     glm::vec2 m_cursorPositionOld;
     bool m_IsCursorDisabled = true;
 

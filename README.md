@@ -1,28 +1,28 @@
 # Tiny game written in C++ using OpenGL
-I build this game to learn the basics of game development in C++. I aim to adhere to common best practices as I come to understand them. For a first iteration of what could be an actually playable game, I imagine a simple car simulation (using Bullet Physics' raycast vehicle) on a heightmap generated terrain.
+I'm building this game to learn game development in C++ sticking to best practices as I come to understand them. I'm not quite sure what the game might look like yet, as I'm constantly implementing new features based on current interests. I outline the scope of this project below:
 
 ### Roadmap
 - [x] Project setup (CMake, GLFW, GLAD)
-- [x] Batch rendered cubes (To learn about batch rendering)
 - [x] First person controller
 - [x] Dear ImGUI
-- [x] Player has gravity and AABB collision detection
 - [x] Lighting
     - [x] Blinn-Phong lighting model
     - [x] Dynamics amount of lights (using UBO)
-    - [x] Spot lights
-- [ ] Refactor the renderer to become more generic (Introduce Mesh class)
+    - [x] Spotlights
+- [x] Refactor the renderer to become more generic (Introduce Mesh class)
+- [x] Scene graph & scene nodes
+- [x] Instanced rendering
 - [ ] Render pass abstraction
 - [ ] Frame buffer object abstraction
 - [ ] Shadow mapping
 - [ ] Basic deferred rendering
-- [ ] Scene graph & scene nodes
-- [ ] Simple particle system OR grass rendering (To learn about instanced rendering)
+- [ ] Simple particle system OR grass rendering
 - [ ] Integrate Assimp mesh loading
 - [ ] Integrate Bullet Physics
 - [ ] Rendering a heightmap from a texture
 - [ ] Skeletal animation and GPU skinning
-- [ ] Sounds using miniaudio
+- [ ] Audio using [miniaudio](https://github.com/mackron/miniaudio)
+- [ ] UI using [clay](https://github.com/nicbarker/clay)
 
 
 

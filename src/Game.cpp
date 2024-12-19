@@ -1,27 +1,26 @@
 #include "Game.h"
 #include "EventManager.h"
 #include "Renderer.h"
-#include "TextureManager.h"
 #include "Window.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "pch.h"
 #include <GLFW/glfw3.h>
-#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 
-// FIXME: to be updated on window resize
+// TODO: to be updated on window resize
 const int windowWidth = 640;
 const int windowHeigth = 480;
 
 WindowProps windowProps = {windowWidth, windowHeigth, "Simple CPP Game", NULL, NULL};
 CameraProps camProps = {45.0f * (M_PI / 180.0f), ((float)windowWidth / windowHeigth), 0.1f, 1000.0f};
 
-Game::Game() : m_Window(windowProps, m_EventManager), m_Camera(camProps), m_Player(m_Camera, m_EventManager), m_scene()
+Game::Game() : m_Window(windowProps, m_EventManager), m_Camera(camProps), m_Player(m_Camera, m_EventManager)
 {
     Renderer::init();
+    Scene::init();
 
     m_EventManager.registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
 
@@ -45,11 +44,8 @@ Game::~Game()
 
 void Game::run()
 {
-    float i = 0.f;
     int previousDrawCalls = 0;
     int previousVertexCount = 0;
-    int previousCubeCount = 0;
-
     double fps = 0.0;
 
     while (m_Window.isWindowOpen)
@@ -67,21 +63,15 @@ void Game::run()
             m_FrameCount = 0;
         }
 
-        // Clear the frame buffer and depth buffer
-        glViewport(0, 0, m_Window.getFrameBufferDimensions().x, m_Window.getFrameBufferDimensions().y);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         Renderer::beginScene(m_Camera);
 
-        m_scene.update();
+        Scene::update();
 
-        m_Player.update(m_DeltaTime, m_Level);
+        m_Player.update(m_DeltaTime);
 
         m_EventManager.processEvents();
 
-        m_Level.update();
-
-        Renderer::endScene(m_Window.getNativeWindow());
+        Renderer::update(m_Window.getFrameBufferDimensions());
 
         // Start new ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -93,33 +83,21 @@ void Game::run()
         ImGui::Begin("Hello, ImGui!", &open);
         std::string fpsText = "FPS: " + std::to_string(fps);
         ImGui::Text("%s", fpsText.c_str());
-        std::string drawCallsText = "Draw calls: " + std::to_string(previousDrawCalls);
+        std::string drawCallsText = "Draw calls: " + std::to_string(Renderer::getStats().drawCallCount);
         ImGui::Text("%s", drawCallsText.c_str());
-        std::string vertCountText = "Vertices: " + std::to_string(previousVertexCount);
-        ImGui::Text("%s", vertCountText.c_str());
-        std::string cubeCountText = "Cubes: " + std::to_string(previousCubeCount);
-        ImGui::Text("%s", cubeCountText.c_str());
-        std::string position = "Position: " + glm::to_string(m_Player.getPosition());
+        std::string position = "Camera Position: " + glm::to_string(m_Player.getPosition());
         ImGui::Text("%s", position.c_str());
-        std::string roation = "Rotation: " + glm::to_string(m_Player.getRotation());
+        std::string roation = "Camera Rotation: " + glm::to_string(m_Player.getRotation());
         ImGui::Text("%s", roation.c_str());
-        std::string numCollisionPars =
-            "Collision pairs checked: " + std::to_string(m_Player.getCollisionPairCheckCount());
-        ImGui::Text("%s", numCollisionPars.c_str());
         ImGui::End();
 
         // Render ImGui
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        // Swap buffers and poll events
+        // Swap buffers and poll events – TODO: move to Window class
         glfwSwapBuffers(m_Window.getNativeWindow());
         glfwPollEvents();
-
-        // Store the current stats for the next frame
-        previousDrawCalls = Renderer::getStats().drawCalls;
-        previousVertexCount = Renderer::getStats().vertexCount;
-        previousCubeCount = Renderer::getStats().cubeCount;
 
         // Reset stats for the next frame
         Renderer::resetStats();

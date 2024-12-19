@@ -3,6 +3,7 @@
 #include "Event.h"
 #include "pch.h"
 
+// TODO: Should be static to enforce implicit singleton pattern
 class EventManager
 {
   public:

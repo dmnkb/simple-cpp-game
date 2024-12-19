@@ -1,8 +1,6 @@
 #include "SceneNode.h"
 #include "pch.h"
 
-SceneNode::SceneNode(const std::string& name, std::shared_ptr<SceneNode> parent) : m_name(name), m_parent(parent) {}
-
 void SceneNode::addChild(std::unique_ptr<SceneNode> child)
 {
     // `shared_from_this()` enables to get a valid shared_ptr instance to this.
@@ -37,6 +35,14 @@ void SceneNode::setScale(const glm::vec3& scale)
 {
     m_scale = scale;
 }
+
+// TODO: update world transform of this and cascading children
+// void SceneNode::updateWorldTransform(const glm::mat4& parentTransform) {
+//     worldTransform = parentTransform * localTransform;
+//     for (auto& child : children) {
+//         child->updateWorldTransform(worldTransform);
+//     }
+// }
 
 SceneNode::~SceneNode()
 {

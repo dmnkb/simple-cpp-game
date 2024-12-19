@@ -17,7 +17,7 @@
 class SceneNode : public std::enable_shared_from_this<SceneNode>
 {
   public:
-    SceneNode(const std::string& name = "", std::shared_ptr<SceneNode> parent = nullptr);
+    SceneNode(){};
     virtual ~SceneNode();
 
     void addChild(std::unique_ptr<SceneNode> child);
@@ -28,9 +28,9 @@ class SceneNode : public std::enable_shared_from_this<SceneNode>
     void setRotation(const glm::vec3& rotation);
     void setScale(const glm::vec3& scale);
 
-  private:
-    std::string m_name;
-    glm::vec3 m_position, m_rotation, m_scale = glm::vec3{0.0f};
+  protected:
+    glm::vec3 m_scale = glm::vec3{1.0f};
+    glm::vec3 m_position, m_rotation = glm::vec3{0.0f};
     std::shared_ptr<SceneNode> m_parent = nullptr;
     std::vector<std::unique_ptr<SceneNode>> m_children;
 };
