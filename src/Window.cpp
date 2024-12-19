@@ -1,10 +1,10 @@
 #include "Window.h"
 
-Window* Window::instance = nullptr;
+static WindowData s_windowData;
 
-Window::Window(const WindowProps& props) : m_WindowProps(props)
+void Window::init(const WindowProps& props)
 {
-    instance = this;
+    s_windowData.windowProps = props;
 
     glfwSetErrorCallback([](int error, const char* description) { fprintf(stderr, "Error: %s\n", description); });
 
@@ -15,41 +15,60 @@ Window::Window(const WindowProps& props) : m_WindowProps(props)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    m_Window = glfwCreateWindow(props.width, props.height, "Simple CPP Game", NULL, NULL);
+    s_windowData.window = glfwCreateWindow(props.width, props.height, "Simple CPP Game", NULL, NULL);
 
-    if (!m_Window)
+    if (!s_windowData.window)
     {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
 
-    glfwSetKeyCallback(m_Window,
-                       [](GLFWwindow* window, int key, int scancode, int action, int mods)
-                       {
-                           if (instance)
-                               instance->keyCallback(window, key, scancode, action, mods);
-                       });
-    glfwSetCursorPosCallback(m_Window,
-                             [](GLFWwindow* window, double xpos, double ypos)
-                             {
-                                 if (instance)
-                                     instance->mousePosCallback(window, xpos, ypos);
-                             });
-    glfwSetWindowCloseCallback(m_Window, [](GLFWwindow* window) { instance->isWindowOpen = false; });
+    glfwSetKeyCallback(s_windowData.window, keyCallback);
+    glfwSetCursorPosCallback(s_windowData.window, mousePosCallback);
 
-    glfwMakeContextCurrent(m_Window);
+    glfwSetWindowCloseCallback(s_windowData.window, [](GLFWwindow* window) { s_windowData.isWindowOpen = false; });
+
+    glfwMakeContextCurrent(s_windowData.window);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     glfwSwapInterval(1);
 
+    // TODO: Add resize event
+
     int fbWidth, fbHeight = 0;
-    glfwGetFramebufferSize(m_Window, &fbWidth, &fbHeight);
-    m_frameBufferDimensions = glm::vec2(fbWidth, fbHeight);
+    glfwGetFramebufferSize(s_windowData.window, &fbWidth, &fbHeight);
+    s_windowData.frameBufferDimensions = glm::vec2(fbWidth, fbHeight);
+    s_windowData.isWindowOpen = true;
 }
 
-Window::~Window()
+void Window::shutdown()
 {
-    glfwDestroyWindow(m_Window);
+    glfwDestroyWindow(s_windowData.window);
     glfwTerminate();
+}
+
+bool Window::getIsWindowOpen()
+{
+    return s_windowData.isWindowOpen;
+}
+
+void Window::swapBuffers()
+{
+    glfwSwapBuffers(s_windowData.window);
+}
+
+void Window::pollEvents()
+{
+    glfwPollEvents();
+}
+
+GLFWwindow*& Window::getNativeWindow()
+{
+    return s_windowData.window;
+}
+
+glm::vec2 Window::getFrameBufferDimensions()
+{
+    return s_windowData.frameBufferDimensions;
 }
 
 void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -60,19 +79,19 @@ void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, 
 
 void Window::mousePosCallback(GLFWwindow* window, double xpos, double ypos)
 {
-    if (m_FirstMosue)
+    if (s_windowData.firstMosue)
     {
-        m_CursorLastX = static_cast<float>(xpos);
-        m_CursorLastY = static_cast<float>(ypos);
-        m_FirstMosue = false;
+        s_windowData.cursorLastX = static_cast<float>(xpos);
+        s_windowData.cursorLastY = static_cast<float>(ypos);
+        s_windowData.firstMosue = false;
     }
 
-    float xoffset = m_CursorLastX - xpos;
-    float yoffset = m_CursorLastY - ypos;
+    float xoffset = s_windowData.cursorLastX - xpos;
+    float yoffset = s_windowData.cursorLastY - ypos;
 
     MouseMoveEvent* event = new MouseMoveEvent(xoffset, yoffset);
     EventManager::queueEvent(event);
 
-    m_CursorLastX = xpos;
-    m_CursorLastY = ypos;
+    s_windowData.cursorLastX = xpos;
+    s_windowData.cursorLastY = ypos;
 }

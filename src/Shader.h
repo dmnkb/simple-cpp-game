@@ -13,7 +13,6 @@ struct ShaderSource
 class Shader
 {
   public:
-    // TODO: Read in shader file
     Shader(const char* vertexShaderPath, const char* fragmentShaderPath);
     ~Shader();
 

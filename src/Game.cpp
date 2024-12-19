@@ -2,39 +2,28 @@
 #include "EventManager.h"
 #include "Renderer.h"
 #include "Sandbox.h"
+#include "Scene.h"
 #include "Window.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "pch.h"
-#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 
 // TODO: to be updated on window resize
 const int windowWidth = 640;
 const int windowHeigth = 480;
-
-WindowProps windowProps = {windowWidth, windowHeigth, "Simple CPP Game", NULL, NULL};
 CameraProps camProps = {45.0f * (M_PI / 180.0f), ((float)windowWidth / windowHeigth), 0.1f, 1000.0f};
 
-Game::Game() : m_Window(windowProps), m_Camera(camProps), m_Player(m_Camera)
+Game::Game() : m_Camera(camProps), m_Player(m_Camera)
 {
+    WindowProps windowProps = {windowWidth, windowHeigth, "Simple CPP Game", NULL, NULL};
+    Window::init(windowProps);
     initImGui();
     Renderer::init();
     EventManager::registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
     Sandbox::init();
-}
-
-void Game::initImGui()
-{
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    (void)io;
-    ImGui::StyleColorsDark();
-    ImGui_ImplGlfw_InitForOpenGL(m_Window.getNativeWindow(), true);
-    ImGui_ImplOpenGL3_Init("#version 330");
 }
 
 void Game::run()
@@ -43,7 +32,7 @@ void Game::run()
     int previousVertexCount = 0;
     double fps = 0.0;
 
-    while (m_Window.isWindowOpen)
+    while (Window::getIsWindowOpen())
     {
         // Calculate delta time
         static double lastTime = glfwGetTime();
@@ -58,15 +47,12 @@ void Game::run()
             m_FrameCount = 0;
         }
 
-        Renderer::beginScene(m_Camera);
-
-        Scene::update();
-
         m_Player.update(m_DeltaTime);
 
+        Scene::update();
+        Renderer::beginScene(m_Camera);
+        Renderer::update(Window::getFrameBufferDimensions());
         EventManager::processEvents();
-
-        Renderer::update(m_Window.getFrameBufferDimensions());
 
         // Start new ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -90,9 +76,9 @@ void Game::run()
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        // Swap buffers and poll events – TODO: move to Window class
-        glfwSwapBuffers(m_Window.getNativeWindow());
-        glfwPollEvents();
+        // Swap buffers and poll events
+        Window::swapBuffers();
+        Window::pollEvents();
 
         // Reset stats for the next frame
         Renderer::resetStats();
@@ -111,20 +97,20 @@ void Game::onKeyEvent(Event* event)
     // lock cursor
     if (keyEvent->key == GLFW_KEY_ESCAPE && keyEvent->action == GLFW_PRESS)
     {
-        int currentMode = glfwGetInputMode(m_Window.getNativeWindow(), GLFW_CURSOR);
+        int currentMode = glfwGetInputMode(Window::getNativeWindow(), GLFW_CURSOR);
         m_CanDisableCursor = false;
         if (currentMode == GLFW_CURSOR_DISABLED)
         {
-            glfwSetInputMode(m_Window.getNativeWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            glfwSetInputMode(Window::getNativeWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             m_Player.setIsCursorDisabled(true);
 
             int windowWidth, windowHeight;
-            glfwGetWindowSize(m_Window.getNativeWindow(), &windowWidth, &windowHeight);
-            glfwSetCursorPos(m_Window.getNativeWindow(), windowWidth / 2, windowHeight / 2);
+            glfwGetWindowSize(Window::getNativeWindow(), &windowWidth, &windowHeight);
+            glfwSetCursorPos(Window::getNativeWindow(), windowWidth / 2, windowHeight / 2);
         }
         else
         {
-            glfwSetInputMode(m_Window.getNativeWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            glfwSetInputMode(Window::getNativeWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             m_Player.setIsCursorDisabled(false);
         }
     }
@@ -140,5 +126,18 @@ Game::~Game()
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
+    Window::shutdown();
+
     exit(EXIT_SUCCESS);
+}
+
+void Game::initImGui()
+{
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
+    ImGui::StyleColorsDark();
+    ImGui_ImplGlfw_InitForOpenGL(Window::getNativeWindow(), true);
+    ImGui_ImplOpenGL3_Init("#version 330");
 }

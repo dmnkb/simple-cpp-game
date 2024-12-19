@@ -3,9 +3,6 @@
 #include "Camera.h"
 #include "EventManager.h"
 #include "Player.h"
-#include "Renderer.h"
-#include "Scene.h"
-#include "Window.h"
 
 class Game
 {
@@ -19,7 +16,6 @@ class Game
   private:
     void initImGui();
 
-    Window m_Window;
     Camera m_Camera;
     Player m_Player;
 

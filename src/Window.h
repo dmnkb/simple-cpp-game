@@ -17,36 +17,32 @@ struct WindowProps
     GLFWwindow* share;
 };
 
-// TODO: Should be static to enforce implicit singleton pattern
+struct WindowData
+{
+    GLFWwindow* window;
+    WindowProps windowProps;
+    glm::vec2 frameBufferDimensions = glm::vec2(0, 0);
+
+    bool isWindowOpen = false;
+    bool firstMosue = true;
+    float cursorLastX, cursorLastY = 0.f;
+};
+
 class Window
 {
   public:
-    Window(const WindowProps& props);
-    ~Window();
+    static void init(const WindowProps& props);
+    static void shutdown();
+    static bool getIsWindowOpen();
+    static void swapBuffers();
+    static void pollEvents();
 
-    bool isWindowOpen = true;
-
-    GLFWwindow*& getNativeWindow()
-    {
-        return m_Window;
-    }
-
-    glm::vec2 getFrameBufferDimensions()
-    {
-        return m_frameBufferDimensions;
-    }
+    static GLFWwindow*& getNativeWindow();
+    static glm::vec2 getFrameBufferDimensions();
 
   private:
     static Window* instance;
 
-    GLFWwindow* m_Window;
-    WindowProps m_WindowProps;
-
-    glm::vec2 m_frameBufferDimensions = glm::vec2(0, 0);
-
-    // Input
-    bool m_FirstMosue = true;
-    float m_CursorLastX, m_CursorLastY = 0.f;
-    void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-    void mousePosCallback(GLFWwindow* window, double xpos, double ypos);
+    static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    static void mousePosCallback(GLFWwindow* window, double xpos, double ypos);
 };
