@@ -21,7 +21,7 @@ struct WindowProps
 class Window
 {
   public:
-    Window(const WindowProps& props, EventManager& eventManager);
+    Window(const WindowProps& props);
     ~Window();
 
     bool isWindowOpen = true;
@@ -45,7 +45,6 @@ class Window
     glm::vec2 m_frameBufferDimensions = glm::vec2(0, 0);
 
     // Input
-    EventManager& m_EventManager;
     bool m_FirstMosue = true;
     float m_CursorLastX, m_CursorLastY = 0.f;
     void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);

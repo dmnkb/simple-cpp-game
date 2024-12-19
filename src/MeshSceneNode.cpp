@@ -1,7 +1,6 @@
 #include "MeshSceneNode.h"
 #include "pch.h"
 #include <glm/glm.hpp>
-#include <glm/gtx/string_cast.hpp>
 
 MeshSceneNode::MeshSceneNode(std::shared_ptr<Mesh> mesh, std::shared_ptr<Shader> shader, const Texture& texture)
     : SceneNode(), m_mesh(mesh), m_shader(shader), m_texture(texture)

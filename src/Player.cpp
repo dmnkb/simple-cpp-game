@@ -5,11 +5,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-Player::Player(Camera& camera, EventManager& eventManager) : m_Camera(camera)
+Player::Player(Camera& camera) : m_Camera(camera)
 {
-    eventManager.registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
-    eventManager.registerListeners(typeid(MouseMoveEvent).name(),
-                                   [this](Event* event) { this->onMouseMoveEvent(event); });
+    EventManager::registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
+    EventManager::registerListeners(typeid(MouseMoveEvent).name(),
+                                    [this](Event* event) { this->onMouseMoveEvent(event); });
 }
 
 void Player::onKeyEvent(Event* event)

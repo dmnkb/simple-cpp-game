@@ -2,8 +2,7 @@
 
 Window* Window::instance = nullptr;
 
-Window::Window(const WindowProps& props, EventManager& eventManager)
-    : m_WindowProps(props), m_EventManager(eventManager)
+Window::Window(const WindowProps& props) : m_WindowProps(props)
 {
     instance = this;
 
@@ -56,7 +55,7 @@ Window::~Window()
 void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     KeyEvent* event = new KeyEvent(key, action);
-    m_EventManager.queueEvent(event);
+    EventManager::queueEvent(event);
 }
 
 void Window::mousePosCallback(GLFWwindow* window, double xpos, double ypos)
@@ -72,7 +71,7 @@ void Window::mousePosCallback(GLFWwindow* window, double xpos, double ypos)
     float yoffset = m_CursorLastY - ypos;
 
     MouseMoveEvent* event = new MouseMoveEvent(xoffset, yoffset);
-    m_EventManager.queueEvent(event);
+    EventManager::queueEvent(event);
 
     m_CursorLastX = xpos;
     m_CursorLastY = ypos;

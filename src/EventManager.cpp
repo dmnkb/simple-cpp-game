@@ -1,35 +1,37 @@
 #include "EventManager.h"
 #include "pch.h"
 
+static EventData s_eventData;
+
 void EventManager::registerListeners(const std::string& eventType, EventCallback callback)
 {
-    listeners[eventType].push_back(callback);
+    s_eventData.listeners[eventType].push_back(callback);
 }
 
 void EventManager::queueEvent(Event* event)
 {
-    eventQueue.push_back(event);
+    s_eventData.eventQueue.push_back(event);
 }
 
 void EventManager::processEvents()
 {
-    for (auto event : eventQueue)
+    for (auto event : s_eventData.eventQueue)
     {
         dispatchEvent(event);
     }
-    for (auto event : eventQueue)
+    for (auto event : s_eventData.eventQueue)
     {
         delete event;
     }
-    eventQueue.clear();
+    s_eventData.eventQueue.clear();
 }
 
 void EventManager::dispatchEvent(Event* event)
 {
     auto eventType = typeid(*event).name();
-    if (listeners.find(eventType) != listeners.end())
+    if (s_eventData.listeners.find(eventType) != s_eventData.listeners.end())
     {
-        for (auto& listener : listeners[eventType])
+        for (auto& listener : s_eventData.listeners[eventType])
         {
             listener(event);
         }

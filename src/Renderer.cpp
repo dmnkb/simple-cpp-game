@@ -93,6 +93,8 @@ void Renderer::bindInstanceData(const std::vector<glm::mat4>& transforms)
     for (int i = 0; i < 4; ++i)
     {
         glEnableVertexAttribArray(3 + i); // 3, 4, 5, 6 are the locations
+        // glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4),
+        //                       reinterpret_cast<void*>(static_cast<std::uintptr_t>(i * vec4Size)));
         glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(i * vec4Size));
         glVertexAttribDivisor(3 + i, 1); // One mat4 per instance
     }

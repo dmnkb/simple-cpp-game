@@ -9,7 +9,7 @@
 class Player
 {
   public:
-    Player(Camera& camera, EventManager& eventManager);
+    Player(Camera& camera);
 
     void onKeyEvent(Event* event);
     void onMouseMoveEvent(Event* event);

@@ -17,8 +17,9 @@ class Game
     void onKeyEvent(Event* event);
 
   private:
+    void initImGui();
+
     Window m_Window;
-    EventManager m_EventManager;
     Camera m_Camera;
     Player m_Player;
 

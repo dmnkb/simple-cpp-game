@@ -1,6 +1,7 @@
 #include "Game.h"
 #include "EventManager.h"
 #include "Renderer.h"
+#include "Sandbox.h"
 #include "Window.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -17,13 +18,16 @@ const int windowHeigth = 480;
 WindowProps windowProps = {windowWidth, windowHeigth, "Simple CPP Game", NULL, NULL};
 CameraProps camProps = {45.0f * (M_PI / 180.0f), ((float)windowWidth / windowHeigth), 0.1f, 1000.0f};
 
-Game::Game() : m_Window(windowProps, m_EventManager), m_Camera(camProps), m_Player(m_Camera, m_EventManager)
+Game::Game() : m_Window(windowProps), m_Camera(camProps), m_Player(m_Camera)
 {
+    initImGui();
     Renderer::init();
-    Scene::init();
+    EventManager::registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
+    Sandbox::init();
+}
 
-    m_EventManager.registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
-
+void Game::initImGui()
+{
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
@@ -31,15 +35,6 @@ Game::Game() : m_Window(windowProps, m_EventManager), m_Camera(camProps), m_Play
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(m_Window.getNativeWindow(), true);
     ImGui_ImplOpenGL3_Init("#version 330");
-}
-
-Game::~Game()
-{
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
-    exit(EXIT_SUCCESS);
 }
 
 void Game::run()
@@ -69,7 +64,7 @@ void Game::run()
 
         m_Player.update(m_DeltaTime);
 
-        m_EventManager.processEvents();
+        EventManager::processEvents();
 
         Renderer::update(m_Window.getFrameBufferDimensions());
 
@@ -137,4 +132,13 @@ void Game::onKeyEvent(Event* event)
     {
         m_CanDisableCursor = true;
     }
+}
+
+Game::~Game()
+{
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
+    exit(EXIT_SUCCESS);
 }

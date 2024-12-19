@@ -9,8 +9,8 @@ const unsigned int MAX_LIGHTS = 3;
 
 struct SceneData
 {
-    std::vector<std::unique_ptr<LightSceneNode>> m_lightSceneNodes;
-    std::vector<std::unique_ptr<MeshSceneNode>> m_meshSceneNodes;
+    std::vector<std::shared_ptr<LightSceneNode>> lightSceneNodes;
+    std::vector<std::shared_ptr<MeshSceneNode>> meshSceneNodes;
 };
 
 class Scene
@@ -22,8 +22,9 @@ class Scene
      * octrees.
      */
 
-    static void init();
     static void update();
+    static void addMeshSceneNode(const std::shared_ptr<MeshSceneNode>& node);
+    static void addLightSceneNode(const std::shared_ptr<LightSceneNode>& node);
 
   private:
     static void submitLights();

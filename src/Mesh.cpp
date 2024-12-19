@@ -1,7 +1,6 @@
 #include "Mesh.h"
 #include "pch.h"
 
-// Constructor
 Mesh::Mesh(const std::string& modelPath)
 {
     glGenVertexArrays(1, &m_VertexArray);

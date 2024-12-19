@@ -3,21 +3,20 @@
 #include "Event.h"
 #include "pch.h"
 
-// TODO: Should be static to enforce implicit singleton pattern
+using EventCallback = std::function<void(Event*)>;
+struct EventData
+{
+    std::unordered_map<std::string, std::vector<EventCallback>> listeners;
+    std::vector<Event*> eventQueue;
+};
+
 class EventManager
 {
   public:
-    using EventCallback = std::function<void(Event*)>;
-
-    void registerListeners(const std::string& eventType, EventCallback callback);
-
-    void queueEvent(Event* event);
-
-    void processEvents();
+    static void registerListeners(const std::string& eventType, EventCallback callback);
+    static void queueEvent(Event* event);
+    static void processEvents();
 
   private:
-    void dispatchEvent(Event* event);
-
-    std::unordered_map<std::string, std::vector<EventCallback>> listeners;
-    std::vector<Event*> eventQueue;
+    static void dispatchEvent(Event* event);
 };
