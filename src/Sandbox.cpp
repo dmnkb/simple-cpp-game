@@ -21,11 +21,13 @@ void Sandbox::init()
 
     auto sceneNode2 = std::make_shared<MeshSceneNode>(mesh, shader, texture);
     sceneNode2->setPosition(glm::vec3(30, 0, 30));
+    sceneNode2->setName("Test Node");
     Scene::addMeshSceneNode(sceneNode2);
 
     auto light1 = std::make_shared<LightSceneNode>(glm::vec3(80, 20, 50), glm::vec3(1, 0, 0), glm::vec3(-1, -1, 0));
     Scene::addLightSceneNode(light1);
     auto light2 = std::make_shared<LightSceneNode>(glm::vec3(35, 15, 76), glm::vec3(0, 1, 0), glm::vec3(1, -1, -0.3));
+    light2->setName("Green Light");
     Scene::addLightSceneNode(light2);
     auto light3 = std::make_shared<LightSceneNode>(glm::vec3(35, 15, 34), glm::vec3(0, 0, 1), glm::vec3(1, -1, -0.3));
     Scene::addLightSceneNode(light3);
@@ -33,4 +35,23 @@ void Sandbox::init()
     Scene::addLightSceneNode(light4);
 }
 
-void Sandbox::update() {}
+static float s_increment = 0.0f;
+
+void Sandbox::update(double deltaTime)
+{
+    s_increment += 0.5 * deltaTime;
+
+    const auto testNode = Scene::getByName("Test Node");
+    if (testNode && std::holds_alternative<std::shared_ptr<MeshSceneNode>>(*testNode))
+    {
+        const auto node = std::get<std::shared_ptr<MeshSceneNode>>(*testNode);
+        node->setPosition(glm::vec3(30, sin(s_increment) * 10, 30));
+    }
+
+    const auto greenLight = Scene::getByName("Green Light");
+    if (greenLight && std::holds_alternative<std::shared_ptr<LightSceneNode>>(*greenLight))
+    {
+        const auto light = std::get<std::shared_ptr<LightSceneNode>>(*greenLight);
+        light->setPosition(glm::vec3(35 + sin(s_increment) * 10, 15, 76 + cos(s_increment) * 10));
+    }
+}

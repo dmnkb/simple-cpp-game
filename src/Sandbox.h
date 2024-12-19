@@ -9,5 +9,5 @@ class Sandbox
 {
   public:
     static void init();
-    static void update();
+    static void update(double deltaTime);
 };

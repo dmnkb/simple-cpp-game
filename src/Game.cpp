@@ -50,6 +50,7 @@ void Game::run()
         m_Player.update(m_DeltaTime);
 
         Scene::update();
+        Sandbox::update(m_DeltaTime);
         Renderer::beginScene(m_Camera);
         Renderer::update(Window::getFrameBufferDimensions());
         EventManager::processEvents();

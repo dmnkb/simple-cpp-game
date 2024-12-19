@@ -36,6 +36,16 @@ void SceneNode::setScale(const glm::vec3& scale)
     m_scale = scale;
 }
 
+void SceneNode::setName(const std::string& name)
+{
+    m_name = name;
+}
+
+const std::string& SceneNode::getName()
+{
+    return m_name;
+}
+
 // TODO: update world transform of this and cascading children
 // void SceneNode::updateWorldTransform(const glm::mat4& parentTransform) {
 //     worldTransform = parentTransform * localTransform;

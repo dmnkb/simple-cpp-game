@@ -7,6 +7,8 @@
 
 const unsigned int MAX_LIGHTS = 3;
 
+using SceneNodeVariant = std::variant<std::shared_ptr<MeshSceneNode>, std::shared_ptr<LightSceneNode>>;
+
 struct SceneData
 {
     std::vector<std::shared_ptr<LightSceneNode>> lightSceneNodes;
@@ -25,6 +27,8 @@ class Scene
     static void update();
     static void addMeshSceneNode(const std::shared_ptr<MeshSceneNode>& node);
     static void addLightSceneNode(const std::shared_ptr<LightSceneNode>& node);
+
+    static std::optional<SceneNodeVariant> getByName(const std::string& name);
 
   private:
     static void submitLights();
