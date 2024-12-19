@@ -3,9 +3,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 
-MeshSceneNode::MeshSceneNode(std::shared_ptr<Mesh> mesh, const std::string& name, std::shared_ptr<SceneNode> parent,
-                             std::shared_ptr<Shader> shader, const Texture& texture)
-    : SceneNode(name, parent), m_mesh(mesh), m_shader(shader), m_texture(texture)
+MeshSceneNode::MeshSceneNode(std::shared_ptr<Mesh> mesh, std::shared_ptr<Shader> shader, const Texture& texture)
+    : SceneNode(), m_mesh(mesh), m_shader(shader), m_texture(texture)
 {
 }
 

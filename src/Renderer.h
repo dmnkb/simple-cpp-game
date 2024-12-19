@@ -46,11 +46,11 @@ struct RendererData
     glm::mat4 viewMatrix;
     glm::vec3 camPos;
 
-    GLuint instanceBuffer;
-    Light lightArray[256];
-    GLuint uboLights;
-
     RenderQueue renderQueue;
+    GLuint instanceBuffer;
+
+    std::vector<Light> lights[256];
+    GLuint uboLights;
 };
 
 struct RenderStats
@@ -66,8 +66,8 @@ class Renderer
     static void beginScene(Camera& camera);
     static void update(const glm::vec2& windowDimensions);
 
-    static void submitLights(const std::vector<Light>& lights);
-    static void submitRenderable(Renderable renderable);
+    static void submitLight(const Light& lights);
+    static void submitRenderable(const Renderable& renderable);
 
     const static RenderStats& getStats();
     const static void resetStats();

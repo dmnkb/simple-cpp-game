@@ -52,11 +52,15 @@ void Renderer::update(const glm::vec2& windowDimensions)
 
     drawQueue();
 
+    // Reset renderQueue
     s_Data.renderQueue.opaque.clear();
     s_Data.renderQueue.transparent.clear();
+
+    // Reset list of lights
+    s_Data.lights->clear();
 }
 
-void Renderer::submitRenderable(Renderable renderable)
+void Renderer::submitRenderable(const Renderable& renderable)
 {
     if (!renderable.mesh || !renderable.shader)
     {
@@ -70,12 +74,9 @@ void Renderer::submitRenderable(Renderable renderable)
     s_Data.renderQueue.opaque[renderable.shader][renderable.mesh].push_back(renderable.transform);
 }
 
-void Renderer::submitLights(const std::vector<Light>& lights)
+void Renderer::submitLight(const Light& light)
 {
-    const unsigned int lightCount = lights.size();
-
-    for (int i = 0; i < lightCount; i++)
-        s_Data.lightArray[i] = lights[i];
+    s_Data.lights->push_back(light);
 }
 
 void Renderer::bindInstanceData(const std::vector<glm::mat4>& transforms)
@@ -115,6 +116,10 @@ void Renderer::drawBatch(const std::shared_ptr<Mesh>& mesh, const std::vector<gl
 
 void Renderer::drawQueue()
 {
+    Light lightBuffer[256];
+    for (int i = 0; i < s_Data.lights->size(); i++)
+        lightBuffer[i] = (*s_Data.lights)[i];
+
     for (const auto& [shader, meshMap] : s_Data.renderQueue.opaque)
     {
         shader->bind();
@@ -132,7 +137,7 @@ void Renderer::drawQueue()
         glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, s_Data.uboLights);
 
         glBindBuffer(GL_UNIFORM_BUFFER, s_Data.uboLights);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(s_Data.lightArray), s_Data.lightArray);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(lightBuffer), lightBuffer);
 
         for (const auto& [mesh, transforms] : meshMap)
         {

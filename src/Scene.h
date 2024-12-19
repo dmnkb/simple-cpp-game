@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Light.h"
+#include "LightSceneNode.h"
 #include "MeshSceneNode.h"
 #include "pch.h"
 
@@ -8,7 +9,7 @@ const unsigned int MAX_LIGHTS = 3;
 
 struct SceneData
 {
-    std::vector<Light> m_lights;
+    std::vector<std::unique_ptr<LightSceneNode>> m_lightSceneNodes;
     std::vector<std::unique_ptr<MeshSceneNode>> m_meshSceneNodes;
 };
 

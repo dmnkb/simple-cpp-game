@@ -1,8 +1,6 @@
 #include "SceneNode.h"
 #include "pch.h"
 
-SceneNode::SceneNode(const std::string& name, std::shared_ptr<SceneNode> parent) : m_name(name), m_parent(parent) {}
-
 void SceneNode::addChild(std::unique_ptr<SceneNode> child)
 {
     // `shared_from_this()` enables to get a valid shared_ptr instance to this.
