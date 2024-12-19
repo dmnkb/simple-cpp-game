@@ -36,6 +36,14 @@ void SceneNode::setScale(const glm::vec3& scale)
     m_scale = scale;
 }
 
+// TODO: update world transform of this and cascading children
+// void SceneNode::updateWorldTransform(const glm::mat4& parentTransform) {
+//     worldTransform = parentTransform * localTransform;
+//     for (auto& child : children) {
+//         child->updateWorldTransform(worldTransform);
+//     }
+// }
+
 SceneNode::~SceneNode()
 {
     // Since the children are managed by unique_ptr, they will be automatically cleaned up.
