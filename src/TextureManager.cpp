@@ -2,6 +2,7 @@
 #include "pch.h"
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_STATIC
+#include <glm/glm.hpp>
 #include <stb_image.h>
 
 std::unordered_map<std::string, Ref<Texture>> TextureManager::s_textureCache;
@@ -60,6 +61,24 @@ Texture TextureManager::loadTexture(const std::string path)
     auto sharedTexture = CreateRef<Texture>(texture);
     s_textureCache[path] = sharedTexture;
     s_textureIDMap[texture.id] = sharedTexture;
+
+    return texture;
+}
+
+Texture TextureManager::loadTexture(const glm::vec2& dimensions)
+{
+    Texture texture;
+
+    texture.texWidth = dimensions.x;
+    texture.texHeight = dimensions.y;
+    texture.channelCount = 3;
+
+    glGenTextures(1, &texture.id);
+    glBindTexture(GL_TEXTURE_2D, texture.id);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, dimensions.x, dimensions.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     return texture;
 }

@@ -2,6 +2,7 @@
 
 #include "pch.h"
 #include <glad/glad.h>
+#include <glm/glm.hpp>
 
 struct Texture
 {
@@ -13,6 +14,7 @@ struct Texture
         glActiveTexture(GL_TEXTURE0 + slot);
         glBindTexture(GL_TEXTURE_2D, id);
     }
+
     void unbind(uint32_t slot = 0) const
     {
         glActiveTexture(GL_TEXTURE0 + slot);
@@ -26,6 +28,7 @@ class TextureManager
     ~TextureManager();
 
     static Texture loadTexture(const std::string path);
+    static Texture loadTexture(const glm::vec2& dimensions);
     static void deleteTexture(const GLuint& textureID);
     static Ref<Texture> getTextureByID(GLuint textureID);
 
