@@ -3,6 +3,7 @@
 #include "Camera.h"
 #include "Light.h"
 #include "Mesh.h"
+#include "RenderPass.h"
 #include "Shader.h"
 
 #define MAX_MESH_COUNT 256
@@ -28,8 +29,6 @@ struct Renderable
  *          L vector<glm::mat4>
  */
 
-using RenderQueue = std::unordered_map<Ref<Shader>, std::unordered_map<Ref<Mesh>, std::vector<glm::mat4>>>;
-
 enum ERenderQueueFilter
 {
     ALL,
@@ -37,17 +36,18 @@ enum ERenderQueueFilter
     TRANSPARENT
 };
 
+using RenderQueue = std::unordered_map<Ref<Shader>, std::unordered_map<Ref<Mesh>, std::vector<glm::mat4>>>;
+
 struct RenderQueueData
 {
-    // clang-format off
-    std::unordered_map<Ref<Shader>, 
-        std::unordered_map<Ref<Mesh>, 
-            std::vector<glm::mat4>>> transparent;
-            
-    std::unordered_map<Ref<Shader>, 
-        std::unordered_map<Ref<Mesh>, 
-            std::vector<glm::mat4>>> opaque;
-    // clang-format on
+    RenderQueue transparent;
+    RenderQueue opaque;
+};
+
+struct RenderPassAndFilter
+{
+    RenderPass pass;
+    ERenderQueueFilter filter;
 };
 
 struct RendererData
@@ -61,6 +61,8 @@ struct RendererData
 
     std::vector<Light> lights[256];
     GLuint uboLights;
+
+    std::vector<RenderPassAndFilter> renderPasses;
 };
 
 struct RenderStats
@@ -86,8 +88,10 @@ class Renderer
     static void drawAll(const ERenderQueueFilter& filter);
     static void drawQueue(const RenderQueue& queue);
     static void drawBatch(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& transforms);
+    static void prepareInstanceBuffer();
     static void bindInstanceData(const std::vector<glm::mat4>& transforms);
     static void unbindInstancBuffer();
+    static void prepareLighting();
 
     static void GLAPIENTRY debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
                                          const GLchar* message, const void* userParam);

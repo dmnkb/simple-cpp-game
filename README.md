@@ -13,8 +13,8 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [x] Scene graph & scene nodes
 - [x] Instanced rendering
 - [ ] Render pass abstraction
-- [ ] Frame buffer object abstraction
 - [ ] Shadow mapping
+- [ ] Materials
 - [ ] Basic deferred rendering
 - [ ] Simple particle system OR grass rendering
 - [ ] Integrate Assimp mesh loading

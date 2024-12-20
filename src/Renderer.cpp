@@ -11,31 +11,18 @@ static RenderStats s_Stats;
 void Renderer::init()
 {
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
-
     enableOpenGLDebugOutput();
 
     glClearColor(0.2902f, 0.4196f, 0.9647f, 1.0f);
     glEnable(GL_DEPTH_TEST);
-
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
-    // Buffer for instanced rendering
-    glGenBuffers(1, &s_Data.instanceBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, s_Data.instanceBuffer);
+    prepareInstanceBuffer();
+    prepareLighting();
 
-    // Lighting
-    unsigned int NUM_LIGHTS = 256;
-
-    // Create and bind the Uniform Buffer Object
-    glGenBuffers(1, &s_Data.uboLights);
-    glBindBuffer(GL_UNIFORM_BUFFER, s_Data.uboLights);
-
-    // Allocate memory for the UBO (empty for now)
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(Light) * NUM_LIGHTS, nullptr, GL_DYNAMIC_DRAW);
-
-    // Bind the UBO to the binding point
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, s_Data.uboLights);
+    RenderPass shadowMapPass = RenderPass();
+    s_Data.renderPasses.push_back({shadowMapPass, ERenderQueueFilter::ALL});
 }
 
 void Renderer::beginScene(Camera& camera)
@@ -47,11 +34,13 @@ void Renderer::beginScene(Camera& camera)
 
 void Renderer::update(const glm::vec2& windowDimensions)
 {
-    glViewport(0, 0, windowDimensions.x, windowDimensions.y);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // TODO: Loop through all passes and render them
-    drawAll(ERenderQueueFilter::ALL);
+    // Loop through all render passes and render to the defined target.
+    // Then, draw all render queues within the applied filter
+    for (auto& [pass, filter] : s_Data.renderPasses)
+    {
+        pass.beginPass();
+        drawAll(filter);
+    }
 
     // Reset renderQueue
     s_Data.renderQueue.opaque.clear();
@@ -106,15 +95,19 @@ void Renderer::unbindInstancBuffer()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void Renderer::drawBatch(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& transforms)
+void Renderer::prepareLighting()
 {
-    s_Stats.drawCallCount++;
+    unsigned int NUM_LIGHTS = 256;
 
-    mesh->bind();
-    bindInstanceData(transforms);
-    glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndexCount(), GL_UNSIGNED_INT, nullptr, transforms.size());
-    unbindInstancBuffer();
-    mesh->unbind();
+    // Create and bind the Uniform Buffer Object
+    glGenBuffers(1, &s_Data.uboLights);
+    glBindBuffer(GL_UNIFORM_BUFFER, s_Data.uboLights);
+
+    // Allocate memory for the UBO (empty for now)
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(Light) * NUM_LIGHTS, nullptr, GL_DYNAMIC_DRAW);
+
+    // Bind the UBO to the binding point
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, s_Data.uboLights);
 }
 
 void Renderer::drawAll(const ERenderQueueFilter& filter)
@@ -169,6 +162,23 @@ void Renderer::drawQueue(const RenderQueue& queue)
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
         shader->unbind();
     }
+}
+
+void Renderer::drawBatch(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& transforms)
+{
+    s_Stats.drawCallCount++;
+
+    mesh->bind();
+    bindInstanceData(transforms);
+    glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndexCount(), GL_UNSIGNED_INT, nullptr, transforms.size());
+    unbindInstancBuffer();
+    mesh->unbind();
+}
+
+void Renderer::prepareInstanceBuffer()
+{
+    glGenBuffers(1, &s_Data.instanceBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, s_Data.instanceBuffer);
 }
 
 const RenderStats& Renderer::getStats()

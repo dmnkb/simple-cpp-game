@@ -2,15 +2,14 @@
 
 #include "Shader.h"
 #include "TextureManager.h"
-#include "camera.h"
 #include "pch.h"
 #include <glad/glad.h>
 
 class RenderPass
 {
   public:
-    RenderPass(bool renderToScreen);
-    void beginPass();
+    RenderPass(const bool renderToScreen = true);
+    void beginPass() const;
     Texture getResult();
 
   private:

@@ -3,7 +3,7 @@
 #include "Window.h"
 #include "pch.h"
 
-RenderPass::RenderPass(bool renderToScreen) : m_renderToScreen(renderToScreen)
+RenderPass::RenderPass(const bool renderToScreen) : m_renderToScreen(renderToScreen)
 {
     if (renderToScreen)
         return;
@@ -20,12 +20,13 @@ RenderPass::RenderPass(bool renderToScreen) : m_renderToScreen(renderToScreen)
         std::cerr << "Framebuffer is not complete!" << std::endl;
 }
 
-void RenderPass::beginPass()
+void RenderPass::beginPass() const
 {
     if (m_renderToScreen)
     {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, Window::getFrameBufferDimensions().x, Window::getFrameBufferDimensions().y);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Render scene ...
 
