@@ -50,7 +50,8 @@ void Renderer::update(const glm::vec2& windowDimensions)
     glViewport(0, 0, windowDimensions.x, windowDimensions.y);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    drawQueue();
+    // TODO: Loop through all passes and render them
+    drawAll(ERenderQueueFilter::ALL);
 
     // Reset renderQueue
     s_Data.renderQueue.opaque.clear();
@@ -116,13 +117,32 @@ void Renderer::drawBatch(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& tr
     mesh->unbind();
 }
 
-void Renderer::drawQueue()
+void Renderer::drawAll(const ERenderQueueFilter& filter)
+{
+    switch (filter)
+    {
+    case ERenderQueueFilter::ALL:
+        drawQueue(s_Data.renderQueue.opaque);
+        drawQueue(s_Data.renderQueue.transparent);
+        break;
+    case ERenderQueueFilter::OPAQUE:
+        drawQueue(s_Data.renderQueue.opaque);
+        break;
+    case ERenderQueueFilter::TRANSPARENT:
+        drawQueue(s_Data.renderQueue.opaque);
+        break;
+    default:
+        drawQueue(s_Data.renderQueue.opaque);
+        drawQueue(s_Data.renderQueue.transparent);
+    }
+}
+
+void Renderer::drawQueue(const RenderQueue& queue)
 {
     Light lightBuffer[256];
     for (int i = 0; i < s_Data.lights->size(); i++)
         lightBuffer[i] = (*s_Data.lights)[i];
-
-    for (const auto& [shader, meshMap] : s_Data.renderQueue.opaque)
+    for (const auto& [shader, meshMap] : queue)
     {
         shader->bind();
 

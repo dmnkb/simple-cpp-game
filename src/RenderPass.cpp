@@ -20,7 +20,7 @@ RenderPass::RenderPass(bool renderToScreen) : m_renderToScreen(renderToScreen)
         std::cerr << "Framebuffer is not complete!" << std::endl;
 }
 
-void RenderPass::render()
+void RenderPass::beginPass()
 {
     if (m_renderToScreen)
     {

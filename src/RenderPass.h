@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Shader.h"
 #include "TextureManager.h"
 #include "camera.h"
 #include "pch.h"
@@ -9,7 +10,7 @@ class RenderPass
 {
   public:
     RenderPass(bool renderToScreen);
-    void render();
+    void beginPass();
     Texture getResult();
 
   private:

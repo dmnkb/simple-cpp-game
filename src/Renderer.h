@@ -27,7 +27,17 @@ struct Renderable
  *      L   Mesh (sorted from far to near)
  *          L vector<glm::mat4>
  */
-struct RenderQueue
+
+using RenderQueue = std::unordered_map<Ref<Shader>, std::unordered_map<Ref<Mesh>, std::vector<glm::mat4>>>;
+
+enum ERenderQueueFilter
+{
+    ALL,
+    OPAQUE,
+    TRANSPARENT
+};
+
+struct RenderQueueData
 {
     // clang-format off
     std::unordered_map<Ref<Shader>, 
@@ -46,7 +56,7 @@ struct RendererData
     glm::mat4 viewMatrix;
     glm::vec3 camPos;
 
-    RenderQueue renderQueue;
+    RenderQueueData renderQueue;
     GLuint instanceBuffer;
 
     std::vector<Light> lights[256];
@@ -73,7 +83,8 @@ class Renderer
     const static void resetStats();
 
   private:
-    static void drawQueue();
+    static void drawAll(const ERenderQueueFilter& filter);
+    static void drawQueue(const RenderQueue& queue);
     static void drawBatch(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& transforms);
     static void bindInstanceData(const std::vector<glm::mat4>& transforms);
     static void unbindInstancBuffer();
