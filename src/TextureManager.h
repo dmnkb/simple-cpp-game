@@ -27,9 +27,9 @@ class TextureManager
 
     static Texture loadTexture(const std::string path);
     static void deleteTexture(const GLuint& textureID);
-    static std::shared_ptr<Texture> getTextureByID(GLuint textureID);
+    static Ref<Texture> getTextureByID(GLuint textureID);
 
   private:
-    static std::unordered_map<std::string, std::shared_ptr<Texture>> s_textureCache;
-    static std::unordered_map<GLuint, std::shared_ptr<Texture>> s_textureIDMap;
+    static std::unordered_map<std::string, Ref<Texture>> s_textureCache;
+    static std::unordered_map<GLuint, Ref<Texture>> s_textureIDMap;
 };

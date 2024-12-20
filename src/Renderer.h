@@ -11,9 +11,9 @@
 // An atomic, stateless POD (plain old data) that contains mesh, material and transform.
 struct Renderable
 {
-    std::shared_ptr<Mesh> mesh; // Geometry data
-    // std::shared_ptr<Material> material; // TODO: Shader, textures, material properties
-    std::shared_ptr<Shader> shader; // TODO: replace with material
+    Ref<Mesh> mesh; // Geometry data
+    // Ref<Material> material; // TODO: Shader, textures, material properties
+    Ref<Shader> shader; // TODO: replace with material
     glm::mat4 transform;
 };
 
@@ -30,12 +30,12 @@ struct Renderable
 struct RenderQueue
 {
     // clang-format off
-    std::unordered_map<std::shared_ptr<Shader>, 
-        std::unordered_map<std::shared_ptr<Mesh>, 
+    std::unordered_map<Ref<Shader>, 
+        std::unordered_map<Ref<Mesh>, 
             std::vector<glm::mat4>>> transparent;
             
-    std::unordered_map<std::shared_ptr<Shader>, 
-        std::unordered_map<std::shared_ptr<Mesh>, 
+    std::unordered_map<Ref<Shader>, 
+        std::unordered_map<Ref<Mesh>, 
             std::vector<glm::mat4>>> opaque;
     // clang-format on
 };
@@ -74,7 +74,7 @@ class Renderer
 
   private:
     static void drawQueue();
-    static void drawBatch(const std::shared_ptr<Mesh>& mesh, const std::vector<glm::mat4>& transforms);
+    static void drawBatch(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& transforms);
     static void bindInstanceData(const std::vector<glm::mat4>& transforms);
     static void unbindInstancBuffer();
 

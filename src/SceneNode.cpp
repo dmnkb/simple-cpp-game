@@ -1,7 +1,7 @@
 #include "SceneNode.h"
 #include "pch.h"
 
-void SceneNode::addChild(std::shared_ptr<SceneNode> child)
+void SceneNode::addChild(Ref<SceneNode> child)
 {
     // `shared_from_this()` enables to get a valid shared_ptr instance to this.
     child->setParent(shared_from_this());
@@ -12,7 +12,7 @@ void SceneNode::addChild(std::shared_ptr<SceneNode> child)
 void SceneNode::removeChild(SceneNode* child)
 {
     auto it = std::remove_if(m_children.begin(), m_children.end(),
-                             [child](const std::shared_ptr<SceneNode>& node) { return node.get() == child; });
+                             [child](const Ref<SceneNode>& node) { return node.get() == child; });
     m_children.erase(it, m_children.end());
 }
 

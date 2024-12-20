@@ -7,12 +7,12 @@
 
 const unsigned int MAX_LIGHTS = 3;
 
-using SceneNodeVariant = std::variant<std::shared_ptr<MeshSceneNode>, std::shared_ptr<LightSceneNode>>;
+using SceneNodeVariant = std::variant<Ref<MeshSceneNode>, Ref<LightSceneNode>>;
 
 struct SceneData
 {
-    std::vector<std::shared_ptr<LightSceneNode>> lightSceneNodes;
-    std::vector<std::shared_ptr<MeshSceneNode>> meshSceneNodes;
+    std::vector<Ref<LightSceneNode>> lightSceneNodes;
+    std::vector<Ref<MeshSceneNode>> meshSceneNodes;
 };
 
 class Scene
@@ -25,8 +25,8 @@ class Scene
      */
 
     static void update();
-    static void addMeshSceneNode(const std::shared_ptr<MeshSceneNode>& node);
-    static void addLightSceneNode(const std::shared_ptr<LightSceneNode>& node);
+    static void addMeshSceneNode(const Ref<MeshSceneNode>& node);
+    static void addLightSceneNode(const Ref<LightSceneNode>& node);
 
     static std::optional<SceneNodeVariant> getByName(const std::string& name);
 

@@ -4,8 +4,8 @@
 #define STB_IMAGE_STATIC
 #include <stb_image.h>
 
-std::unordered_map<std::string, std::shared_ptr<Texture>> TextureManager::s_textureCache;
-std::unordered_map<GLuint, std::shared_ptr<Texture>> TextureManager::s_textureIDMap;
+std::unordered_map<std::string, Ref<Texture>> TextureManager::s_textureCache;
+std::unordered_map<GLuint, Ref<Texture>> TextureManager::s_textureIDMap;
 
 TextureManager::~TextureManager()
 {
@@ -57,7 +57,7 @@ Texture TextureManager::loadTexture(const std::string path)
     }
     stbi_image_free(data);
 
-    auto sharedTexture = std::make_shared<Texture>(texture);
+    auto sharedTexture = CreateRef<Texture>(texture);
     s_textureCache[path] = sharedTexture;
     s_textureIDMap[texture.id] = sharedTexture;
 
@@ -78,7 +78,7 @@ void TextureManager::deleteTexture(const GLuint& textureID)
     std::cerr << "[ERROR] Can't delete texture ID " << textureID << "as it was not found." << std::endl;
 }
 
-std::shared_ptr<Texture> TextureManager::getTextureByID(GLuint textureID)
+Ref<Texture> TextureManager::getTextureByID(GLuint textureID)
 {
     auto it = s_textureIDMap.find(textureID);
     if (it != s_textureIDMap.end())

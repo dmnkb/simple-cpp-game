@@ -105,7 +105,7 @@ void Renderer::unbindInstancBuffer()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void Renderer::drawBatch(const std::shared_ptr<Mesh>& mesh, const std::vector<glm::mat4>& transforms)
+void Renderer::drawBatch(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& transforms)
 {
     s_Stats.drawCallCount++;
 
