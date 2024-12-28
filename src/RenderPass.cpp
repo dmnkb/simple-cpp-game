@@ -20,8 +20,9 @@ RenderPass::RenderPass(const bool renderToScreen) : m_renderToScreen(renderToScr
         std::cerr << "Framebuffer is not complete!" << std::endl;
 }
 
-void RenderPass::beginPass() const
+void RenderPass::setup() const
 {
+    // Render to screen
     if (m_renderToScreen)
     {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -33,6 +34,7 @@ void RenderPass::beginPass() const
         return;
     }
 
+    // Render to FBO
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     glViewport(0, 0, m_texture.texWidth, m_texture.texHeight);
 

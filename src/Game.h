@@ -16,7 +16,7 @@ class Game
   private:
     void initImGui();
 
-    Camera m_Camera;
+    Ref<Camera> m_Camera;
     Player m_Player;
 
     double m_DeltaTime, m_FPSUpdateTime = 0.0;

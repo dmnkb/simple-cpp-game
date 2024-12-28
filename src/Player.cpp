@@ -5,7 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-Player::Player(Camera& camera) : m_Camera(camera)
+Player::Player(const Ref<Camera>& camera) : m_Camera(camera)
 {
     EventManager::registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
     EventManager::registerListeners(typeid(MouseMoveEvent).name(),
@@ -96,8 +96,8 @@ void Player::update(double deltaTime)
     m_Position.y += m_verticalVelocity * deltaTime;
 
     // Camera Update
-    m_Camera.setPosition(m_Position);
-    m_Camera.lookAt(m_Position + m_Direction);
+    m_Camera->setPosition(m_Position);
+    m_Camera->lookAt(m_Position + m_Direction);
 }
 
 bool Player::isKeyPressed(unsigned int key)

@@ -9,7 +9,7 @@
 class Player
 {
   public:
-    Player(Camera& camera);
+    Player(const Ref<Camera>& camera);
 
     void onKeyEvent(Event* event);
     void onMouseMoveEvent(Event* event);
@@ -38,7 +38,7 @@ class Player
     float m_verticalVelocity = 0;
 
     // Camera
-    Camera& m_Camera;
+    Ref<Camera> m_Camera;
     glm::vec2 m_camChange = glm::vec2(0, 0);
     glm::vec2 m_cursorPositionOld;
     bool m_IsCursorDisabled = true;

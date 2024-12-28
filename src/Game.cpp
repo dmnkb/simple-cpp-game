@@ -16,12 +16,12 @@ const int windowWidth = 640;
 const int windowHeigth = 480;
 CameraProps camProps = {45.0f * (M_PI / 180.0f), ((float)windowWidth / windowHeigth), 0.1f, 1000.0f};
 
-Game::Game() : m_Camera(camProps), m_Player(m_Camera)
+Game::Game() : m_Camera(CreateRef<Camera>(camProps)), m_Player(m_Camera)
 {
     WindowProps windowProps = {windowWidth, windowHeigth, "Simple CPP Game", NULL, NULL};
     Window::init(windowProps);
     initImGui();
-    Renderer::init();
+    Renderer::init(m_Camera);
     EventManager::registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
     Sandbox::init();
 }
@@ -52,7 +52,7 @@ void Game::run()
         Scene::update();
         Sandbox::update(m_DeltaTime);
         Renderer::beginScene(m_Camera);
-        Renderer::update(Window::getFrameBufferDimensions());
+        Renderer::update();
         EventManager::processEvents();
 
         // Start new ImGui frame

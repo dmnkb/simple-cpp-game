@@ -1,5 +1,6 @@
 #include "Renderer.h"
 #include "Shader.h"
+#include "Window.h"
 #include "pch.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -8,7 +9,7 @@
 static RendererData s_Data;
 static RenderStats s_Stats;
 
-void Renderer::init()
+void Renderer::init(const Ref<Camera>& camera)
 {
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
     enableOpenGLDebugOutput();
@@ -21,33 +22,97 @@ void Renderer::init()
     prepareInstanceBuffer();
     prepareLighting();
 
-    RenderPass shadowMapPass = RenderPass();
-    s_Data.renderPasses.push_back({shadowMapPass, ERenderQueueFilter::ALL});
+    s_Data.defaultCamera = camera;
+
+    RenderPass shadowMapPass = RenderPass(false);
+    s_Data.renderPasses.push_back({shadowMapPass, ERenderQueueFilter::ALL, nullptr, {}, "shadowMapPass"});
+
+    RenderPass simpleBloomPass = RenderPass(false);
+    s_Data.renderPasses.push_back({simpleBloomPass, ERenderQueueFilter::QUAD, nullptr, {}, "simpleBloomPass"});
+
+    RenderPass finalDrawPass = RenderPass();
+    s_Data.renderPasses.push_back({finalDrawPass, ERenderQueueFilter::ALL, nullptr, {}, "finalDrawPass"});
 }
 
-void Renderer::beginScene(Camera& camera)
+// TODO:
+// void Renderer::render(const Scene& scene) {
+//     // Shadow pass for shadow-casting lights
+//     for (const auto& light : scene.getLights()) {
+//         if (light.castsShadows()) {
+//             Camera shadowCamera = light.createShadowCamera();
+//             setActiveCamera(&shadowCamera);
+//             executeShadowPass(scene, light);
+//         }
+//     }
+
+//     // Reflection pass (e.g., water surface)
+//     Camera reflectionCamera = createReflectionCamera(scene.getMainCamera());
+//     setActiveCamera(&reflectionCamera);
+//     executeReflectionPass(scene);
+
+//     // Main pass using the player's camera
+//     setActiveCamera(scene.getMainCamera());
+//     executeMainPass(scene);
+// }
+
+// TODO:
+// void Renderer::executePass(const RenderPass& pass, const std::vector<SceneObject>& objects) {
+//     pass.setup();
+
+//     for (const auto& object : objects) {
+//         if (pass.filter(object)) {
+//             object.draw();
+//         }
+//     }
+
+//     pass.teardown();
+// }
+
+void Renderer::beginScene(const Ref<Camera>& camera)
 {
-    s_Data.viewMatrix = camera.getViewMatrix();
-    s_Data.viewProjectionMatrix = camera.getProjectionMatrix();
-    s_Data.camPos = camera.getPosition();
+    s_Data.defaultCamera = camera;
 }
 
-void Renderer::update(const glm::vec2& windowDimensions)
+void Renderer::update()
 {
     // Loop through all render passes and render to the defined target.
-    // Then, draw all render queues within the applied filter
-    for (auto& [pass, filter] : s_Data.renderPasses)
+    // Then, draw all render queues within the applied filter.
+    for (auto& [pass, filter, camera, results, name] : s_Data.renderPasses)
     {
-        pass.beginPass();
-        drawAll(filter);
+        std::cout << "Begin pass: " << name << std::endl;
+        if (camera)
+        {
+            // Set the active camera to be this camera, so that the scene can be rendered from that angle
+            s_Data.activeCamera = camera;
+            for (const auto light : s_Data.lights)
+            {
+                // Make the render passe's camera match the light transform
+                updateCameraFromLight(camera, light);
+                pass.setup();
+                drawAll(filter);
+                results.push_back(pass.getResult());
+            }
+        }
+        else
+        {
+            // Reset camera to the default camera, that is controlled by the player
+            s_Data.activeCamera = s_Data.defaultCamera;
+            pass.setup();
+            drawAll(filter);
+            results.push_back(pass.getResult());
+        }
     }
+
+    // Clear all intermediate frame buffer object textures
+    for (auto& [pass, filter, camera, results, name] : s_Data.renderPasses)
+        results.clear();
 
     // Reset renderQueue
     s_Data.renderQueue.opaque.clear();
     s_Data.renderQueue.transparent.clear();
 
     // Reset list of lights
-    s_Data.lights->clear();
+    s_Data.lights.clear();
 }
 
 void Renderer::submitRenderable(const Renderable& renderable)
@@ -66,7 +131,7 @@ void Renderer::submitRenderable(const Renderable& renderable)
 
 void Renderer::submitLight(const Light& light)
 {
-    s_Data.lights->push_back(light);
+    s_Data.lights.push_back(light);
 }
 
 void Renderer::bindInstanceData(const std::vector<glm::mat4>& transforms)
@@ -110,7 +175,24 @@ void Renderer::prepareLighting()
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, s_Data.uboLights);
 }
 
-void Renderer::drawAll(const ERenderQueueFilter& filter)
+void Renderer::updateCameraFromLight(Ref<Camera>& camera, const Light& light)
+{
+    switch (light.lightType)
+    {
+    case ELightType::POINT:
+        // Point lights don't support shadows for now
+        break;
+    case ELightType::SPOT:
+        camera->setPosition(light.position);
+        camera->lookAt(light.rotation);
+        // TODO: adjust FOV according to the cone
+        break;
+    default:
+        break;
+    }
+}
+
+void Renderer::drawAll(const ERenderQueueFilter& filter, const Ref<Shader> overrideShader)
 {
     switch (filter)
     {
@@ -122,7 +204,14 @@ void Renderer::drawAll(const ERenderQueueFilter& filter)
         drawQueue(s_Data.renderQueue.opaque);
         break;
     case ERenderQueueFilter::TRANSPARENT:
-        drawQueue(s_Data.renderQueue.opaque);
+        drawQueue(s_Data.renderQueue.transparent);
+        break;
+    case ERenderQueueFilter::QUAD:
+        if (overrideShader)
+            overrideShader->bind();
+        drawFullScreenQuad();
+        if (overrideShader)
+            overrideShader->unbind();
         break;
     default:
         drawQueue(s_Data.renderQueue.opaque);
@@ -130,19 +219,25 @@ void Renderer::drawAll(const ERenderQueueFilter& filter)
     }
 }
 
+// TODO: Make so that the shader can be overridden by albedo, position, ... shader (?)
 void Renderer::drawQueue(const RenderQueue& queue)
 {
     Light lightBuffer[256];
-    for (int i = 0; i < s_Data.lights->size(); i++)
-        lightBuffer[i] = (*s_Data.lights)[i];
+    for (int i = 0; i < s_Data.lights.size(); i++)
+        lightBuffer[i] = (s_Data.lights)[i];
+
     for (const auto& [shader, meshMap] : queue)
     {
         shader->bind();
 
-        glm::mat4 viewProjectionMatrix = s_Data.viewProjectionMatrix * s_Data.viewMatrix;
+        const auto viewMatrix = s_Data.activeCamera->getViewMatrix();
+        const auto projectionMatrix = s_Data.activeCamera->getProjectionMatrix();
+        const auto camPos = s_Data.activeCamera->getPosition();
+
+        const auto viewProjectionMatrix = projectionMatrix * viewMatrix;
 
         shader->setUniformMatrix4fv("u_ViewProjection", viewProjectionMatrix);
-        shader->setUniform3fv("viewPos", s_Data.camPos);
+        shader->setUniform3fv("viewPos", camPos);
 
         GLuint uboBindingPoint = 0;
         GLuint blockIndex = glGetUniformBlockIndex(shader->getProgramID(), "LightsBlock");
@@ -173,6 +268,51 @@ void Renderer::drawBatch(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& tr
     glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndexCount(), GL_UNSIGNED_INT, nullptr, transforms.size());
     unbindInstancBuffer();
     mesh->unbind();
+}
+
+void Renderer::drawFullScreenQuad()
+{
+    static unsigned int quadVAO = 0;
+    static unsigned int quadVBO = 0;
+
+    // If the VAO has not been created, generate and set it up
+    if (quadVAO == 0)
+    {
+        // clang-format off
+        float quadVertices[] = {
+            // Positions     // TexCoords
+            -1.0f,  1.0f,  0.0f,  1.0f,
+            -1.0f, -1.0f,  0.0f,  0.0f,
+             1.0f, -1.0f,  1.0f,  0.0f,
+
+            -1.0f,  1.0f,  0.0f,  1.0f,
+             1.0f, -1.0f,  1.0f,  0.0f,
+             1.0f,  1.0f,  1.0f,  1.0f
+        };
+        // clang-format on
+
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+
+        // Position attribute
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+
+        // Texture coordinate attribute
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    }
+
+    // Bind and draw the quad
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    // Unbind VAO to avoid accidental modification
+    glBindVertexArray(0);
 }
 
 void Renderer::prepareInstanceBuffer()
