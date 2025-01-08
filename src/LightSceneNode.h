@@ -11,6 +11,7 @@ class LightSceneNode : public SceneNode
     LightSceneNode(const glm::vec3& position, const glm::vec3& color, const glm::vec3& rotation);
 
     const Light prepareLight();
+    const glm::mat4 getTransform();
 
   private:
     glm::vec3 m_color = {0.0f, 0.0f, 0.0f};

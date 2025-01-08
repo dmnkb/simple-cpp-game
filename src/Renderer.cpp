@@ -1,4 +1,5 @@
 #include "Renderer.h"
+#include "Scene.h"
 #include "Shader.h"
 #include "Window.h"
 #include "pch.h"
@@ -9,29 +10,21 @@
 static RendererData s_Data;
 static RenderStats s_Stats;
 
-void Renderer::init(const Ref<Camera>& camera)
+void Renderer::init()
 {
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
     enableOpenGLDebugOutput();
 
     glClearColor(0.2902f, 0.4196f, 0.9647f, 1.0f);
     glEnable(GL_DEPTH_TEST);
+
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
-    prepareInstanceBuffer();
-    prepareLighting();
+    glGenBuffers(1, &s_Data.instanceBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, s_Data.instanceBuffer);
 
-    s_Data.defaultCamera = camera;
-
-    RenderPass shadowMapPass = RenderPass(false);
-    s_Data.renderPasses.push_back({shadowMapPass, ERenderQueueFilter::ALL, nullptr, {}, "shadowMapPass"});
-
-    RenderPass simpleBloomPass = RenderPass(false);
-    s_Data.renderPasses.push_back({simpleBloomPass, ERenderQueueFilter::QUAD, nullptr, {}, "simpleBloomPass"});
-
-    RenderPass finalDrawPass = RenderPass();
-    s_Data.renderPasses.push_back({finalDrawPass, ERenderQueueFilter::ALL, nullptr, {}, "finalDrawPass"});
+    prepareLightingUBO();
 }
 
 // TODO:
@@ -55,86 +48,82 @@ void Renderer::init(const Ref<Camera>& camera)
 //     executeMainPass(scene);
 // }
 
-// TODO:
-// void Renderer::executePass(const RenderPass& pass, const std::vector<SceneObject>& objects) {
-//     pass.setup();
-
-//     for (const auto& object : objects) {
-//         if (pass.filter(object)) {
-//             object.draw();
-//         }
-//     }
-
-//     pass.teardown();
-// }
-
-void Renderer::beginScene(const Ref<Camera>& camera)
-{
-    s_Data.defaultCamera = camera;
-}
-
 void Renderer::update()
 {
-    // Loop through all render passes and render to the defined target.
-    // Then, draw all render queues within the applied filter.
-    for (auto& [pass, filter, camera, results, name] : s_Data.renderPasses)
+    // ==================
+    // Shadow caster pass
+    // ==================
+
+    for (const auto& lightSceneNode : Scene::getLightSceneNodes())
     {
-        std::cout << "Begin pass: " << name << std::endl;
-        if (camera)
+        const auto light = lightSceneNode->prepareLight();
+        if (light.lightType == SPOT)
         {
-            // Set the active camera to be this camera, so that the scene can be rendered from that angle
-            s_Data.activeCamera = camera;
-            for (const auto light : s_Data.lights)
-            {
-                // Make the render passe's camera match the light transform
-                updateCameraFromLight(camera, light);
-                pass.setup();
-                drawAll(filter);
-                results.push_back(pass.getResult());
-            }
-        }
-        else
-        {
-            // Reset camera to the default camera, that is controlled by the player
-            s_Data.activeCamera = s_Data.defaultCamera;
-            pass.setup();
-            drawAll(filter);
-            results.push_back(pass.getResult());
+            RenderPass shadowCasterPass;
+            shadowCasterPass.bind(FRAMEBUFFER);
+
+            // Setup shadow caster camera
+            // TODO: Camera shadowCamera = light.createShadowCamera();
+            CameraProps shadowCamProps = {45.0f * (M_PI / 180.0f), 1, 0.1f, 1000.0f};
+            const auto shadowCamera = CreateRef<Camera>(shadowCamProps);
+            shadowCamera->setPosition(light.position);
+            shadowCamera->lookAt(light.rotation);
+            Scene::setActiveCamera(shadowCamera);
+
+            // Render meshes
+            auto opaqueQueue =
+                Scene::getRenderQueue([](const Renderable& renderable) { return renderable.isOpaque(); });
+            drawQueue(opaqueQueue);
+
+            // Store depth buffers along with individual transforms
+            s_Data.shadowCasters.push_back({lightSceneNode->getTransform(), shadowCasterPass.getResult()});
+
+            // Reset and cleanup
+            Scene::setActiveCamera(shadowCamera);
+            shadowCasterPass.unbind();
         }
     }
 
-    // Clear all intermediate frame buffer object textures
-    for (auto& [pass, filter, camera, results, name] : s_Data.renderPasses)
-        results.clear();
+    // ===================================
+    // Main pass using the player's camera
+    // ===================================
 
-    // Reset renderQueue
-    s_Data.renderQueue.opaque.clear();
-    s_Data.renderQueue.transparent.clear();
+    RenderPass opaquePass;
 
-    // Reset list of lights
-    s_Data.lights.clear();
+    // Get the scene's main camera (default = player's camera)
+    Scene::setActiveCamera(Scene::getDefaultCamera());
+
+    // Rendertarget = FBO
+    opaquePass.bind(SCREEN);
+    const auto opaquePassResult = opaquePass.getResult();
+
+    // Render all meshes (currently opaque only)
+    auto opaqueQueue = Scene::getRenderQueue([](const Renderable& renderable) { return renderable.isOpaque(); });
+    drawQueue(opaqueQueue);
+
+    // Clean up FBO
+    opaquePass.unbind();
+
+    // ========================
+    // Bloom pass (Pseudo Code)
+    // ========================
+
+    // RenderPass bloomPass;
+
+    // Get the scene's main camera (default = player's camera)
+    // Scene::setActiveCamera(Scene::getDefaultCamera());
+
+    // Rendertarget = Screen
+    // bloomPass.bind(SCREEN);
+
+    // Render fullscreen quad, bind bloom shader and apply the previous pass's result as texture
+    // bloomShader.bind();
+    // renderFullScreenQuad(opaquePassResult);
+    // bloomShader.unbind();
+    // bloomPass.unbind();
 }
 
-void Renderer::submitRenderable(const Renderable& renderable)
-{
-    if (!renderable.mesh || !renderable.shader)
-    {
-        if (!renderable.mesh)
-            std::cerr << "Invalid mesh in batch!" << std::endl;
-        if (!renderable.shader)
-            std::cerr << "Invalid shader in batch!" << std::endl;
-        return;
-    }
-
-    s_Data.renderQueue.opaque[renderable.shader][renderable.mesh].push_back(renderable.transform);
-}
-
-void Renderer::submitLight(const Light& light)
-{
-    s_Data.lights.push_back(light);
-}
-
-void Renderer::bindInstanceData(const std::vector<glm::mat4>& transforms)
+void Renderer::bindInstanceBuffer(const std::vector<glm::mat4>& transforms)
 {
     // Bind the instance buffer and upload transforms
     glBindBuffer(GL_ARRAY_BUFFER, s_Data.instanceBuffer);
@@ -148,9 +137,8 @@ void Renderer::bindInstanceData(const std::vector<glm::mat4>& transforms)
     for (int i = 0; i < 4; ++i)
     {
         glEnableVertexAttribArray(3 + i); // 3, 4, 5, 6 are the locations
-        // glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4),
-        //                       reinterpret_cast<void*>(static_cast<std::uintptr_t>(i * vec4Size)));
-        glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(i * vec4Size));
+        glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4),
+                              reinterpret_cast<void*>(static_cast<std::uintptr_t>(i * vec4Size)));
         glVertexAttribDivisor(3 + i, 1); // One mat4 per instance
     }
 }
@@ -160,7 +148,7 @@ void Renderer::unbindInstancBuffer()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void Renderer::prepareLighting()
+void Renderer::prepareLightingUBO()
 {
     unsigned int NUM_LIGHTS = 256;
 
@@ -175,64 +163,25 @@ void Renderer::prepareLighting()
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, s_Data.uboLights);
 }
 
-void Renderer::updateCameraFromLight(Ref<Camera>& camera, const Light& light)
-{
-    switch (light.lightType)
-    {
-    case ELightType::POINT:
-        // Point lights don't support shadows for now
-        break;
-    case ELightType::SPOT:
-        camera->setPosition(light.position);
-        camera->lookAt(light.rotation);
-        // TODO: adjust FOV according to the cone
-        break;
-    default:
-        break;
-    }
-}
-
-void Renderer::drawAll(const ERenderQueueFilter& filter, const Ref<Shader> overrideShader)
-{
-    switch (filter)
-    {
-    case ERenderQueueFilter::ALL:
-        drawQueue(s_Data.renderQueue.opaque);
-        drawQueue(s_Data.renderQueue.transparent);
-        break;
-    case ERenderQueueFilter::OPAQUE:
-        drawQueue(s_Data.renderQueue.opaque);
-        break;
-    case ERenderQueueFilter::TRANSPARENT:
-        drawQueue(s_Data.renderQueue.transparent);
-        break;
-    case ERenderQueueFilter::QUAD:
-        if (overrideShader)
-            overrideShader->bind();
-        drawFullScreenQuad();
-        if (overrideShader)
-            overrideShader->unbind();
-        break;
-    default:
-        drawQueue(s_Data.renderQueue.opaque);
-        drawQueue(s_Data.renderQueue.transparent);
-    }
-}
-
 // TODO: Make so that the shader can be overridden by albedo, position, ... shader (?)
 void Renderer::drawQueue(const RenderQueue& queue)
 {
     Light lightBuffer[256];
-    for (int i = 0; i < s_Data.lights.size(); i++)
-        lightBuffer[i] = (s_Data.lights)[i];
+
+    const auto lights = Scene::getLightSceneNodes();
+
+    for (int i = 0; i < lights.size(); i++)
+        lightBuffer[i] = ((lights)[i])->prepareLight();
 
     for (const auto& [shader, meshMap] : queue)
     {
         shader->bind();
 
-        const auto viewMatrix = s_Data.activeCamera->getViewMatrix();
-        const auto projectionMatrix = s_Data.activeCamera->getProjectionMatrix();
-        const auto camPos = s_Data.activeCamera->getPosition();
+        assert(Scene::getActiveCamera() && "No active camera in scene");
+
+        const auto viewMatrix = Scene::getActiveCamera()->getViewMatrix();
+        const auto projectionMatrix = Scene::getActiveCamera()->getProjectionMatrix();
+        const auto camPos = Scene::getActiveCamera()->getPosition();
 
         const auto viewProjectionMatrix = projectionMatrix * viewMatrix;
 
@@ -251,7 +200,7 @@ void Renderer::drawQueue(const RenderQueue& queue)
 
         for (const auto& [mesh, transforms] : meshMap)
         {
-            drawBatch(mesh, transforms);
+            drawInstanceBatch(mesh, transforms);
         }
 
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -259,66 +208,15 @@ void Renderer::drawQueue(const RenderQueue& queue)
     }
 }
 
-void Renderer::drawBatch(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& transforms)
+void Renderer::drawInstanceBatch(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& transforms)
 {
     s_Stats.drawCallCount++;
 
     mesh->bind();
-    bindInstanceData(transforms);
+    bindInstanceBuffer(transforms);
     glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndexCount(), GL_UNSIGNED_INT, nullptr, transforms.size());
     unbindInstancBuffer();
     mesh->unbind();
-}
-
-void Renderer::drawFullScreenQuad()
-{
-    static unsigned int quadVAO = 0;
-    static unsigned int quadVBO = 0;
-
-    // If the VAO has not been created, generate and set it up
-    if (quadVAO == 0)
-    {
-        // clang-format off
-        float quadVertices[] = {
-            // Positions     // TexCoords
-            -1.0f,  1.0f,  0.0f,  1.0f,
-            -1.0f, -1.0f,  0.0f,  0.0f,
-             1.0f, -1.0f,  1.0f,  0.0f,
-
-            -1.0f,  1.0f,  0.0f,  1.0f,
-             1.0f, -1.0f,  1.0f,  0.0f,
-             1.0f,  1.0f,  1.0f,  1.0f
-        };
-        // clang-format on
-
-        glGenVertexArrays(1, &quadVAO);
-        glGenBuffers(1, &quadVBO);
-
-        glBindVertexArray(quadVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
-
-        // Position attribute
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-
-        // Texture coordinate attribute
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-    }
-
-    // Bind and draw the quad
-    glBindVertexArray(quadVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    // Unbind VAO to avoid accidental modification
-    glBindVertexArray(0);
-}
-
-void Renderer::prepareInstanceBuffer()
-{
-    glGenBuffers(1, &s_Data.instanceBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, s_Data.instanceBuffer);
 }
 
 const RenderStats& Renderer::getStats()
@@ -343,7 +241,6 @@ void GLAPIENTRY Renderer::debugCallback(GLenum source, GLenum type, GLuint id, G
 
 void Renderer::enableOpenGLDebugOutput()
 {
-
     GLint majorVersion, minorVersion;
     glGetIntegerv(GL_MAJOR_VERSION, &majorVersion);
     glGetIntegerv(GL_MINOR_VERSION, &minorVersion);

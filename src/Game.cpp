@@ -11,18 +11,30 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 
-// TODO: to be updated on window resize
-const int windowWidth = 640;
-const int windowHeigth = 480;
-CameraProps camProps = {45.0f * (M_PI / 180.0f), ((float)windowWidth / windowHeigth), 0.1f, 1000.0f};
-
-Game::Game() : m_Camera(CreateRef<Camera>(camProps)), m_Player(m_Camera)
+Game::Game() : m_Player()
 {
+    // Device
+    // TODO: to be updated on window resize
+    const int windowWidth = 640;
+    const int windowHeigth = 480;
+
     WindowProps windowProps = {windowWidth, windowHeigth, "Simple CPP Game", NULL, NULL};
     Window::init(windowProps);
+
+    // ImGUI
     initImGui();
-    Renderer::init(m_Camera);
+
+    // Renderer
+    Renderer::init();
+
+    // Scene
+    CameraProps cameraProps = {45.0f * (M_PI / 180.0f), ((float)windowWidth / windowHeigth), 0.1f, 1000.0f};
+    Scene::init(cameraProps);
+
+    // Events
     EventManager::registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
+
+    // Sandbox
     Sandbox::init();
 }
 
@@ -49,9 +61,7 @@ void Game::run()
 
         m_Player.update(m_DeltaTime);
 
-        Scene::update();
         Sandbox::update(m_DeltaTime);
-        Renderer::beginScene(m_Camera);
         Renderer::update();
         EventManager::processEvents();
 
