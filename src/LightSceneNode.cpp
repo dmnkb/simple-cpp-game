@@ -32,6 +32,15 @@ const Light LightSceneNode::prepareLight()
     };
 }
 
+const Ref<Camera> LightSceneNode::createShadowCamera()
+{
+    CameraProps shadowCamProps = {static_cast<float>(m_outerCone * (M_PI / 180.0f)), 1, 0.1f, 1000.0f};
+    auto camera = CreateRef<Camera>(shadowCamProps);
+    camera->setPosition(m_position);
+    camera->lookAt(m_rotation);
+    return camera;
+}
+
 const glm::mat4 LightSceneNode::getTransform()
 {
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), m_position) *

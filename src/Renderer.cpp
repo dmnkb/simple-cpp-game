@@ -27,27 +27,6 @@ void Renderer::init()
     prepareLightingUBO();
 }
 
-// TODO:
-// void Renderer::render(const Scene& scene) {
-//     // Shadow pass for shadow-casting lights
-//     for (const auto& light : scene.getLights()) {
-//         if (light.castsShadows()) {
-//             Camera shadowCamera = light.createShadowCamera();
-//             setActiveCamera(&shadowCamera);
-//             executeShadowPass(scene, light);
-//         }
-//     }
-
-//     // Reflection pass (e.g., water surface)
-//     Camera reflectionCamera = createReflectionCamera(scene.getMainCamera());
-//     setActiveCamera(&reflectionCamera);
-//     executeReflectionPass(scene);
-
-//     // Main pass using the player's camera
-//     setActiveCamera(scene.getMainCamera());
-//     executeMainPass(scene);
-// }
-
 void Renderer::update()
 {
     // ==================
@@ -63,12 +42,7 @@ void Renderer::update()
             shadowCasterPass.bind(FRAMEBUFFER);
 
             // Setup shadow caster camera
-            // TODO: Camera shadowCamera = light.createShadowCamera();
-            CameraProps shadowCamProps = {45.0f * (M_PI / 180.0f), 1, 0.1f, 1000.0f};
-            const auto shadowCamera = CreateRef<Camera>(shadowCamProps);
-            shadowCamera->setPosition(light.position);
-            shadowCamera->lookAt(light.rotation);
-            Scene::setActiveCamera(shadowCamera);
+            Scene::setActiveCamera(lightSceneNode->createShadowCamera());
 
             // Render meshes
             auto opaqueQueue =
@@ -79,7 +53,6 @@ void Renderer::update()
             s_Data.shadowCasters.push_back({lightSceneNode->getTransform(), shadowCasterPass.getResult()});
 
             // Reset and cleanup
-            Scene::setActiveCamera(shadowCamera);
             shadowCasterPass.unbind();
         }
     }

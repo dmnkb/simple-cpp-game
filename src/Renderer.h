@@ -24,6 +24,9 @@
 // RenderStats
 //     Extended to include more detailed performance metrics.
 
+// TODO: For reflections in the future:
+// Camera reflectionCamera = createReflectionCamera(scene.getMainCamera());
+
 /** Current:
  * Shader
  * L   Mesh (sorted from far to near)
@@ -51,12 +54,6 @@ using RenderQueue = std::unordered_map<Ref<Shader>, std::unordered_map<Ref<Mesh>
 // │   │   └── InstanceDataBuffer1
 // │   └── ...
 // └── ...
-
-struct ShadowCaster
-{
-    glm::mat4 lightSpaceMatrix;
-    Texture depthTexture;
-};
 
 struct RendererData
 {
