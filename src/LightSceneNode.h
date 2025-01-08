@@ -8,6 +8,7 @@
 class LightSceneNode : public SceneNode
 {
   public:
+    // TODO: Is missing the cone property! Currently hardcode in prepareLight()
     LightSceneNode(const glm::vec3& position, const glm::vec3& color);
     LightSceneNode(const glm::vec3& position, const glm::vec3& color, const glm::vec3& rotation);
 

@@ -34,10 +34,11 @@ const Light LightSceneNode::prepareLight()
 
 const Ref<Camera> LightSceneNode::createShadowCamera()
 {
-    CameraProps shadowCamProps = {static_cast<float>(m_outerCone * (M_PI / 180.0f)), 1, 0.1f, 1000.0f};
+    // TODO: The cone is currently hardcoded
+    CameraProps shadowCamProps = {static_cast<float>(30.0f * (M_PI / 180.0f)), 1, 0.1f, 1000.0f};
     auto camera = CreateRef<Camera>(shadowCamProps);
     camera->setPosition(m_position);
-    camera->lookAt(m_rotation);
+    camera->lookAt({m_rotation});
     return camera;
 }
 

@@ -5,6 +5,7 @@
 #include "Mesh.h"
 #include "RenderPass.h"
 #include "Shader.h"
+#include "TextureManager.h"
 
 #define MAX_MESH_COUNT 256
 #define MAX_TRANSFORMS_PER_MESH 256
@@ -74,6 +75,7 @@ class Renderer
 
     const static RenderStats& getStats();
     const static void resetStats();
+    const static std::vector<Texture> getShadowCasterDepthBuffers();
 
   private:
     static void drawQueue(const RenderQueue& queue);

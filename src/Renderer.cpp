@@ -32,7 +32,7 @@ void Renderer::update()
     // ==================
     // Shadow caster pass
     // ==================
-
+    s_Data.shadowCasters.clear();
     for (const auto& lightSceneNode : Scene::getLightSceneNodes())
     {
         const auto light = lightSceneNode->prepareLight();
@@ -200,6 +200,18 @@ const RenderStats& Renderer::getStats()
 const void Renderer::resetStats()
 {
     s_Stats.drawCallCount = 0;
+}
+
+const std::vector<Texture> Renderer::getShadowCasterDepthBuffers()
+{
+    std::vector<Texture> textures = {};
+
+    for (const auto& shadowCaster : s_Data.shadowCasters)
+    {
+        textures.push_back(shadowCaster.depthTexture);
+    }
+
+    return textures;
 }
 
 void GLAPIENTRY Renderer::debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
