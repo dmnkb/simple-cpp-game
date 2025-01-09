@@ -18,6 +18,7 @@ LightSceneNode::LightSceneNode(const glm::vec3& position, const glm::vec3& color
 
 const Light LightSceneNode::prepareLight()
 {
+    // TODO: remove hardcoding
     return {
         m_position,  // Position
         0.0f,        // Padding

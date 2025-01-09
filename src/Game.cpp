@@ -71,9 +71,8 @@ void Game::run()
         ImGui::NewFrame();
 
         // Render ImGui elements
-        // Render ImGui elements
         static bool open = true;
-        ImGui::Begin("Hello, ImGui!", &open);
+        ImGui::Begin("Hello, ImGui!", &open, ImGuiWindowFlags_NoTitleBar);
 
         // FPS
         std::string fpsText = "FPS: " + std::to_string(fps);
@@ -82,12 +81,6 @@ void Game::run()
         // Draw Calls
         std::string drawCallsText = "Draw calls: " + std::to_string(Renderer::getStats().drawCallCount);
         ImGui::Text("%s", drawCallsText.c_str());
-
-        // Camera Position and Rotation
-        std::string position = "Camera Position: " + glm::to_string(m_Player.getPosition());
-        ImGui::Text("%s", position.c_str());
-        std::string rotation = "Camera Rotation: " + glm::to_string(m_Player.getRotation());
-        ImGui::Text("%s", rotation.c_str());
 
         // Shadow Caster Depth Textures
         const auto& shadowDepthBuffers = Renderer::getShadowCasterDepthBuffers();
@@ -98,8 +91,6 @@ void Game::run()
             for (size_t i = 0; i < shadowDepthBuffers.size(); ++i)
             {
                 const auto& texture = shadowDepthBuffers[i];
-                ImGui::Text("Shadow Texture %zu:", i + 1);
-                // Display texture using ImGui::Image
                 ImGui::Image((void*)(intptr_t)texture.id, ImVec2(128, 128)); // Adjust size as needed
             }
         }
@@ -172,6 +163,22 @@ void Game::initImGui()
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
     ImGui::StyleColorsDark();
+
+    auto& style = ImGui::GetStyle();
+    ImVec4* colors = style.Colors;
+
+    const ImVec4 transparent = ImVec4(0.0, 0.0, 0.0, 0.0);
+    const ImVec4 white = ImVec4(1.0, 1.0, 1.0, 1.0);
+    colors[ImGuiCol_WindowBg] = transparent;
+    colors[ImGuiCol_ChildBg] = transparent;
+    colors[ImGuiCol_TitleBg] = transparent;
+    colors[ImGuiCol_ScrollbarBg] = transparent;
+    colors[ImGuiCol_Border] = transparent;
+    colors[ImGuiCol_Separator] = white;
+    colors[ImGuiCol_ScrollbarGrab] = transparent;
+    colors[ImGuiCol_ScrollbarGrabActive] = white;
+    colors[ImGuiCol_ScrollbarGrabHovered] = white;
+
     ImGui_ImplGlfw_InitForOpenGL(Window::getNativeWindow(), true);
     ImGui_ImplOpenGL3_Init("#version 330");
 }
