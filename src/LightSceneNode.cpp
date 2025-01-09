@@ -1,7 +1,7 @@
 #include "LightSceneNode.h"
 #include "Light.h"
 #include "pch.h"
-#include <glm/ext.hpp>
+#include <glm/glm.hpp>
 
 LightSceneNode::LightSceneNode(const glm::vec3& position, const glm::vec3& color)
     : SceneNode(), m_color(color), m_lightType(ELightType::POINT)
@@ -39,7 +39,7 @@ const Ref<Camera> LightSceneNode::createShadowCamera()
     CameraProps shadowCamProps = {static_cast<float>(30.0f * (M_PI / 180.0f)), 1, 0.1f, 1000.0f};
     auto camera = CreateRef<Camera>(shadowCamProps);
     camera->setPosition(m_position);
-    camera->lookAt({m_rotation});
+    camera->lookAt(m_position + m_rotation);
     return camera;
 }
 

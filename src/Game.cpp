@@ -91,7 +91,7 @@ void Game::run()
             for (size_t i = 0; i < shadowDepthBuffers.size(); ++i)
             {
                 const auto& texture = shadowDepthBuffers[i];
-                ImGui::Image((void*)(intptr_t)texture->id, ImVec2(128, 128));
+                ImGui::Image((void*)(intptr_t)texture->id, ImVec2(128, 96));
             }
         }
 
@@ -176,8 +176,8 @@ void Game::initImGui()
     colors[ImGuiCol_Border] = transparent;
     colors[ImGuiCol_Separator] = white;
     colors[ImGuiCol_ScrollbarGrab] = transparent;
-    colors[ImGuiCol_ScrollbarGrabActive] = white;
-    colors[ImGuiCol_ScrollbarGrabHovered] = white;
+    colors[ImGuiCol_ScrollbarGrabActive] = transparent;
+    colors[ImGuiCol_ScrollbarGrabHovered] = transparent;
 
     ImGui_ImplGlfw_InitForOpenGL(Window::getNativeWindow(), true);
     ImGui_ImplOpenGL3_Init("#version 330");
