@@ -27,12 +27,11 @@ class TextureManager
   public:
     ~TextureManager();
 
-    static Texture loadTexture(const std::string path);
-    static Texture loadTexture(const glm::vec2& dimensions);
+    static Ref<Texture> loadTextureFromFile(const std::string path);
+    static Ref<Texture> createColorTexture(const glm::vec2& dimensions, const int channelCount = 3,
+                                           unsigned char* data = NULL, bool generateMipmap = false);
     static void deleteTexture(const GLuint& textureID);
-    static Ref<Texture> getTextureByID(GLuint textureID);
 
   private:
     static std::unordered_map<std::string, Ref<Texture>> s_textureCache;
-    static std::unordered_map<GLuint, Ref<Texture>> s_textureIDMap;
 };

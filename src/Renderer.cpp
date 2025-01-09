@@ -202,9 +202,9 @@ const void Renderer::resetStats()
     s_Stats.drawCallCount = 0;
 }
 
-const std::vector<Texture> Renderer::getShadowCasterDepthBuffers()
+const std::vector<Ref<Texture>> Renderer::getShadowCasterDepthBuffers()
 {
-    std::vector<Texture> textures = {};
+    std::vector<Ref<Texture>> textures = {};
 
     for (const auto& shadowCaster : s_Data.shadowCasters)
     {

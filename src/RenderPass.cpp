@@ -20,9 +20,9 @@ void RenderPass::bind(const ERenderTarget& target)
     glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-    texture = TextureManager::loadTexture(Window::getFrameBufferDimensions());
-    texture.bind();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.id, 0);
+    texture = TextureManager::createColorTexture(Window::getFrameBufferDimensions());
+    texture->bind();
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture->id, 0);
 
     // Check if FBO is complete
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -30,7 +30,7 @@ void RenderPass::bind(const ERenderTarget& target)
 
     // Render to FBO
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-    glViewport(0, 0, texture.texWidth, texture.texHeight);
+    glViewport(0, 0, texture->texWidth, texture->texHeight);
 
     // Render scene ...
 }
@@ -38,10 +38,10 @@ void RenderPass::bind(const ERenderTarget& target)
 void RenderPass::unbind()
 {
     glDeleteFramebuffers(1, &fbo);
-    texture.unbind();
+    texture->unbind();
 }
 
-Texture RenderPass::getResult()
+Ref<Texture> RenderPass::getResult()
 {
     return texture;
 }

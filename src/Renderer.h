@@ -28,6 +28,12 @@
 // TODO: For reflections in the future:
 // Camera reflectionCamera = createReflectionCamera(scene.getMainCamera());
 
+struct ShadowCaster
+{
+    glm::mat4 lightSpaceMatrix;
+    Ref<Texture> depthTexture;
+};
+
 /** Current:
  * Shader
  * L   Mesh (sorted from far to near)
@@ -75,7 +81,7 @@ class Renderer
 
     const static RenderStats& getStats();
     const static void resetStats();
-    const static std::vector<Texture> getShadowCasterDepthBuffers();
+    const static std::vector<Ref<Texture>> getShadowCasterDepthBuffers();
 
   private:
     static void drawQueue(const RenderQueue& queue);

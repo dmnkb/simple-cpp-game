@@ -2,7 +2,7 @@
 #include "pch.h"
 #include <glm/glm.hpp>
 
-MeshSceneNode::MeshSceneNode(Ref<Mesh> mesh, Ref<Shader> shader, const Texture& texture)
+MeshSceneNode::MeshSceneNode(Ref<Mesh> mesh, Ref<Shader> shader, const Ref<Texture>& texture)
     : SceneNode(), m_mesh(mesh), m_shader(shader), m_texture(texture)
 {
 }

@@ -61,7 +61,7 @@ struct RenderPass
     void bind(const ERenderTarget& target);
     void unbind();
 
-    Texture getResult();
-    Texture texture;
+    Ref<Texture> getResult();
+    Ref<Texture> texture;
     GLuint fbo;
 };

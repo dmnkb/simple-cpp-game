@@ -6,7 +6,6 @@
 #include <stb_image.h>
 
 std::unordered_map<std::string, Ref<Texture>> TextureManager::s_textureCache;
-std::unordered_map<GLuint, Ref<Texture>> TextureManager::s_textureIDMap;
 
 TextureManager::~TextureManager()
 {
@@ -16,67 +15,64 @@ TextureManager::~TextureManager()
     }
 }
 
-Texture TextureManager::loadTexture(const std::string path)
+Ref<Texture> TextureManager::loadTextureFromFile(const std::string path)
 {
     // Return cached texture
     if (s_textureCache.find(path) != s_textureCache.end())
-        return *s_textureCache[path];
+        return s_textureCache[path];
 
-    // Load texture
+    // Cache miss -> Load texture
     if (!std::filesystem::exists(path))
-    {
         fprintf(stderr, "[ERROR] Texture file not found: %s\n", path.c_str());
-    }
 
-    Texture texture;
+    int texWidth = 0;
+    int texHeight = 0;
+    int channelCount = 0;
 
-    glGenTextures(1, &texture.id);
-    glBindTexture(GL_TEXTURE_2D, texture.id);
+    unsigned char* data = stbi_load(path.c_str(), &texWidth, &texHeight, &channelCount, 0);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    unsigned char* data = stbi_load(path.c_str(), &texture.texWidth, &texture.texHeight, &texture.channelCount, 0);
-    if (data)
-    {
-        GLenum format = GL_RGB;
-        if (texture.channelCount == 1)
-            format = GL_RED;
-        else if (texture.channelCount == 3)
-            format = GL_RGB;
-        else if (texture.channelCount == 4)
-            format = GL_RGBA;
-
-        glTexImage2D(GL_TEXTURE_2D, 0, format, texture.texWidth, texture.texHeight, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else
+    if (!data)
     {
         std::cout << "Failed to load texture: " << path << std::endl;
+        // Could return std::nullopt here or throw. But I'll return empty data for now.
     }
-    stbi_image_free(data);
 
-    auto sharedTexture = CreateRef<Texture>(texture);
-    s_textureCache[path] = sharedTexture;
-    s_textureIDMap[texture.id] = sharedTexture;
+    auto texture = createColorTexture({texWidth, texHeight}, channelCount, data, true);
+    s_textureCache[path] = texture;
+
+    stbi_image_free(data);
 
     return texture;
 }
 
-Texture TextureManager::loadTexture(const glm::vec2& dimensions)
+Ref<Texture> TextureManager::createColorTexture(const glm::vec2& dimensions, const int channelCount,
+                                                unsigned char* data, bool generateMipmap)
 {
-    Texture texture;
+    auto texture = CreateRef<Texture>();
 
-    texture.texWidth = dimensions.x;
-    texture.texHeight = dimensions.y;
-    texture.channelCount = 3;
+    GLenum format = GL_RGB;
+    if (channelCount == 1)
+        format = GL_RED;
+    else if (channelCount == 3)
+        format = GL_RGB;
+    else if (channelCount == 4)
+        format = GL_RGBA;
 
-    glGenTextures(1, &texture.id);
-    glBindTexture(GL_TEXTURE_2D, texture.id);
+    texture->texWidth = dimensions.x;
+    texture->texHeight = dimensions.y;
+    texture->channelCount = channelCount;
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, dimensions.x, dimensions.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glGenTextures(1, &texture->id);
+    glBindTexture(GL_TEXTURE_2D, texture->id);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, format, dimensions.x, dimensions.y, 0, format, GL_UNSIGNED_BYTE, data);
+    if (generateMipmap)
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+    // Might not be needed for render targets, but keep for now
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -95,16 +91,4 @@ void TextureManager::deleteTexture(const GLuint& textureID)
         }
     }
     std::cerr << "[ERROR] Can't delete texture ID " << textureID << "as it was not found." << std::endl;
-}
-
-Ref<Texture> TextureManager::getTextureByID(GLuint textureID)
-{
-    auto it = s_textureIDMap.find(textureID);
-    if (it != s_textureIDMap.end())
-    {
-        return it->second;
-    }
-
-    std::cerr << "[ERROR] Can't resolve texture ID " << textureID << std::endl;
-    return nullptr;
 }

@@ -91,7 +91,7 @@ void Game::run()
             for (size_t i = 0; i < shadowDepthBuffers.size(); ++i)
             {
                 const auto& texture = shadowDepthBuffers[i];
-                ImGui::Image((void*)(intptr_t)texture.id, ImVec2(128, 128)); // Adjust size as needed
+                ImGui::Image((void*)(intptr_t)texture->id, ImVec2(128, 128));
             }
         }
 

@@ -11,7 +11,7 @@ void Sandbox::init()
 {
     auto mesh = CreateRef<Mesh>("my/unused/model/path/model.glb");
     auto shader = CreateRef<Shader>("assets/phong.vs", "assets/phong.fs");
-    auto texture = TextureManager::loadTexture("assets/wall.png");
+    auto texture = TextureManager::loadTextureFromFile("assets/wall.png");
 
     auto sceneNode = CreateRef<MeshSceneNode>(mesh, shader, texture);
     sceneNode->setPosition(glm::vec3(0, -10, 0));

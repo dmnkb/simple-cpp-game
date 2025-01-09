@@ -24,9 +24,3 @@ struct Light
     float outerCone = 0.0f;                   // 4 bytes
     float padding4 = 0.0f;                    // Padding to align the struct to 16 bytes
 };
-
-struct ShadowCaster
-{
-    glm::mat4 lightSpaceMatrix;
-    Texture depthTexture;
-};

@@ -12,7 +12,7 @@ class MeshSceneNode : public SceneNode
   public:
     // Maybe the constructor just takes a file path
     MeshSceneNode(std::shared_ptr<Mesh> mesh, std::shared_ptr<Shader> shader = nullptr,
-                  const Texture& texture = Texture{});
+                  const Ref<Texture>& texture = {});
 
     /**
      * TODO:
@@ -23,7 +23,7 @@ class MeshSceneNode : public SceneNode
     const Renderable prepareRenderable();
 
     // FIXME: remove
-    const Texture getTexture()
+    const Ref<Texture> getTexture()
     {
         return m_texture;
     }
@@ -31,5 +31,5 @@ class MeshSceneNode : public SceneNode
   private:
     std::shared_ptr<Mesh> m_mesh;
     std::shared_ptr<Shader> m_shader;
-    Texture m_texture;
+    Ref<Texture> m_texture;
 };

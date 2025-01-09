@@ -54,7 +54,7 @@ RenderQueue Scene::getRenderQueue(const RenderPassFilter& filter)
     for (const auto& node : s_sceneData.meshSceneNodes)
     {
         // FIXME: should be done during the rendering being retrieved from each instances material
-        node->getTexture().bind();
+        node->getTexture()->bind();
         auto renderable = node->prepareRenderable();
         if (filter(renderable))
         {
