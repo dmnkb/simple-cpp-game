@@ -35,7 +35,6 @@ void Renderer::update()
     // ===============
     static auto depthShader = CreateRef<Shader>("assets/depth.vs", "assets/depth.fs");
 
-    s_Data.shadowCasters.clear();
     for (const auto& lightSceneNode : Scene::getLightSceneNodes())
     {
         const auto light = lightSceneNode->prepareLight();
@@ -80,6 +79,9 @@ void Renderer::update()
 
     // Clean up FBO
     opaquePass.unbind();
+
+    // Clean up list of shadow casters
+    s_Data.shadowCasters.clear();
 
     // ========================
     // Bloom pass (Pseudo Code)
@@ -222,6 +224,12 @@ const std::vector<Ref<Texture>> Renderer::getShadowCasterDepthBuffers()
     }
 
     return textures;
+}
+
+void Renderer::shutdown()
+{
+    glDeleteBuffers(1, &s_Data.instanceBuffer);
+    glDeleteBuffers(1, &s_Data.uboLights);
 }
 
 void GLAPIENTRY Renderer::debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,

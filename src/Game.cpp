@@ -151,6 +151,8 @@ Game::~Game()
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
+    Renderer::shutdown();
+
     Window::shutdown();
 
     exit(EXIT_SUCCESS);

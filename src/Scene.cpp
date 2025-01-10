@@ -50,11 +50,13 @@ RenderQueue Scene::getRenderQueue(const RenderPassFilter& filter)
      * Renderables only for visible objects. This can be integrated with spatial partitioning techniques like BVH or
      * octrees.
      */
+
+    // FIXME: Has a huge memory leak!
     RenderQueue queue = {};
     for (const auto& node : s_sceneData.meshSceneNodes)
     {
         // FIXME: should be done during the rendering being retrieved from each instances material
-        node->getTexture()->bind();
+        // node->getTexture()->bind();
         auto renderable = node->prepareRenderable();
         if (filter(renderable))
         {

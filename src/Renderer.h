@@ -78,6 +78,7 @@ class Renderer
   public:
     static void init();
     static void update();
+    static void shutdown();
 
     const static RenderStats& getStats();
     const static void resetStats();
