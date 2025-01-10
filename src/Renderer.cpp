@@ -30,9 +30,9 @@ void Renderer::init()
 
 void Renderer::update()
 {
-    // ==================
-    // Shadow caster pass
-    // ==================
+    // ===============
+    // Shadow map pass
+    // ===============
     static auto depthShader = CreateRef<Shader>("assets/depth.vs", "assets/depth.fs");
 
     s_Data.shadowCasters.clear();
@@ -43,7 +43,7 @@ void Renderer::update()
         {
             RenderPass shadowCasterPass;
             // shadowCasterPass.bind(FRAMEBUFFER, true);
-            shadowCasterPass.bind(FRAMEBUFFER);
+            shadowCasterPass.bind(FRAMEBUFFER_DEPTH);
 
             // Setup shadow caster camera
             Scene::setActiveCamera(lightSceneNode->createShadowCamera());

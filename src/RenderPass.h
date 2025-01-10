@@ -51,7 +51,8 @@ struct Renderable
 enum ERenderTarget
 {
     SCREEN,
-    FRAMEBUFFER
+    FRAMEBUFFER,
+    FRAMEBUFFER_DEPTH,
 };
 
 using RenderPassFilter = std::function<bool(const Renderable&)>;
