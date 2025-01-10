@@ -11,8 +11,7 @@ class MeshSceneNode : public SceneNode
 {
   public:
     // Maybe the constructor just takes a file path
-    MeshSceneNode(std::shared_ptr<Mesh> mesh, std::shared_ptr<Shader> shader = nullptr,
-                  const Ref<Texture>& texture = {});
+    MeshSceneNode(Ref<Mesh> mesh, Ref<Shader> shader = nullptr, const Ref<Texture>& texture = {});
 
     /**
      * TODO:
@@ -29,7 +28,7 @@ class MeshSceneNode : public SceneNode
     }
 
   private:
-    std::shared_ptr<Mesh> m_mesh;
-    std::shared_ptr<Shader> m_shader;
+    Ref<Mesh> m_mesh;
+    Ref<Shader> m_shader;
     Ref<Texture> m_texture;
 };

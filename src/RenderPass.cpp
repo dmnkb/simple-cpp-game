@@ -3,8 +3,11 @@
 #include "Window.h"
 #include "pch.h"
 
-void RenderPass::bind(const ERenderTarget& target)
+void RenderPass::bind(const ERenderTarget& target, const bool isDepthPass)
 {
+    // TODO: Check if correct
+    glColorMask(!isDepthPass, !isDepthPass, !isDepthPass, !isDepthPass);
+
     // Render to screen
     if (target == SCREEN)
     {

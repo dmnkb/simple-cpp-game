@@ -58,7 +58,7 @@ using RenderPassFilter = std::function<bool(const Renderable&)>;
 
 struct RenderPass
 {
-    void bind(const ERenderTarget& target);
+    void bind(const ERenderTarget& target, const bool isDepthPass = false);
     void unbind();
 
     Ref<Texture> getResult();

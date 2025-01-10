@@ -17,12 +17,14 @@ struct Light
     float padding4;  // Offset 60, size 4
 };                   // Total size: 64 bytes (aligned to 16 bytes)
 
-out vec4 FragColor;
 in vec2 v_UV;
 in vec3 v_Normal;
 in vec3 FragPos;
+
 uniform sampler2D u_Texture;
 uniform vec3 viewPos;
+
+out vec4 FragColor;
 
 #define NUM_LIGHTS 256
 layout(std140) uniform LightsBlock

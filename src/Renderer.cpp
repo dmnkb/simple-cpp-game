@@ -17,6 +17,7 @@ void Renderer::init()
 
     glClearColor(0.2902f, 0.4196f, 0.9647f, 1.0f);
     glEnable(GL_DEPTH_TEST);
+    // glDepthMask(GL_TRUE);
 
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
@@ -32,6 +33,8 @@ void Renderer::update()
     // ==================
     // Shadow caster pass
     // ==================
+    static auto depthShader = CreateRef<Shader>("assets/depth.vs", "assets/depth.fs");
+
     s_Data.shadowCasters.clear();
     for (const auto& lightSceneNode : Scene::getLightSceneNodes())
     {
@@ -39,6 +42,7 @@ void Renderer::update()
         if (light.lightType == SPOT)
         {
             RenderPass shadowCasterPass;
+            // shadowCasterPass.bind(FRAMEBUFFER, true);
             shadowCasterPass.bind(FRAMEBUFFER);
 
             // Setup shadow caster camera
@@ -47,7 +51,7 @@ void Renderer::update()
             // Render meshes
             auto opaqueQueue =
                 Scene::getRenderQueue([](const Renderable& renderable) { return renderable.isOpaque(); });
-            drawQueue(opaqueQueue);
+            executePass(opaqueQueue, false, depthShader);
 
             // Store depth buffers along with individual transforms
             s_Data.shadowCasters.push_back({lightSceneNode->getTransform(), shadowCasterPass.getResult()});
@@ -72,7 +76,7 @@ void Renderer::update()
 
     // Render all meshes (currently opaque only)
     auto opaqueQueue = Scene::getRenderQueue([](const Renderable& renderable) { return renderable.isOpaque(); });
-    drawQueue(opaqueQueue);
+    executePass(opaqueQueue, true);
 
     // Clean up FBO
     opaquePass.unbind();
@@ -136,8 +140,7 @@ void Renderer::prepareLightingUBO()
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, s_Data.uboLights);
 }
 
-// TODO: Make so that the shader can be overridden by albedo, position, ... shader (?)
-void Renderer::drawQueue(const RenderQueue& queue)
+void Renderer::executePass(const RenderQueue& queue, const bool useLights, const Ref<Shader>& overrideShader)
 {
     Light lightBuffer[256];
 
@@ -148,36 +151,43 @@ void Renderer::drawQueue(const RenderQueue& queue)
 
     for (const auto& [shader, meshMap] : queue)
     {
-        shader->bind();
 
         assert(Scene::getActiveCamera() && "No active camera in scene");
 
         const auto viewMatrix = Scene::getActiveCamera()->getViewMatrix();
         const auto projectionMatrix = Scene::getActiveCamera()->getProjectionMatrix();
+        const auto viewProjectionMatrix = projectionMatrix * viewMatrix;
         const auto camPos = Scene::getActiveCamera()->getPosition();
 
-        const auto viewProjectionMatrix = projectionMatrix * viewMatrix;
+        auto activeShader = overrideShader ? overrideShader : shader;
+        activeShader->bind();
 
-        shader->setUniformMatrix4fv("u_ViewProjection", viewProjectionMatrix);
-        shader->setUniform3fv("viewPos", camPos);
+        activeShader->setUniformMatrix4fv("u_ViewProjection", viewProjectionMatrix);
+        // Hack to prevent unnecessary props being passed during the shadow map pass
+        if (!overrideShader)
+        {
+            activeShader->setUniform3fv("viewPos", camPos);
+            GLuint uboBindingPoint = 0;
+            GLuint blockIndex = glGetUniformBlockIndex(activeShader->getProgramID(), "LightsBlock");
+            assert(blockIndex != GL_INVALID_INDEX && "LightsBlock not found in shader!");
 
-        GLuint uboBindingPoint = 0;
-        GLuint blockIndex = glGetUniformBlockIndex(shader->getProgramID(), "LightsBlock");
-        assert(blockIndex != GL_INVALID_INDEX && "LightsBlock not found in shader!");
+            glUniformBlockBinding(shader->getProgramID(), blockIndex, uboBindingPoint);
+            glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, s_Data.uboLights);
 
-        glUniformBlockBinding(shader->getProgramID(), blockIndex, uboBindingPoint);
-        glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, s_Data.uboLights);
-
-        glBindBuffer(GL_UNIFORM_BUFFER, s_Data.uboLights);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(lightBuffer), lightBuffer);
+            glBindBuffer(GL_UNIFORM_BUFFER, s_Data.uboLights);
+            glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(lightBuffer), lightBuffer);
+        }
 
         for (const auto& [mesh, transforms] : meshMap)
         {
             drawInstanceBatch(mesh, transforms);
         }
 
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
-        shader->unbind();
+        if (!overrideShader)
+        {
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        }
+        activeShader->unbind();
     }
 }
 
