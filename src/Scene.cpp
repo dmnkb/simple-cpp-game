@@ -42,7 +42,7 @@ std::optional<SceneNodeVariant> Scene::getByName(const std::string& name)
     return std::nullopt;
 }
 
-RenderQueue Scene::getRenderQueue(const RenderPassFilter& filter)
+RenderQueue& Scene::getRenderQueue(const RenderPassFilter& filter)
 {
     /**
      * TODO:
@@ -51,19 +51,22 @@ RenderQueue Scene::getRenderQueue(const RenderPassFilter& filter)
      * octrees.
      */
 
-    // FIXME: Has a huge memory leak!
-    RenderQueue queue = {};
     for (const auto& node : s_sceneData.meshSceneNodes)
     {
         // FIXME: should be done during the rendering being retrieved from each instances material
-        // node->getTexture()->bind();
-        auto renderable = node->prepareRenderable();
-        if (filter(renderable))
+        node->getTexture()->bind();
+        if (filter(node))
         {
-            queue[renderable.shader][renderable.mesh].push_back(renderable.transform);
+            auto renderable = node->prepareRenderable();
+            s_sceneData.renderQueue[renderable.shader][renderable.mesh].push_back(renderable.transform);
         }
     }
-    return queue;
+    return s_sceneData.renderQueue;
+}
+
+void Scene::clearRenderQueue()
+{
+    s_sceneData.renderQueue.clear();
 }
 
 std::vector<Ref<LightSceneNode>> Scene::getLightSceneNodes()

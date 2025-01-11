@@ -1,11 +1,25 @@
 #pragma once
 
 #include "Mesh.h"
-#include "Renderer.h"
 #include "SceneNode.h"
 #include "Shader.h"
 #include "TextureManager.h"
 #include "pch.h"
+
+enum ERenderFlags
+{
+    OPAQUE,
+    TRANSLUCENT,
+    CASTS_SHADOW,
+};
+
+// An atomic, stateless POD (plain old data) that contains mesh, material and transform.
+struct Renderable
+{
+    Ref<Mesh> mesh;
+    Ref<Shader> shader;
+    glm::mat4 transform;
+};
 
 class MeshSceneNode : public SceneNode
 {
@@ -19,7 +33,22 @@ class MeshSceneNode : public SceneNode
      * For dynamic scenes, flag nodes for updates to reduce redundant computations.
      */
 
-    const Renderable prepareRenderable();
+    const bool isOpaque() const
+    {
+        return m_renderFlags.find(OPAQUE) != m_renderFlags.end();
+    }
+
+    const bool isTransparent() const
+    {
+        return m_renderFlags.find(TRANSLUCENT) != m_renderFlags.end();
+    }
+
+    const bool isCastsShadow() const
+    {
+        return m_renderFlags.find(CASTS_SHADOW) != m_renderFlags.end();
+    }
+
+    const Renderable& prepareRenderable();
 
     // FIXME: remove
     const Ref<Texture> getTexture()
@@ -31,4 +60,5 @@ class MeshSceneNode : public SceneNode
     Ref<Mesh> m_mesh;
     Ref<Shader> m_shader;
     Ref<Texture> m_texture;
+    std::unordered_set<ERenderFlags> m_renderFlags = {OPAQUE};
 };

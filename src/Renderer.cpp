@@ -33,6 +33,8 @@ void Renderer::update()
     // ===============
     // Shadow map pass
     // ===============
+    // Clean up list of shadow casters
+    s_Data.shadowCasters.clear();
     static auto depthShader = CreateRef<Shader>("assets/depth.vs", "assets/depth.fs");
 
     for (const auto& lightSceneNode : Scene::getLightSceneNodes())
@@ -48,9 +50,10 @@ void Renderer::update()
             Scene::setActiveCamera(lightSceneNode->createShadowCamera());
 
             // Render meshes
-            auto opaqueQueue =
-                Scene::getRenderQueue([](const Renderable& renderable) { return renderable.isOpaque(); });
-            executePass(opaqueQueue, false, depthShader);
+            auto shadowMapPassQueue =
+                Scene::getRenderQueue([](const Ref<MeshSceneNode>& node) { return node->isOpaque(); });
+            executePass(shadowMapPassQueue, false, depthShader);
+            Scene::clearRenderQueue();
 
             // Store depth buffers along with individual transforms
             s_Data.shadowCasters.push_back({lightSceneNode->getTransform(), shadowCasterPass.getResult()});
@@ -65,23 +68,18 @@ void Renderer::update()
     // ===================================
 
     RenderPass opaquePass;
+    opaquePass.bind(SCREEN);
 
     // Get the scene's main camera (default = player's camera)
     Scene::setActiveCamera(Scene::getDefaultCamera());
 
-    // Rendertarget = FBO
-    opaquePass.bind(SCREEN);
-    const auto opaquePassResult = opaquePass.getResult();
-
     // Render all meshes (currently opaque only)
-    auto opaqueQueue = Scene::getRenderQueue([](const Renderable& renderable) { return renderable.isOpaque(); });
-    executePass(opaqueQueue, true);
+    auto finalQueue = Scene::getRenderQueue([](const Ref<MeshSceneNode>& node) { return node->isOpaque(); });
+    executePass(finalQueue, true);
+    Scene::clearRenderQueue();
 
     // Clean up FBO
     opaquePass.unbind();
-
-    // Clean up list of shadow casters
-    s_Data.shadowCasters.clear();
 
     // ========================
     // Bloom pass (Pseudo Code)

@@ -3,6 +3,7 @@
 #include "Light.h"
 #include "LightSceneNode.h"
 #include "MeshSceneNode.h"
+#include "Renderer.h"
 #include "pch.h"
 
 const unsigned int MAX_LIGHTS = 3;
@@ -13,9 +14,12 @@ struct SceneData
 {
     std::vector<Ref<LightSceneNode>> lightSceneNodes;
     std::vector<Ref<MeshSceneNode>> meshSceneNodes;
+    RenderQueue renderQueue = {};
     Ref<Camera> defaultCamera = nullptr;
     Ref<Camera> activeCamera = nullptr;
 };
+
+using RenderPassFilter = std::function<bool(const Ref<MeshSceneNode>&)>;
 
 class Scene
 {
@@ -25,7 +29,8 @@ class Scene
     static void addLightSceneNode(const Ref<LightSceneNode>& node);
 
     static std::optional<SceneNodeVariant> getByName(const std::string& name);
-    static RenderQueue getRenderQueue(const RenderPassFilter& filter);
+    static RenderQueue& getRenderQueue(const RenderPassFilter& filter);
+    static void clearRenderQueue();
     static std::vector<Ref<LightSceneNode>> getLightSceneNodes();
 
     static void setActiveCamera(const Ref<Camera>& camera);
