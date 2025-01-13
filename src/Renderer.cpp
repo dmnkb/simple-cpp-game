@@ -3,6 +3,7 @@
 #include "Shader.h"
 #include "Window.h"
 #include "pch.h"
+#include <fmt/core.h>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -175,7 +176,10 @@ void Renderer::executePass(const RenderQueue& queue, const bool useLights, const
         // Hack to prevent unnecessary props being passed during the shadow map pass
         if (!overrideShader)
         {
+            // View
             activeShader->setUniform3fv("viewPos", camPos);
+
+            // Lighting
             GLuint uboBindingPoint = 0;
             GLuint blockIndex = glGetUniformBlockIndex(activeShader->getProgramID(), "LightsBlock");
             assert(blockIndex != GL_INVALID_INDEX && "LightsBlock not found in shader!");
@@ -185,6 +189,19 @@ void Renderer::executePass(const RenderQueue& queue, const bool useLights, const
 
             glBindBuffer(GL_UNIFORM_BUFFER, s_Data.uboLights);
             glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(lightBuffer), lightBuffer);
+
+            // Shadows
+            for (size_t i = 1; i < s_Data.shadowCasters.size() + 1; ++i)
+            {
+                const auto& shadowCaster = s_Data.shadowCasters[i - 1];
+
+                std::string uniformName = fmt::format("lightSpaceMatrices[{}]", i);
+                activeShader->setUniformMatrix4fv(uniformName.c_str(), shadowCaster.lightSpaceMatrix);
+
+                uniformName = fmt::format("shadowMaps[{}]", i);
+                shadowCaster.depthTexture->bind(i);                 // Bind texture to the i-th texture unit
+                activeShader->setUniform1i(uniformName.c_str(), i); // Tell shader which texture unit to use
+            }
         }
 
         for (const auto& [mesh, transforms] : meshMap)
