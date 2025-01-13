@@ -3,14 +3,12 @@
 #include "Window.h"
 #include "pch.h"
 
-void RenderPass::bind(const ERenderTarget& target, const bool isDepthPass)
+void RenderPass::bind(const Ref<Texture>& attachment)
 {
-    // TODO: Check if correct
-    glColorMask(!isDepthPass, !isDepthPass, !isDepthPass, !isDepthPass);
-
     // Render to screen
-    if (target == SCREEN)
+    if (!attachment)
     {
+        glColorMask(true, true, true, true);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, Window::getFrameBufferDimensions().x, Window::getFrameBufferDimensions().y);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -20,36 +18,31 @@ void RenderPass::bind(const ERenderTarget& target, const bool isDepthPass)
     }
 
     // Render to FBO
-    glGenFramebuffers(1, &fbo);
+    glColorMask(false, false, false, false);
+
+    if (!fbo)
+        glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-    const bool colorAttachment = target == FRAMEBUFFER;
+    attachment->bind();
+    glFramebufferTexture2D(GL_FRAMEBUFFER, attachment->attachmentType, GL_TEXTURE_2D, attachment->id, 0);
 
-    texture = colorAttachment ? TextureManager::createColorTexture(Window::getFrameBufferDimensions())
-                              : TextureManager::createDepthTexture(Window::getFrameBufferDimensions());
-
-    texture->bind();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, colorAttachment ? GL_COLOR_ATTACHMENT0 : GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
-                           texture->id, 0);
-
-    // Check if FBO is complete
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         std::cerr << "Framebuffer is not complete!" << std::endl;
 
-    // Render to FBO
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-    glViewport(0, 0, texture->texWidth, texture->texHeight);
+    glViewport(0, 0, attachment->texWidth, attachment->texHeight);
 
     // Render scene ...
 }
 
 void RenderPass::unbind()
 {
-    glDeleteFramebuffers(1, &fbo);
-    fbo = 0;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-Ref<Texture> RenderPass::getResult()
+RenderPass::~RenderPass()
 {
-    return texture;
+    if (fbo)
+        glDeleteFramebuffers(1, &fbo);
 }

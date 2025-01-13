@@ -8,23 +8,12 @@
 #include "pch.h"
 #include <glad/glad.h>
 
-// TODO:
-// Make this class only an abstraction of frame buffer objects that stores the textures
-// and sets up the FBOs
-
-enum ERenderTarget
-{
-    SCREEN,
-    FRAMEBUFFER,
-    FRAMEBUFFER_DEPTH,
-};
-
 struct RenderPass
 {
-    void bind(const ERenderTarget& target, const bool isDepthPass = false);
+    void bind(const Ref<Texture>& attachment = nullptr);
     void unbind();
 
-    Ref<Texture> getResult();
-    Ref<Texture> texture;
+    ~RenderPass();
+
     GLuint fbo = 0;
 };

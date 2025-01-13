@@ -49,6 +49,7 @@ Ref<Texture> TextureManager::createColorTexture(const glm::vec2& dimensions, con
                                                 unsigned char* data, bool generateMipmap)
 {
     auto texture = CreateRef<Texture>();
+    texture->attachmentType = GL_COLOR_ATTACHMENT0;
 
     GLenum format = GL_RGB;
     if (channelCount == 1)
@@ -82,6 +83,7 @@ Ref<Texture> TextureManager::createColorTexture(const glm::vec2& dimensions, con
 Ref<Texture> TextureManager::createDepthTexture(const glm::vec2& dimensions)
 {
     auto texture = CreateRef<Texture>();
+    texture->attachmentType = GL_DEPTH_ATTACHMENT;
 
     texture->texWidth = dimensions.x;
     texture->texHeight = dimensions.y;

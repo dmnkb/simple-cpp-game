@@ -8,6 +8,7 @@ struct Texture
 {
     GLuint id;
     int texWidth, texHeight, channelCount;
+    GLenum attachmentType;
 
     void bind(uint32_t slot = 0) const
     {

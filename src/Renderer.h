@@ -28,12 +28,6 @@
 // TODO: For reflections in the future:
 // Camera reflectionCamera = createReflectionCamera(scene.getMainCamera());
 
-struct ShadowCaster
-{
-    glm::mat4 lightSpaceMatrix;
-    Ref<Texture> depthTexture;
-};
-
 /** Current:
  * Shader
  * L   Mesh (sorted from far to near)
@@ -64,6 +58,12 @@ using RenderQueue = std::unordered_map<Ref<Shader>, std::unordered_map<Ref<Mesh>
 
 struct RendererData
 {
+    struct ShadowCaster
+    {
+        glm::mat4 lightSpaceMatrix;
+        Ref<Texture> depthTexture;
+    };
+
     GLuint instanceBuffer;
     GLuint uboLights;
     std::vector<ShadowCaster> shadowCasters;

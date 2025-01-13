@@ -50,9 +50,10 @@ void Renderer::update()
         const auto light = lightSceneNode->prepareLight();
         if (light.lightType == SPOT)
         {
-            RenderPass shadowCasterPass;
+            auto depthTexture = TextureManager::createDepthTexture(Window::getFrameBufferDimensions());
+            static RenderPass shadowCasterPass;
             // shadowCasterPass.bind(FRAMEBUFFER, true);
-            shadowCasterPass.bind(FRAMEBUFFER_DEPTH);
+            shadowCasterPass.bind(depthTexture);
 
             // Setup shadow caster camera
             Scene::setActiveCamera(lightSceneNode->createShadowCamera());
@@ -64,7 +65,7 @@ void Renderer::update()
             Scene::clearRenderQueue();
 
             // Store depth buffers along with individual transforms
-            s_Data.shadowCasters.push_back({lightSceneNode->getTransform(), shadowCasterPass.getResult()});
+            s_Data.shadowCasters.push_back({lightSceneNode->getTransform(), depthTexture});
 
             // Reset and cleanup
             shadowCasterPass.unbind();
@@ -75,8 +76,8 @@ void Renderer::update()
     // Main pass using the player's camera
     // ===================================
 
-    RenderPass opaquePass;
-    opaquePass.bind(SCREEN);
+    static RenderPass opaquePass;
+    opaquePass.bind();
 
     // Get the scene's main camera (default = player's camera)
     Scene::setActiveCamera(Scene::getDefaultCamera());
