@@ -23,16 +23,9 @@ void RenderPass::bind(const ERenderTarget& target, const bool isDepthPass)
     glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-    const bool colorAttachment = target == FRAMEBUFFER;
-
-    texture = colorAttachment ? TextureManager::createColorTexture(Window::getFrameBufferDimensions())
-                              : TextureManager::createDepthTexture(Window::getFrameBufferDimensions());
-
-    std::cout << texture->id << std::endl;
-
+    texture = TextureManager::createColorTexture(Window::getFrameBufferDimensions());
     texture->bind();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, colorAttachment ? GL_COLOR_ATTACHMENT0 : GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
-                           texture->id, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture->id, 0);
 
     // Check if FBO is complete
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -48,15 +41,7 @@ void RenderPass::bind(const ERenderTarget& target, const bool isDepthPass)
 void RenderPass::unbind()
 {
     glDeleteFramebuffers(1, &fbo);
-    fbo = 0; // Reset FBO ID for safety
-
-    if (texture)
-    {
-        // TODO: Should be done through the texture manager, but it's not properly set
-        // up to be part of the cache!
-        glDeleteTextures(1, &texture->id);
-        texture.reset(); // Release the smart pointer
-    }
+    fbo = 0;
 }
 
 Ref<Texture> RenderPass::getResult()

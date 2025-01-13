@@ -33,8 +33,16 @@ void Renderer::update()
     // ===============
     // Shadow map pass
     // ===============
-    // Clean up list of shadow casters
+
+    // Clean up list of shadow casters and free memory
+    for (auto& [_, texture] : s_Data.shadowCasters)
+    {
+        texture->unbind();
+        glDeleteTextures(1, &texture->id);
+        texture.reset();
+    }
     s_Data.shadowCasters.clear();
+
     static auto depthShader = CreateRef<Shader>("assets/depth.vs", "assets/depth.fs");
 
     for (const auto& lightSceneNode : Scene::getLightSceneNodes())
