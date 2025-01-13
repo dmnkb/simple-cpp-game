@@ -23,9 +23,14 @@ void RenderPass::bind(const ERenderTarget& target, const bool isDepthPass)
     glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-    texture = TextureManager::createColorTexture(Window::getFrameBufferDimensions());
+    const bool colorAttachment = target == FRAMEBUFFER;
+
+    texture = colorAttachment ? TextureManager::createColorTexture(Window::getFrameBufferDimensions())
+                              : TextureManager::createDepthTexture(Window::getFrameBufferDimensions());
+
     texture->bind();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture->id, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, colorAttachment ? GL_COLOR_ATTACHMENT0 : GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+                           texture->id, 0);
 
     // Check if FBO is complete
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
