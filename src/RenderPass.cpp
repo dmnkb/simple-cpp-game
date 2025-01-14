@@ -18,20 +18,27 @@ void RenderPass::bind(const Ref<Texture>& attachment)
     }
 
     // Render to FBO
-    glColorMask(false, false, false, false);
+
+    // Mask out all colors if attachment is a depth texture
+    const bool isColorBuffer = attachment ? attachment->attachmentType == GL_COLOR_ATTACHMENT0 : true;
+    glColorMask(isColorBuffer, isColorBuffer, isColorBuffer, isColorBuffer);
 
     if (!fbo)
         glGenFramebuffers(1, &fbo);
+
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
     attachment->bind();
     glFramebufferTexture2D(GL_FRAMEBUFFER, attachment->attachmentType, GL_TEXTURE_2D, attachment->id, 0);
 
+    // Check if FBO is complete
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         std::cerr << "Framebuffer is not complete!" << std::endl;
 
+    // Render to FBO
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     glViewport(0, 0, attachment->texWidth, attachment->texHeight);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Render scene ...
 }

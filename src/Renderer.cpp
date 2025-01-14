@@ -52,6 +52,7 @@ void Renderer::update()
         if (light.lightType == SPOT)
         {
             auto depthTexture = TextureManager::createDepthTexture(Window::getFrameBufferDimensions());
+            // auto depthTexture = TextureManager::createColorTexture(Window::getFrameBufferDimensions());
             static RenderPass shadowCasterPass;
             // shadowCasterPass.bind(FRAMEBUFFER, true);
             shadowCasterPass.bind(depthTexture);

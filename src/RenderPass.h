@@ -2,7 +2,6 @@
 
 #include "Camera.h"
 #include "Mesh.h"
-#include "MeshSceneNode.h"
 #include "Shader.h"
 #include "TextureManager.h"
 #include "pch.h"
