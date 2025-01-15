@@ -12,8 +12,8 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [x] Refactor the renderer to become more generic (Introduce Mesh class)
 - [x] Scene graph & scene nodes
 - [x] Instanced rendering
-- [ ] Render pass abstraction
-- [ ] Shadow mapping
+- [x] Render pass abstraction
+- [x] Shadow mapping
 - [ ] Materials
 - [ ] Basic deferred rendering
 - [ ] Simple particle system OR grass rendering
