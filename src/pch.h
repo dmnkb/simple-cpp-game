@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <variant>
 
 // Thanks to: https://github.com/TheCherno/Hazel

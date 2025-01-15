@@ -12,12 +12,14 @@ add_subdirectory(vendor/glfw EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/glad EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/glm EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/imgui)
+add_subdirectory(vendor/fmt)
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
     PRIVATE glfw 
     PRIVATE glad 
     PRIVATE glm
     PRIVATE imgui
+    PRIVATE fmt::fmt
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE 

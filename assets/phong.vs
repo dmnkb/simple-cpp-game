@@ -20,7 +20,5 @@ void main()
 
     // Calculate the fragment position in world space
     FragPos = vec3(a_InstanceTransform * vec4(a_Position, 1.0));
-
-    // Final position in clip space
     gl_Position = u_ViewProjection * vec4(FragPos, 1.0);
 }

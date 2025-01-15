@@ -1,6 +1,9 @@
 #include "Renderer.h"
+#include "Scene.h"
 #include "Shader.h"
+#include "Window.h"
 #include "pch.h"
+#include <fmt/core.h>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -11,75 +14,162 @@ static RenderStats s_Stats;
 void Renderer::init()
 {
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
-
     enableOpenGLDebugOutput();
 
     glClearColor(0.2902f, 0.4196f, 0.9647f, 1.0f);
     glEnable(GL_DEPTH_TEST);
+    // glDepthMask(GL_TRUE);
 
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
-    // Buffer for instanced rendering
     glGenBuffers(1, &s_Data.instanceBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, s_Data.instanceBuffer);
 
-    // Lighting
-    unsigned int NUM_LIGHTS = 256;
-
-    // Create and bind the Uniform Buffer Object
-    glGenBuffers(1, &s_Data.uboLights);
-    glBindBuffer(GL_UNIFORM_BUFFER, s_Data.uboLights);
-
-    // Allocate memory for the UBO (empty for now)
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(Light) * NUM_LIGHTS, nullptr, GL_DYNAMIC_DRAW);
-
-    // Bind the UBO to the binding point
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, s_Data.uboLights);
+    prepareLightingUBO();
 }
 
-void Renderer::beginScene(Camera& camera)
+void Renderer::update()
 {
-    s_Data.viewMatrix = camera.getViewMatrix();
-    s_Data.viewProjectionMatrix = camera.getProjectionMatrix();
-    s_Data.camPos = camera.getPosition();
-}
+    // ===============
+    // Shadow map pass
+    // ===============
 
-void Renderer::update(const glm::vec2& windowDimensions)
-{
-    glViewport(0, 0, windowDimensions.x, windowDimensions.y);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    drawQueue();
-
-    // Reset renderQueue
-    s_Data.renderQueue.opaque.clear();
-    s_Data.renderQueue.transparent.clear();
-
-    // Reset list of lights
-    s_Data.lights->clear();
-}
-
-void Renderer::submitRenderable(const Renderable& renderable)
-{
-    if (!renderable.mesh || !renderable.shader)
+    // Clean up list of shadow casters and free memory
+    for (auto& [_, texture] : s_Data.shadowCasters)
     {
-        if (!renderable.mesh)
-            std::cerr << "Invalid mesh in batch!" << std::endl;
-        if (!renderable.shader)
-            std::cerr << "Invalid shader in batch!" << std::endl;
-        return;
+        texture->unbind();
+        glDeleteTextures(1, &texture->id);
+        texture.reset();
+    }
+    s_Data.shadowCasters.clear();
+
+    static auto depthShader = CreateRef<Shader>("assets/depth.vs", "assets/depth.fs");
+    depthShader->bind();
+
+    for (auto& lightSceneNode : Scene::getLightSceneNodes())
+    {
+        // auto depthTexture = TextureManager::createColorTexture(Window::getFrameBufferDimensions());
+        auto depthTexture = TextureManager::createDepthTexture(Window::getFrameBufferDimensions());
+        auto shadowMapPassQueue =
+            Scene::getRenderQueue([](const Ref<MeshSceneNode>& node) { return node->isOpaque(); });
+
+        static RenderPass shadowCasterPass;
+        shadowCasterPass.bind(depthTexture);
+
+        auto shadowCam = lightSceneNode->createShadowCamera();
+        Scene::setActiveCamera(shadowCam);
+
+        const auto lightSpaceMatrix = shadowCam->getProjectionMatrix() * shadowCam->getViewMatrix();
+        depthShader->setUniformMatrix4fv("lightSpaceMatrix", lightSpaceMatrix);
+
+        glCullFace(GL_FRONT);
+        executeShadowPass(shadowMapPassQueue);
+        glCullFace(GL_BACK);
+
+        s_Data.shadowCasters.push_back({lightSpaceMatrix, depthTexture});
+
+        Scene::clearRenderQueue();
+        shadowCasterPass.unbind();
     }
 
-    s_Data.renderQueue.opaque[renderable.shader][renderable.mesh].push_back(renderable.transform);
+    depthShader->unbind();
+
+    // ===================================
+    // Main pass using the player's camera
+    // ===================================
+    Scene::setActiveCamera(Scene::getDefaultCamera());
+
+    static RenderPass opaquePass;
+    opaquePass.bind();
+
+    auto finalQueue = Scene::getRenderQueue([](const Ref<MeshSceneNode>& node) { return node->isOpaque(); });
+    executePass(finalQueue);
+    Scene::clearRenderQueue();
+
+    opaquePass.unbind();
 }
 
-void Renderer::submitLight(const Light& light)
+void Renderer::executeShadowPass(const RenderQueue& queue)
 {
-    s_Data.lights->push_back(light);
+    for (const auto& [_, meshMap] : queue)
+    {
+        for (const auto& [mesh, transforms] : meshMap)
+        {
+            drawInstanceBatch(mesh, transforms);
+        }
+    }
 }
 
-void Renderer::bindInstanceData(const std::vector<glm::mat4>& transforms)
+void Renderer::executePass(const RenderQueue& queue)
+{
+
+    Light lightBuffer[256];
+
+    const auto lights = Scene::getLightSceneNodes();
+
+    for (int i = 0; i < lights.size(); i++)
+        lightBuffer[i] = ((lights)[i])->prepareLight();
+
+    for (const auto& [shader, meshMap] : queue)
+    {
+        const auto viewMatrix = Scene::getActiveCamera()->getViewMatrix();
+        const auto projectionMatrix = Scene::getActiveCamera()->getProjectionMatrix();
+        const auto viewProjectionMatrix = projectionMatrix * viewMatrix;
+        const auto camPos = Scene::getActiveCamera()->getPosition();
+
+        shader->bind();
+        shader->setUniformMatrix4fv("u_ViewProjection", viewProjectionMatrix);
+
+        // View
+        shader->setUniform3fv("viewPos", camPos);
+
+        // Lighting
+        GLuint uboBindingPoint = 0;
+        GLuint blockIndex = glGetUniformBlockIndex(shader->getProgramID(), "LightsBlock");
+        assert(blockIndex != GL_INVALID_INDEX && "LightsBlock not found in shader!");
+
+        glUniformBlockBinding(shader->getProgramID(), blockIndex, uboBindingPoint);
+        glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, s_Data.uboLights);
+
+        glBindBuffer(GL_UNIFORM_BUFFER, s_Data.uboLights);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(lightBuffer), lightBuffer);
+
+        for (size_t i = 0; i < s_Data.shadowCasters.size(); ++i)
+        {
+            auto shadowCaster = s_Data.shadowCasters[i];
+
+            std::string uniformName = fmt::format("lightSpaceMatrices[{}]", i);
+            shader->setUniformMatrix4fv(uniformName.c_str(), shadowCaster.lightSpaceMatrix);
+
+            uniformName = fmt::format("shadowMaps[{}]", i);
+            shadowCaster.depthTexture->bind(i);           // Bind texture to the i-th texture unit
+            shader->setUniform1i(uniformName.c_str(), i); // Tell shader which texture unit to use
+        }
+
+        for (const auto& [mesh, transforms] : meshMap)
+        {
+            drawInstanceBatch(mesh, transforms);
+        }
+
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+        shader->unbind();
+    }
+}
+
+void Renderer::drawInstanceBatch(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& transforms)
+{
+    s_Stats.drawCallCount++;
+
+    mesh->bind();
+    bindInstanceBuffer(transforms);
+    glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndexCount(), GL_UNSIGNED_INT, nullptr, transforms.size());
+    unbindInstancBuffer();
+    mesh->unbind();
+}
+
+void Renderer::bindInstanceBuffer(const std::vector<glm::mat4>& transforms)
 {
     // Bind the instance buffer and upload transforms
     glBindBuffer(GL_ARRAY_BUFFER, s_Data.instanceBuffer);
@@ -93,9 +183,8 @@ void Renderer::bindInstanceData(const std::vector<glm::mat4>& transforms)
     for (int i = 0; i < 4; ++i)
     {
         glEnableVertexAttribArray(3 + i); // 3, 4, 5, 6 are the locations
-        // glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4),
-        //                       reinterpret_cast<void*>(static_cast<std::uintptr_t>(i * vec4Size)));
-        glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(i * vec4Size));
+        glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4),
+                              reinterpret_cast<void*>(static_cast<std::uintptr_t>(i * vec4Size)));
         glVertexAttribDivisor(3 + i, 1); // One mat4 per instance
     }
 }
@@ -105,50 +194,19 @@ void Renderer::unbindInstancBuffer()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void Renderer::drawBatch(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& transforms)
+void Renderer::prepareLightingUBO()
 {
-    s_Stats.drawCallCount++;
+    unsigned int NUM_LIGHTS = 256;
 
-    mesh->bind();
-    bindInstanceData(transforms);
-    glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndexCount(), GL_UNSIGNED_INT, nullptr, transforms.size());
-    unbindInstancBuffer();
-    mesh->unbind();
-}
+    // Create and bind the Uniform Buffer Object
+    glGenBuffers(1, &s_Data.uboLights);
+    glBindBuffer(GL_UNIFORM_BUFFER, s_Data.uboLights);
 
-void Renderer::drawQueue()
-{
-    Light lightBuffer[256];
-    for (int i = 0; i < s_Data.lights->size(); i++)
-        lightBuffer[i] = (*s_Data.lights)[i];
+    // Allocate memory for the UBO (empty for now)
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(Light) * NUM_LIGHTS, nullptr, GL_DYNAMIC_DRAW);
 
-    for (const auto& [shader, meshMap] : s_Data.renderQueue.opaque)
-    {
-        shader->bind();
-
-        glm::mat4 viewProjectionMatrix = s_Data.viewProjectionMatrix * s_Data.viewMatrix;
-
-        shader->setUniformMatrix4fv("u_ViewProjection", viewProjectionMatrix);
-        shader->setUniform3fv("viewPos", s_Data.camPos);
-
-        GLuint uboBindingPoint = 0;
-        GLuint blockIndex = glGetUniformBlockIndex(shader->getProgramID(), "LightsBlock");
-        assert(blockIndex != GL_INVALID_INDEX && "LightsBlock not found in shader!");
-
-        glUniformBlockBinding(shader->getProgramID(), blockIndex, uboBindingPoint);
-        glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, s_Data.uboLights);
-
-        glBindBuffer(GL_UNIFORM_BUFFER, s_Data.uboLights);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(lightBuffer), lightBuffer);
-
-        for (const auto& [mesh, transforms] : meshMap)
-        {
-            drawBatch(mesh, transforms);
-        }
-
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
-        shader->unbind();
-    }
+    // Bind the UBO to the binding point
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, s_Data.uboLights);
 }
 
 const RenderStats& Renderer::getStats()
@@ -159,6 +217,24 @@ const RenderStats& Renderer::getStats()
 const void Renderer::resetStats()
 {
     s_Stats.drawCallCount = 0;
+}
+
+const std::vector<Ref<Texture>> Renderer::getShadowCasterDepthBuffers()
+{
+    std::vector<Ref<Texture>> textures = {};
+
+    for (const auto& shadowCaster : s_Data.shadowCasters)
+    {
+        textures.push_back(shadowCaster.depthTexture);
+    }
+
+    return textures;
+}
+
+void Renderer::shutdown()
+{
+    glDeleteBuffers(1, &s_Data.instanceBuffer);
+    glDeleteBuffers(1, &s_Data.uboLights);
 }
 
 void GLAPIENTRY Renderer::debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
@@ -173,7 +249,6 @@ void GLAPIENTRY Renderer::debugCallback(GLenum source, GLenum type, GLuint id, G
 
 void Renderer::enableOpenGLDebugOutput()
 {
-
     GLint majorVersion, minorVersion;
     glGetIntegerv(GL_MAJOR_VERSION, &majorVersion);
     glGetIntegerv(GL_MINOR_VERSION, &minorVersion);

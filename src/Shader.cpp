@@ -31,7 +31,7 @@ Shader::Shader(const char* vertexShaderPath, const char* fragmentShaderPath) : m
 Shader::~Shader()
 {
     unbind();
-    glDeleteShader(m_VertexShaderID);
+    glDeleteShader(m_FragmentShaderID);
     glDeleteShader(m_VertexShaderID);
     glDeleteProgram(m_ProgramID);
 }
@@ -151,10 +151,14 @@ void Shader::setIntArray(const char* name, GLint* values, GLsizei count)
 
 GLint Shader::getCachedLocation(const char* name)
 {
-    if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
-        return m_UniformLocationCache[name];
+    // FIXME: The cache doesn't work with EXACT matches and returns always the first.
+    // This breaks array uniforms!
+
+    // if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
+    //     return m_UniformLocationCache[name];
 
     GLint location = glGetUniformLocation(m_ProgramID, name);
+
     if (location == -1)
         std::cerr << "[ERROR] Uniform '" << name << "' not found in shader program." << std::endl;
 

@@ -5,10 +5,10 @@
 
 static SceneData s_sceneData;
 
-void Scene::update()
+void Scene::init(const CameraProps& cameraProps)
 {
-    submitLights();
-    submitMeshSceneNodes();
+    s_sceneData.defaultCamera = CreateRef<Camera>(cameraProps);
+    setActiveCamera(s_sceneData.defaultCamera);
 }
 
 void Scene::addMeshSceneNode(const Ref<MeshSceneNode>& node)
@@ -42,18 +42,47 @@ std::optional<SceneNodeVariant> Scene::getByName(const std::string& name)
     return std::nullopt;
 }
 
-void Scene::submitLights()
+RenderQueue& Scene::getRenderQueue(const RenderPassFilter& filter)
 {
-    for (const auto& node : s_sceneData.lightSceneNodes)
-    {
-        Renderer::submitLight(node->prepareLight());
-    }
-}
+    /**
+     * TODO:
+     * For more complex scenes, implement a culling stage that processes the scene graph and produces
+     * Renderables only for visible objects. This can be integrated with spatial partitioning techniques like BVH or
+     * octrees.
+     */
 
-void Scene::submitMeshSceneNodes()
-{
     for (const auto& node : s_sceneData.meshSceneNodes)
     {
-        Renderer::submitRenderable(node->prepareRenderable());
+        if (filter(node))
+        {
+            auto renderable = node->prepareRenderable();
+            s_sceneData.renderQueue[renderable.shader][renderable.mesh].push_back(renderable.transform);
+        }
     }
+    return s_sceneData.renderQueue;
+}
+
+void Scene::clearRenderQueue()
+{
+    s_sceneData.renderQueue.clear();
+}
+
+std::vector<Ref<LightSceneNode>> Scene::getLightSceneNodes()
+{
+    return s_sceneData.lightSceneNodes;
+}
+
+void Scene::setActiveCamera(const Ref<Camera>& camera)
+{
+    s_sceneData.activeCamera = camera;
+}
+
+const Ref<Camera> Scene::getActiveCamera()
+{
+    return s_sceneData.activeCamera;
+}
+
+const Ref<Camera> Scene::getDefaultCamera()
+{
+    return s_sceneData.defaultCamera;
 }

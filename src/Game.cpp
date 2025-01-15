@@ -11,18 +11,30 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 
-// TODO: to be updated on window resize
-const int windowWidth = 640;
-const int windowHeigth = 480;
-CameraProps camProps = {45.0f * (M_PI / 180.0f), ((float)windowWidth / windowHeigth), 0.1f, 1000.0f};
-
-Game::Game() : m_Camera(camProps), m_Player(m_Camera)
+Game::Game() : m_Player()
 {
+    // Device
+    // TODO: to be updated on window resize
+    const int windowWidth = 640;
+    const int windowHeigth = 480;
+
     WindowProps windowProps = {windowWidth, windowHeigth, "Simple CPP Game", NULL, NULL};
     Window::init(windowProps);
+
+    // ImGUI
     initImGui();
+
+    // Renderer
     Renderer::init();
+
+    // Scene
+    CameraProps cameraProps = {45.0f * (M_PI / 180.0f), ((float)windowWidth / windowHeigth), 0.1f, 1000.0f};
+    Scene::init(cameraProps);
+
+    // Events
     EventManager::registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
+
+    // Sandbox
     Sandbox::init();
 }
 
@@ -49,10 +61,8 @@ void Game::run()
 
         m_Player.update(m_DeltaTime);
 
-        Scene::update();
         Sandbox::update(m_DeltaTime);
-        Renderer::beginScene(m_Camera);
-        Renderer::update(Window::getFrameBufferDimensions());
+        Renderer::update();
         EventManager::processEvents();
 
         // Start new ImGui frame
@@ -62,15 +72,29 @@ void Game::run()
 
         // Render ImGui elements
         static bool open = true;
-        ImGui::Begin("Hello, ImGui!", &open);
+        ImGui::Begin("Hello, ImGui!", &open, ImGuiWindowFlags_NoTitleBar);
+
+        // FPS
         std::string fpsText = "FPS: " + std::to_string(fps);
         ImGui::Text("%s", fpsText.c_str());
+
+        // Draw Calls
         std::string drawCallsText = "Draw calls: " + std::to_string(Renderer::getStats().drawCallCount);
         ImGui::Text("%s", drawCallsText.c_str());
-        std::string position = "Camera Position: " + glm::to_string(m_Player.getPosition());
-        ImGui::Text("%s", position.c_str());
-        std::string roation = "Camera Rotation: " + glm::to_string(m_Player.getRotation());
-        ImGui::Text("%s", roation.c_str());
+
+        // Shadow Caster Depth Textures
+        // const auto& shadowDepthBuffers = Renderer::getShadowCasterDepthBuffers();
+        // if (!shadowDepthBuffers.empty())
+        // {
+        //     ImGui::Separator();
+        //     ImGui::Text("Shadow Depth Buffers:");
+        //     for (size_t i = 0; i < shadowDepthBuffers.size(); ++i)
+        //     {
+        //         const auto& texture = shadowDepthBuffers[i];
+        //         ImGui::Image((void*)(intptr_t)texture->id, ImVec2(128, 96));
+        //     }
+        // }
+
         ImGui::End();
 
         // Render ImGui
@@ -127,6 +151,8 @@ Game::~Game()
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
+    Renderer::shutdown();
+
     Window::shutdown();
 
     exit(EXIT_SUCCESS);
@@ -139,6 +165,22 @@ void Game::initImGui()
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
     ImGui::StyleColorsDark();
+
+    auto& style = ImGui::GetStyle();
+    ImVec4* colors = style.Colors;
+
+    const ImVec4 transparent = ImVec4(0.0, 0.0, 0.0, 0.0);
+    const ImVec4 white = ImVec4(1.0, 1.0, 1.0, 1.0);
+    colors[ImGuiCol_WindowBg] = transparent;
+    colors[ImGuiCol_ChildBg] = transparent;
+    colors[ImGuiCol_TitleBg] = transparent;
+    colors[ImGuiCol_ScrollbarBg] = transparent;
+    colors[ImGuiCol_Border] = transparent;
+    colors[ImGuiCol_Separator] = white;
+    colors[ImGuiCol_ScrollbarGrab] = transparent;
+    colors[ImGuiCol_ScrollbarGrabActive] = transparent;
+    colors[ImGuiCol_ScrollbarGrabHovered] = transparent;
+
     ImGui_ImplGlfw_InitForOpenGL(Window::getNativeWindow(), true);
     ImGui_ImplOpenGL3_Init("#version 330");
 }
