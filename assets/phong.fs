@@ -21,9 +21,7 @@ in vec2 v_UV;
 in vec3 v_Normal;
 in vec3 FragPos;
 
-uniform sampler2D u_Texture;
 uniform vec3 viewPos;
-
 uniform sampler2D shadowMaps[8];
 uniform mat4 lightSpaceMatrices[8];
 
@@ -47,7 +45,7 @@ float calculateShadow(int lightIndex, vec4 fragPosLightSpace)
     // Check if the fragment is outside the light's frustum
     if (projCoords.z > 1.0 || projCoords.x < 0.0 || projCoords.x > 1.0 || projCoords.y < 0.0 || projCoords.y > 1.0)
     {
-        return 1.0; // Fully lit if outside
+        return 0.0; // Fully lit if outside
     }
 
     // Sample the shadow map
@@ -55,8 +53,8 @@ float calculateShadow(int lightIndex, vec4 fragPosLightSpace)
 
     // Compare depth values
     float currentDepth = projCoords.z;
-    float bias = 0.005; // Bias to prevent shadow acne
-    float shadow = currentDepth - bias > closestDepth ? 0.5 : 1.0;
+    // check whether current frag pos is in shadow
+    float shadow = (currentDepth - 0.0001) > closestDepth ? 1.0 : 0.0;
 
     return shadow;
 }
@@ -124,7 +122,7 @@ void main()
         vec4 fragPosLightSpace = lightSpaceMatrices[i] * vec4(FragPos, 1.0);
 
         // Calculate shadow factor
-        float shadow = calculateShadow(i, fragPosLightSpace);
+        float shadow = 1 - calculateShadow(i, fragPosLightSpace);
 
         if (lights[i].lightType == POINT_LIGHT)
         {
@@ -138,6 +136,5 @@ void main()
         }
     }
 
-    vec4 texColor = texture(u_Texture, v_UV);
-    FragColor = texColor * vec4(resultColor + ambient, 1.0);
+    FragColor = vec4(resultColor + ambient, 1.0);
 }

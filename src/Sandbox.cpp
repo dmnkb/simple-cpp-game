@@ -22,17 +22,16 @@ void Sandbox::init()
     sceneNode2->setName("Floating Cube");
     Scene::addMeshSceneNode(sceneNode2);
 
-    auto light1 = CreateRef<LightSceneNode>(glm::vec3(10, 10, 0), glm::vec3(1, 0, 0), glm::vec3(-1, -2, 0));
+    auto light1 = CreateRef<LightSceneNode>(glm::vec3(5, 5, 0), glm::vec3(1, 0, 0), glm::vec3(-1, -1, 0));
     Scene::addLightSceneNode(light1);
 
-    auto light2 = CreateRef<LightSceneNode>(glm::vec3(-3, 2, 4), glm::vec3(0, 1, 0), glm::vec3(1, -1, -0.3));
-    light2->setName("Green Light");
+    auto light2 = CreateRef<LightSceneNode>(glm::vec3(-3, 2, 4), glm::vec3(0, 1, 0), glm::vec3(1, -1, -1));
     Scene::addLightSceneNode(light2);
 
-    auto light3 = CreateRef<LightSceneNode>(glm::vec3(2, 3, -3), glm::vec3(0, 0, 1), glm::vec3(1, -1, -0.3));
+    auto light3 = CreateRef<LightSceneNode>(glm::vec3(4, 3, -5), glm::vec3(0, 0, 1), glm::vec3(-2, -3, 3));
     Scene::addLightSceneNode(light3);
 
-    auto light4 = CreateRef<LightSceneNode>(glm::vec3(-4, 2, -4), glm::vec3(1, 0, 1), glm::vec3(-0.3, -1, -1));
+    auto light4 = CreateRef<LightSceneNode>(glm::vec3(3, 10, 3), glm::vec3(1, 0, 1), glm::vec3(-5, -15, -5));
     Scene::addLightSceneNode(light4);
 }
 
@@ -46,13 +45,6 @@ void Sandbox::update(double deltaTime)
     if (testNode && Is(Ref<MeshSceneNode>, *testNode))
     {
         const auto node = Get(Ref<MeshSceneNode>, *testNode);
-        node->setPosition(glm::vec3(0, sin(s_increment) * 2 - 4, 0));
-    }
-
-    const auto greenLight = Scene::getByName("Green Light");
-    if (greenLight && Is(Ref<LightSceneNode>, *greenLight))
-    {
-        const auto light = Get(Ref<LightSceneNode>, *greenLight);
-        light->setPosition(glm::vec3(sin(s_increment) * 3 - 10, 2, cos(s_increment) * 3));
+        node->setPosition(glm::vec3(0, sin(s_increment) * 2, 0));
     }
 }

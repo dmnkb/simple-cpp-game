@@ -53,16 +53,9 @@ RenderQueue& Scene::getRenderQueue(const RenderPassFilter& filter)
 
     for (const auto& node : s_sceneData.meshSceneNodes)
     {
-        // FIXME: should be done during the rendering being retrieved from each instances material
-
         if (filter(node))
         {
             auto renderable = node->prepareRenderable();
-
-            std::string uniformName = "u_Texture";
-            node->getTexture()->bind(0);
-            renderable.shader->setUniform1i(uniformName.c_str(), 0);
-
             s_sceneData.renderQueue[renderable.shader][renderable.mesh].push_back(renderable.transform);
         }
     }

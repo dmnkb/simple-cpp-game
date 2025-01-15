@@ -18,7 +18,7 @@ class LightSceneNode : public SceneNode
 
   private:
     glm::vec3 m_color = {0.0f, 0.0f, 0.0f};
-    ELightType m_lightType = ELightType::POINT;
+    ELightType m_lightType = ELightType::SPOT;
     float m_innerCone = 0.0f;
     float m_outerCone = 0.0f;
 };

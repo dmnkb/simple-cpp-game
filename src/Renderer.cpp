@@ -45,70 +45,128 @@ void Renderer::update()
     s_Data.shadowCasters.clear();
 
     static auto depthShader = CreateRef<Shader>("assets/depth.vs", "assets/depth.fs");
+    depthShader->bind();
 
-    for (const auto& lightSceneNode : Scene::getLightSceneNodes())
+    for (auto& lightSceneNode : Scene::getLightSceneNodes())
     {
-        const auto light = lightSceneNode->prepareLight();
-        if (light.lightType == SPOT)
-        {
-            auto depthTexture = TextureManager::createDepthTexture(Window::getFrameBufferDimensions());
-            // auto depthTexture = TextureManager::createColorTexture(Window::getFrameBufferDimensions());
-            static RenderPass shadowCasterPass;
-            // shadowCasterPass.bind(FRAMEBUFFER, true);
-            shadowCasterPass.bind(depthTexture);
+        // auto depthTexture = TextureManager::createColorTexture(Window::getFrameBufferDimensions());
+        auto depthTexture = TextureManager::createDepthTexture(Window::getFrameBufferDimensions());
+        auto shadowMapPassQueue =
+            Scene::getRenderQueue([](const Ref<MeshSceneNode>& node) { return node->isOpaque(); });
 
-            // Setup shadow caster camera
-            Scene::setActiveCamera(lightSceneNode->createShadowCamera());
+        static RenderPass shadowCasterPass;
+        shadowCasterPass.bind(depthTexture);
 
-            // Render meshes
-            auto shadowMapPassQueue =
-                Scene::getRenderQueue([](const Ref<MeshSceneNode>& node) { return node->isOpaque(); });
-            executePass(shadowMapPassQueue, false, depthShader);
-            Scene::clearRenderQueue();
+        auto shadowCam = lightSceneNode->createShadowCamera();
+        Scene::setActiveCamera(shadowCam);
 
-            // Store depth buffers along with individual transforms
-            s_Data.shadowCasters.push_back({lightSceneNode->getTransform(), depthTexture});
+        const auto lightSpaceMatrix = shadowCam->getProjectionMatrix() * shadowCam->getViewMatrix();
+        depthShader->setUniformMatrix4fv("lightSpaceMatrix", lightSpaceMatrix);
 
-            // Reset and cleanup
-            shadowCasterPass.unbind();
-        }
+        glCullFace(GL_FRONT);
+        executeShadowPass(shadowMapPassQueue);
+        glCullFace(GL_BACK);
+
+        s_Data.shadowCasters.push_back({lightSpaceMatrix, depthTexture});
+
+        Scene::clearRenderQueue();
+        shadowCasterPass.unbind();
     }
+
+    depthShader->unbind();
 
     // ===================================
     // Main pass using the player's camera
     // ===================================
+    Scene::setActiveCamera(Scene::getDefaultCamera());
 
     static RenderPass opaquePass;
     opaquePass.bind();
 
-    // Get the scene's main camera (default = player's camera)
-    Scene::setActiveCamera(Scene::getDefaultCamera());
-
-    // Render all meshes (currently opaque only)
     auto finalQueue = Scene::getRenderQueue([](const Ref<MeshSceneNode>& node) { return node->isOpaque(); });
-    executePass(finalQueue, true);
+    executePass(finalQueue);
     Scene::clearRenderQueue();
 
-    // Clean up FBO
     opaquePass.unbind();
+}
 
-    // ========================
-    // Bloom pass (Pseudo Code)
-    // ========================
+void Renderer::executeShadowPass(const RenderQueue& queue)
+{
+    for (const auto& [_, meshMap] : queue)
+    {
+        for (const auto& [mesh, transforms] : meshMap)
+        {
+            drawInstanceBatch(mesh, transforms);
+        }
+    }
+}
 
-    // RenderPass bloomPass;
+void Renderer::executePass(const RenderQueue& queue)
+{
 
-    // Get the scene's main camera (default = player's camera)
-    // Scene::setActiveCamera(Scene::getDefaultCamera());
+    Light lightBuffer[256];
 
-    // Rendertarget = Screen
-    // bloomPass.bind(SCREEN);
+    const auto lights = Scene::getLightSceneNodes();
 
-    // Render fullscreen quad, bind bloom shader and apply the previous pass's result as texture
-    // bloomShader.bind();
-    // renderFullScreenQuad(opaquePassResult);
-    // bloomShader.unbind();
-    // bloomPass.unbind();
+    for (int i = 0; i < lights.size(); i++)
+        lightBuffer[i] = ((lights)[i])->prepareLight();
+
+    for (const auto& [shader, meshMap] : queue)
+    {
+        const auto viewMatrix = Scene::getActiveCamera()->getViewMatrix();
+        const auto projectionMatrix = Scene::getActiveCamera()->getProjectionMatrix();
+        const auto viewProjectionMatrix = projectionMatrix * viewMatrix;
+        const auto camPos = Scene::getActiveCamera()->getPosition();
+
+        shader->bind();
+        shader->setUniformMatrix4fv("u_ViewProjection", viewProjectionMatrix);
+
+        // View
+        shader->setUniform3fv("viewPos", camPos);
+
+        // Lighting
+        GLuint uboBindingPoint = 0;
+        GLuint blockIndex = glGetUniformBlockIndex(shader->getProgramID(), "LightsBlock");
+        assert(blockIndex != GL_INVALID_INDEX && "LightsBlock not found in shader!");
+
+        glUniformBlockBinding(shader->getProgramID(), blockIndex, uboBindingPoint);
+        glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, s_Data.uboLights);
+
+        glBindBuffer(GL_UNIFORM_BUFFER, s_Data.uboLights);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(lightBuffer), lightBuffer);
+
+        for (size_t i = 0; i < s_Data.shadowCasters.size(); ++i)
+        {
+            auto shadowCaster = s_Data.shadowCasters[i];
+
+            std::string uniformName = fmt::format("lightSpaceMatrices[{}]", i);
+            shader->setUniformMatrix4fv(uniformName.c_str(), shadowCaster.lightSpaceMatrix);
+
+            uniformName = fmt::format("shadowMaps[{}]", i);
+            shadowCaster.depthTexture->bind(i);           // Bind texture to the i-th texture unit
+            shader->setUniform1i(uniformName.c_str(), i); // Tell shader which texture unit to use
+        }
+
+        for (const auto& [mesh, transforms] : meshMap)
+        {
+            drawInstanceBatch(mesh, transforms);
+        }
+
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+        shader->unbind();
+    }
+}
+
+void Renderer::drawInstanceBatch(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& transforms)
+{
+    s_Stats.drawCallCount++;
+
+    mesh->bind();
+    bindInstanceBuffer(transforms);
+    glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndexCount(), GL_UNSIGNED_INT, nullptr, transforms.size());
+    unbindInstancBuffer();
+    mesh->unbind();
 }
 
 void Renderer::bindInstanceBuffer(const std::vector<glm::mat4>& transforms)
@@ -149,84 +207,6 @@ void Renderer::prepareLightingUBO()
 
     // Bind the UBO to the binding point
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, s_Data.uboLights);
-}
-
-void Renderer::executePass(const RenderQueue& queue, const bool useLights, const Ref<Shader>& overrideShader)
-{
-    Light lightBuffer[256];
-
-    const auto lights = Scene::getLightSceneNodes();
-
-    for (int i = 0; i < lights.size(); i++)
-        lightBuffer[i] = ((lights)[i])->prepareLight();
-
-    for (const auto& [shader, meshMap] : queue)
-    {
-
-        assert(Scene::getActiveCamera() && "No active camera in scene");
-
-        const auto viewMatrix = Scene::getActiveCamera()->getViewMatrix();
-        const auto projectionMatrix = Scene::getActiveCamera()->getProjectionMatrix();
-        const auto viewProjectionMatrix = projectionMatrix * viewMatrix;
-        const auto camPos = Scene::getActiveCamera()->getPosition();
-
-        auto activeShader = overrideShader ? overrideShader : shader;
-        activeShader->bind();
-
-        activeShader->setUniformMatrix4fv("u_ViewProjection", viewProjectionMatrix);
-        // Hack to prevent unnecessary props being passed during the shadow map pass
-        if (!overrideShader)
-        {
-            // View
-            activeShader->setUniform3fv("viewPos", camPos);
-
-            // Lighting
-            GLuint uboBindingPoint = 0;
-            GLuint blockIndex = glGetUniformBlockIndex(activeShader->getProgramID(), "LightsBlock");
-            assert(blockIndex != GL_INVALID_INDEX && "LightsBlock not found in shader!");
-
-            glUniformBlockBinding(shader->getProgramID(), blockIndex, uboBindingPoint);
-            glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, s_Data.uboLights);
-
-            glBindBuffer(GL_UNIFORM_BUFFER, s_Data.uboLights);
-            glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(lightBuffer), lightBuffer);
-
-            // Shadows
-            for (size_t i = 1; i < s_Data.shadowCasters.size() + 1; ++i)
-            {
-                const auto& shadowCaster = s_Data.shadowCasters[i - 1];
-
-                std::string uniformName = fmt::format("lightSpaceMatrices[{}]", i);
-                activeShader->setUniformMatrix4fv(uniformName.c_str(), shadowCaster.lightSpaceMatrix);
-
-                uniformName = fmt::format("shadowMaps[{}]", i);
-                shadowCaster.depthTexture->bind(i);                 // Bind texture to the i-th texture unit
-                activeShader->setUniform1i(uniformName.c_str(), i); // Tell shader which texture unit to use
-            }
-        }
-
-        for (const auto& [mesh, transforms] : meshMap)
-        {
-            drawInstanceBatch(mesh, transforms);
-        }
-
-        if (!overrideShader)
-        {
-            glBindBuffer(GL_UNIFORM_BUFFER, 0);
-        }
-        activeShader->unbind();
-    }
-}
-
-void Renderer::drawInstanceBatch(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& transforms)
-{
-    s_Stats.drawCallCount++;
-
-    mesh->bind();
-    bindInstanceBuffer(transforms);
-    glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndexCount(), GL_UNSIGNED_INT, nullptr, transforms.size());
-    unbindInstancBuffer();
-    mesh->unbind();
 }
 
 const RenderStats& Renderer::getStats()

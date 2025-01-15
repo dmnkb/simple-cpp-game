@@ -82,28 +82,23 @@ Ref<Texture> TextureManager::createColorTexture(const glm::vec2& dimensions, con
 
 Ref<Texture> TextureManager::createDepthTexture(const glm::vec2& dimensions)
 {
-    auto texture = CreateRef<Texture>();
-    texture->attachmentType = GL_DEPTH_ATTACHMENT;
+    auto depthMap = CreateRef<Texture>();
+    depthMap->attachmentType = GL_DEPTH_ATTACHMENT;
 
-    texture->texWidth = dimensions.x;
-    texture->texHeight = dimensions.y;
-    texture->channelCount = 1; // Depth texture has a single channel
+    depthMap->texWidth = dimensions.x;
+    depthMap->texHeight = dimensions.y;
+    depthMap->channelCount = 1; // Depth texture has a single channel
 
-    glGenTextures(1, &texture->id);
-    glBindTexture(GL_TEXTURE_2D, texture->id);
-
+    glGenTextures(1, &depthMap->id);
+    glBindTexture(GL_TEXTURE_2D, depthMap->id);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, dimensions.x, dimensions.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
-                 nullptr);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                 NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-
-    return texture;
+    return depthMap;
 }
 
 void TextureManager::deleteTexture(const GLuint& textureID)

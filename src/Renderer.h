@@ -85,8 +85,8 @@ class Renderer
     const static std::vector<Ref<Texture>> getShadowCasterDepthBuffers();
 
   private:
-    static void executePass(const RenderQueue& queue, const bool lights = false,
-                            const Ref<Shader>& overrideShader = nullptr);
+    static void executeShadowPass(const RenderQueue& queue);
+    static void executePass(const RenderQueue& queue);
     static void drawInstanceBatch(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& transforms);
     static void bindInstanceBuffer(const std::vector<glm::mat4>& transforms);
     static void unbindInstancBuffer();

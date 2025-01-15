@@ -83,17 +83,17 @@ void Game::run()
         ImGui::Text("%s", drawCallsText.c_str());
 
         // Shadow Caster Depth Textures
-        const auto& shadowDepthBuffers = Renderer::getShadowCasterDepthBuffers();
-        if (!shadowDepthBuffers.empty())
-        {
-            ImGui::Separator();
-            ImGui::Text("Shadow Depth Buffers:");
-            for (size_t i = 0; i < shadowDepthBuffers.size(); ++i)
-            {
-                const auto& texture = shadowDepthBuffers[i];
-                ImGui::Image((void*)(intptr_t)texture->id, ImVec2(128, 96));
-            }
-        }
+        // const auto& shadowDepthBuffers = Renderer::getShadowCasterDepthBuffers();
+        // if (!shadowDepthBuffers.empty())
+        // {
+        //     ImGui::Separator();
+        //     ImGui::Text("Shadow Depth Buffers:");
+        //     for (size_t i = 0; i < shadowDepthBuffers.size(); ++i)
+        //     {
+        //         const auto& texture = shadowDepthBuffers[i];
+        //         ImGui::Image((void*)(intptr_t)texture->id, ImVec2(128, 96));
+        //     }
+        // }
 
         ImGui::End();
 
