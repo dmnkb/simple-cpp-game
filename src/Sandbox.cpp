@@ -32,7 +32,7 @@ void Sandbox::init()
     sceneNode2->setPosition({0, 10, 0});
     Scene::addMeshSceneNode(sceneNode2);
 
-    auto light1 = CreateRef<LightSceneNode>(glm::vec3(5, 15, 0), glm::vec3(1, 0, 0), glm::vec3(-1, -1, 0));
+    auto light1 = CreateRef<LightSceneNode>(glm::vec3(5, 15, 0), glm::vec3(1, 0, 0), glm::vec3(-1, -1, 0), ELT_SPOT);
     Scene::addLightSceneNode(light1);
 
     auto light2 = CreateRef<LightSceneNode>(glm::vec3(-3, 12, 4), glm::vec3(0, 1, 0), glm::vec3(1, -1, -1));
@@ -43,12 +43,12 @@ static float s_increment = 0.0f;
 
 void Sandbox::update(double deltaTime)
 {
-    // s_increment += 0.5 * deltaTime;
+    s_increment += 0.5 * deltaTime;
 
-    // const auto testNode = Scene::getByName("Floating Cube");
-    // if (testNode && Is(Ref<MeshSceneNode>, *testNode))
-    // {
-    //     const auto node = Get(Ref<MeshSceneNode>, *testNode);
-    //     node->setPosition(glm::vec3(0, sin(s_increment) * 2, 0));
-    // }
+    const auto testNode = Scene::getByName("Floating Cube");
+    if (testNode && Is(Ref<MeshSceneNode>, *testNode))
+    {
+        const auto node = Get(Ref<MeshSceneNode>, *testNode);
+        node->setPosition(glm::vec3(0, sin(s_increment) * 4 + 4, 0));
+    }
 }

@@ -1,7 +1,8 @@
 #version 330 core
 
-const int POINT_LIGHT = 0;
-const int SPOT_LIGHT = 1;
+const int ELT_POINT = 0;
+const int ELT_DIRECTIONAL = 1;
+const int ELT_SPOT = 2;
 
 struct Light
 {
@@ -63,7 +64,7 @@ float calculateShadow(int lightIndex, vec4 fragPosLightSpace)
 }
 
 // Function to calculate the contribution of a point light
-vec3 calculatePointLight(vec3 lightPos, vec3 fragPos, vec3 viewPos, vec3 normal, vec3 color, float shadow)
+vec3 calculatePointLight(vec3 lightPos, vec3 fragPos, vec3 viewPos, vec3 normal, vec3 color)
 {
     vec3 lightDir = normalize(lightPos - fragPos);
     float diff = max(dot(normal, lightDir), 0.0);
@@ -72,8 +73,8 @@ vec3 calculatePointLight(vec3 lightPos, vec3 fragPos, vec3 viewPos, vec3 normal,
     vec3 halfwayDir = normalize(lightDir + viewDir);
     float spec = pow(max(dot(normal, halfwayDir), 0.0), 100);
 
-    vec3 diffuse = color * diff * shadow;
-    vec3 specular = color * spec * shadow;
+    vec3 diffuse = color * diff;
+    vec3 specular = color * spec;
 
     return diffuse + specular;
 }
@@ -127,11 +128,11 @@ void main()
         // Calculate shadow factor
         float shadow = 1 - calculateShadow(i, fragPosLightSpace);
 
-        if (lights[i].lightType == POINT_LIGHT)
+        if (lights[i].lightType == ELT_POINT)
         {
-            resultColor += calculatePointLight(lightPos, FragPos, viewPos, norm, color, shadow);
+            resultColor += calculatePointLight(lightPos, FragPos, viewPos, norm, color);
         }
-        else if (lights[i].lightType == SPOT_LIGHT)
+        else if (lights[i].lightType == ELT_SPOT)
         {
             vec3 lightDir = lights[i].rotation;
             resultColor += calculateSpotLight(lightPos, lightDir, FragPos, viewPos, norm, color, lights[i].innerCone,

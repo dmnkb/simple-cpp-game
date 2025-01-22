@@ -7,33 +7,17 @@
 #include "RenderPass.h"
 #include "TextureManager.h"
 
-#define MAX_MESH_COUNT 256
-#define MAX_TRANSFORMS_PER_MESH 256
-
-// Refactor idea:
-// Renderer
-//     Manages the overall pipeline and orchestration.
-//     Delegates tasks to managers and passes.
-// RenderPassManager
-//     Stores and manages all RenderPass instances.
-//     Handles pass execution, input/output dependencies, and framebuffer bindings.
-// LightingManager
-//     Manages lights and UBO updates.
+// Status Quo:
 // RenderQueue
-//     Tracks opaque and transparent objects.
-//     Provides sorting utilities.
-// RenderStats
-//     Extended to include more detailed performance metrics.
-
-// TODO: For reflections in the future:
-// Camera reflectionCamera = createReflectionCamera(scene.getMainCamera());
-
-/** Current:
- * Shader
- * L   Mesh (sorted from far to near)
- *     L    std::vector<glm::mat4> transforms
- */
-using RenderQueue = std::unordered_map<Ref<Material>, std::unordered_map<Ref<Mesh>, std::vector<glm::mat4>>>;
+// ├── Material
+// │   ├── Mesh1
+// │   │   ├── mat4 Transform1
+// │   │   ├── mat4 Transform2
+// │   │   └── ...
+// │   ├── Mesh2
+// │   │   ├── mat4 Transform1
+// │   │   ├── mat4 Transform2
+// │   │   └── ...
 
 // TODO: Future idea:
 // RenderQueue
@@ -55,6 +39,8 @@ using RenderQueue = std::unordered_map<Ref<Material>, std::unordered_map<Ref<Mes
 // │   │   └── InstanceDataBuffer1
 // │   └── ...
 // └── ...
+
+using RenderQueue = std::unordered_map<Ref<Material>, std::unordered_map<Ref<Mesh>, std::vector<glm::mat4>>>;
 
 struct RendererData
 {
