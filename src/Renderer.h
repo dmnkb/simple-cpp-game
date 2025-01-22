@@ -2,9 +2,9 @@
 
 #include "Camera.h"
 #include "Light.h"
+#include "Material.h"
 #include "Mesh.h"
 #include "RenderPass.h"
-#include "Shader.h"
 #include "TextureManager.h"
 
 #define MAX_MESH_COUNT 256
@@ -33,7 +33,7 @@
  * L   Mesh (sorted from far to near)
  *     L    std::vector<glm::mat4> transforms
  */
-using RenderQueue = std::unordered_map<Ref<Shader>, std::unordered_map<Ref<Mesh>, std::vector<glm::mat4>>>;
+using RenderQueue = std::unordered_map<Ref<Material>, std::unordered_map<Ref<Mesh>, std::vector<glm::mat4>>>;
 
 // TODO: Future idea:
 // RenderQueue
@@ -58,14 +58,15 @@ using RenderQueue = std::unordered_map<Ref<Shader>, std::unordered_map<Ref<Mesh>
 
 struct RendererData
 {
+    GLuint instanceBuffer;
+    GLuint uboLights;
+
+    // TODO: This could be combined such that both is part of a vector of Lights
     struct ShadowCaster
     {
         glm::mat4 lightSpaceMatrix;
         Ref<Texture> depthTexture;
     };
-
-    GLuint instanceBuffer;
-    GLuint uboLights;
     std::vector<ShadowCaster> shadowCasters;
 };
 

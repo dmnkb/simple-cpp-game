@@ -61,6 +61,8 @@ std::optional<ShaderSource> Shader::readShaderFiles(const char* vertexShaderPath
         // convert stream into string
         vertexCode = vShaderStream.str();
         fragmentCode = fShaderStream.str();
+
+        shaderNames = {.vertex = vertexShaderPath, .fragment = fragmentShaderPath};
     }
     catch (std::ifstream::failure e)
     {
@@ -86,7 +88,8 @@ void Shader::setVertexAttribute(const char* name, GLint size, GLenum type, GLboo
 {
     GLint location = glGetAttribLocation(m_ProgramID, name);
     if (location == -1)
-        std::cerr << "[ERROR] Uniform '" << name << "' not found in shader program." << std::endl;
+        std::cerr << "[ERROR] (" << shaderNames.vertex << "): Uniform '" << name << "' not found in shader program."
+                  << std::endl;
     else
     {
         glEnableVertexAttribArray(location);
@@ -118,19 +121,15 @@ void Shader::setUniformMatrix3fv(const char* name, const glm::mat3 value)
 void Shader::setUniform3fv(const char* name, const glm::vec3 value)
 {
     auto location = getCachedLocation(name);
-    // GLint location = glGetUniformLocation(m_ProgramID, name);
-
-    // std::cout << "name: " << name << ", location: " << location << "\n";
-
     if (location != -1)
         glUniform3fv(location, 1, (const GLfloat*)&value);
 }
 
-void Shader::setUniform1i(const char* name, GLint v0)
+void Shader::setUniform1i(const char* name, GLint value)
 {
     auto location = getCachedLocation(name);
     if (location != -1)
-        glUniform1i(location, v0);
+        glUniform1i(location, value);
 }
 
 void Shader::setUniform1iv(const char* name, GLint samplerIDs[16])
@@ -159,8 +158,9 @@ GLint Shader::getCachedLocation(const char* name)
 
     GLint location = glGetUniformLocation(m_ProgramID, name);
 
-    if (location == -1)
-        std::cerr << "[ERROR] Uniform '" << name << "' not found in shader program." << std::endl;
+    if (location == -1 && false)
+        std::cerr << "[ERROR] (" << shaderNames.fragment << "): Uniform '" << name << "' not found in shader program."
+                  << std::endl;
 
     m_UniformLocationCache[name] = location;
     return location;
@@ -188,4 +188,9 @@ void Shader::checkProgramLinking(GLuint program)
         glGetProgramInfoLog(program, 1024, NULL, infoLog);
         fprintf(stderr, "[ERROR] Error linking program: %s\n", infoLog);
     }
+}
+
+const bool Shader::hasUniform(const char* name)
+{
+    return !!getCachedLocation(name);
 }

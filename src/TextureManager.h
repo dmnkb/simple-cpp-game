@@ -21,6 +21,11 @@ struct Texture
         glActiveTexture(GL_TEXTURE0 + slot);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
+
+    ~Texture()
+    {
+        glDeleteTextures(1, &id);
+    }
 };
 
 class TextureManager

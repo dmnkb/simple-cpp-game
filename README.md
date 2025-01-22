@@ -7,7 +7,7 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [x] Dear ImGUI
 - [x] Lighting
     - [x] Blinn-Phong lighting model
-    - [x] Dynamics amount of lights (using UBO)
+    - [x] Dynamic amount of lights (using UBO)
     - [x] Spotlights
 - [x] Refactor the renderer to become more generic (Introduce Mesh class)
 - [x] Scene graph & scene nodes
@@ -16,10 +16,11 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [x] Shadow mapping
 - [ ] Materials
 - [ ] Basic deferred rendering
-- [ ] Simple particle system OR grass rendering
-- [ ] Integrate Assimp mesh loading
+- [ ] Integrate Assimp mesh and material loading
 - [ ] Integrate Bullet Physics
+- [ ] Simple particle system OR grass rendering
 - [ ] Rendering a heightmap from a texture
+- [ ] Scene (de)serialization (and loading)
 - [ ] Skeletal animation and GPU skinning
 - [ ] Audio using [miniaudio](https://github.com/mackron/miniaudio)
 - [ ] UI using [clay](https://github.com/nicbarker/clay)

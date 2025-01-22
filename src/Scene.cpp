@@ -56,7 +56,7 @@ RenderQueue& Scene::getRenderQueue(const RenderPassFilter& filter)
         if (filter(node))
         {
             auto renderable = node->prepareRenderable();
-            s_sceneData.renderQueue[renderable.shader][renderable.mesh].push_back(renderable.transform);
+            s_sceneData.renderQueue[renderable.material][renderable.mesh].push_back(renderable.transform);
         }
     }
     return s_sceneData.renderQueue;

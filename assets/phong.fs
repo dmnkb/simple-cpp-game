@@ -22,7 +22,9 @@ in vec3 v_Normal;
 in vec3 FragPos;
 
 uniform vec3 viewPos;
-uniform sampler2D shadowMaps[8];
+
+uniform sampler2D foo;
+uniform sampler2D shadowMaps[7];
 uniform mat4 lightSpaceMatrices[8];
 
 out vec4 FragColor;
@@ -136,5 +138,6 @@ void main()
         }
     }
 
-    FragColor = vec4(resultColor + ambient, 1.0);
+    vec4 baseColor = texture(foo, v_UV);
+    FragColor = vec4(resultColor + ambient, 1.0) * baseColor;
 }

@@ -166,21 +166,6 @@ void Game::initImGui()
     (void)io;
     ImGui::StyleColorsDark();
 
-    auto& style = ImGui::GetStyle();
-    ImVec4* colors = style.Colors;
-
-    const ImVec4 transparent = ImVec4(0.0, 0.0, 0.0, 0.0);
-    const ImVec4 white = ImVec4(1.0, 1.0, 1.0, 1.0);
-    colors[ImGuiCol_WindowBg] = transparent;
-    colors[ImGuiCol_ChildBg] = transparent;
-    colors[ImGuiCol_TitleBg] = transparent;
-    colors[ImGuiCol_ScrollbarBg] = transparent;
-    colors[ImGuiCol_Border] = transparent;
-    colors[ImGuiCol_Separator] = white;
-    colors[ImGuiCol_ScrollbarGrab] = transparent;
-    colors[ImGuiCol_ScrollbarGrabActive] = transparent;
-    colors[ImGuiCol_ScrollbarGrabHovered] = transparent;
-
     ImGui_ImplGlfw_InitForOpenGL(Window::getNativeWindow(), true);
     ImGui_ImplOpenGL3_Init("#version 330");
 }

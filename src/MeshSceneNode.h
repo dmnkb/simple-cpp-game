@@ -1,9 +1,8 @@
 #pragma once
 
+#include "Material.h"
 #include "Mesh.h"
 #include "SceneNode.h"
-#include "Shader.h"
-#include "TextureManager.h"
 #include "pch.h"
 
 enum ERenderFlags
@@ -17,7 +16,7 @@ enum ERenderFlags
 struct Renderable
 {
     Ref<Mesh> mesh;
-    Ref<Shader> shader;
+    Ref<Material> material;
     glm::mat4 transform;
 };
 
@@ -25,7 +24,7 @@ class MeshSceneNode : public SceneNode
 {
   public:
     // Maybe the constructor just takes a file path
-    MeshSceneNode(Ref<Mesh> mesh, Ref<Shader> shader = nullptr, const Ref<Texture>& texture = {});
+    MeshSceneNode(Ref<Mesh> mesh, Ref<Material> material = nullptr);
 
     /**
      * TODO:
@@ -48,17 +47,10 @@ class MeshSceneNode : public SceneNode
         return m_renderFlags.find(CASTS_SHADOW) != m_renderFlags.end();
     }
 
-    const Renderable& prepareRenderable();
-
-    // FIXME: remove
-    const Ref<Texture> getTexture()
-    {
-        return m_texture;
-    }
+    const Renderable prepareRenderable();
 
   private:
     Ref<Mesh> m_mesh;
-    Ref<Shader> m_shader;
-    Ref<Texture> m_texture;
+    Ref<Material> m_material;
     std::unordered_set<ERenderFlags> m_renderFlags = {OPAQUE};
 };

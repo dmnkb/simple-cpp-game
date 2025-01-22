@@ -13,6 +13,12 @@ struct ShaderSource
 class Shader
 {
   public:
+    struct ShaderNames
+    {
+        const char* vertex = "";
+        const char* fragment = "";
+    } shaderNames;
+
     Shader(const char* vertexShaderPath, const char* fragmentShaderPath);
     ~Shader();
 
@@ -33,9 +39,11 @@ class Shader
     void setUniformMatrix4fv(const char* name, const glm::mat4 value);
     void setUniformMatrix3fv(const char* name, const glm::mat3 value);
     void setUniform3fv(const char* name, const glm::vec3 value);
-    void setUniform1i(const char* name, GLint v0);
+    void setUniform1i(const char* name, GLint value);
     void setUniform1iv(const char* name, GLint samplerIDs[16]);
     void setIntArray(const char* name, GLint* values, GLsizei count);
+
+    const bool hasUniform(const char* name);
 
   private:
     GLuint m_ProgramID;
