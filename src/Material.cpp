@@ -6,27 +6,26 @@ Material::Material(Ref<Shader>& shader) : m_shader(shader) {}
 void Material::bind()
 {
     m_shader->bind();
-
-    for (const auto& [uniformName, texture] : m_textures)
-    {
-        texture->bind(0);
-        m_shader->setUniform1i(uniformName.c_str(), 0);
-    }
+    // 0 = Default color layer across all fragment shaders
+    m_colorTexture->bind(0);
+    m_shader->setUniform1i("colorMap", 0);
+    m_shader->setUniformFloat("colorMapScale", m_colorTextureScale);
 }
 
 void Material::unbind()
 {
     m_shader->unbind();
-
-    for (const auto& [uniformName, texture] : m_textures)
-    {
-        texture->unbind();
-    }
+    m_colorTexture->unbind();
 }
 
-void Material::addTexture(const std::string& uniformName, Ref<Texture> texture)
+void Material::setColorTexture(Ref<Texture>& texture)
 {
-    m_textures[uniformName] = texture;
+    m_colorTexture = texture;
+}
+
+void Material::setColorTextureScale(const int& scale)
+{
+    m_colorTextureScale = scale;
 }
 
 void Material::setUniformMatrix4fv(const char* name, const glm::mat4 value)
@@ -47,6 +46,11 @@ void Material::setUniform1i(const char* name, GLint value)
 Ref<Shader> Material::getShader() const
 {
     return m_shader;
+}
+
+Ref<Texture> Material::getColorTexture() const
+{
+    return m_colorTexture;
 }
 
 const bool Material::hasUniform(const char* name)

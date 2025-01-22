@@ -22,8 +22,9 @@ in vec3 v_Normal;
 in vec3 FragPos;
 
 uniform vec3 viewPos;
+uniform float colorMapScale;
 
-uniform sampler2D foo;
+uniform sampler2D colorMap;
 uniform sampler2D shadowMaps[7];
 uniform mat4 lightSpaceMatrices[8];
 
@@ -112,7 +113,7 @@ vec3 calculateSpotLight(vec3 lightPos, vec3 lightDir, vec3 fragPos, vec3 viewPos
 void main()
 {
     vec3 norm = normalize(v_Normal);
-    vec3 ambient = vec3(0.5);
+    vec3 ambient = vec3(0.75);
     vec3 resultColor = vec3(0.0);
 
     for (int i = 0; i < NUM_LIGHTS; i++)
@@ -138,6 +139,6 @@ void main()
         }
     }
 
-    vec4 baseColor = texture(foo, v_UV);
+    vec4 baseColor = texture(colorMap, v_UV * colorMapScale);
     FragColor = vec4(resultColor + ambient, 1.0) * baseColor;
 }
