@@ -14,6 +14,8 @@ class LightSceneNode : public SceneNode
 
     void setLookAt(const glm::vec3& lookAt = {0.f, 0.f, 0.f});
 
+    const ELightType getLightType();
+
     const Light prepareLight();
     const Ref<Camera> createShadowCamera();
 

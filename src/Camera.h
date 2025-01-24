@@ -3,51 +3,64 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+enum ECameraType
+{
+    ECT_PROJECTION,
+    ECT_ORTHOGRAPHIC
+};
+
 struct CameraProps
 {
-    float fov, aspect, near, far;
-    glm::vec3 defaultPosition, defaultTarget = glm::vec3(0, 0, 0);
+    float fov = 45.0f * (M_PI / 180.0f);
+    float aspect = 4 / 3;
+    float near = 0.1f;
+    float far = 1000.0f;
+    glm::vec3 position, target = glm::vec3(0, 0, 0);
+    ECameraType type = ECT_PROJECTION;
 };
 
 class Camera
 {
   public:
-    Camera(const CameraProps& props)
-        : m_Fov(props.fov), m_Aspect(props.aspect), m_Near(props.near), m_Far(props.far),
-          m_Position(props.defaultPosition), m_Target(props.defaultTarget){};
+    Camera(const CameraProps& props) : m_props(props) {}
 
     void setPosition(glm::vec3 position)
     {
-        m_Position = position;
+        m_props.position = position;
     }
 
     void lookAt(glm::vec3 target)
     {
-        m_Target = target;
+        m_props.target = target;
     }
 
     glm::mat4 getProjectionMatrix() const
     {
-        return glm::perspective(m_Fov, m_Aspect, m_Near, m_Far);
+        if (m_props.type == ECT_PROJECTION)
+        {
+            return glm::perspective(m_props.fov, m_props.aspect, m_props.near, m_props.far);
+        }
+        else if (m_props.type == ECT_ORTHOGRAPHIC)
+        {
+            float orthoLeft = -50.0f;
+            float orthoRight = 50.0f;
+            float orthoBottom = -50.0f;
+            float orthoTop = 50.0f;
+            return glm::ortho(orthoLeft, orthoRight, orthoBottom, orthoTop, m_props.near, m_props.far);
+        }
     }
 
     glm::mat4 getViewMatrix() const
     {
         glm::vec3 up = {0.0f, 1.0f, 0.0f};
-        return glm::lookAt(m_Position, m_Target, up);
+        return glm::lookAt(m_props.position, m_props.target, up);
     }
 
     glm::vec3 getPosition() const
     {
-        return m_Position;
+        return m_props.position;
     }
 
   private:
-    float m_Fov;
-    float m_Aspect;
-    float m_Near;
-    float m_Far;
-
-    glm::vec3 m_Position;
-    glm::vec3 m_Target;
+    CameraProps m_props;
 };

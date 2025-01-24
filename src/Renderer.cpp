@@ -18,7 +18,6 @@ void Renderer::init()
 
     glClearColor(0.2902f, 0.4196f, 0.9647f, 1.0f);
     glEnable(GL_DEPTH_TEST);
-    // glDepthMask(GL_TRUE);
 
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
@@ -43,10 +42,15 @@ void Renderer::update()
     static auto depthShader = CreateRef<Shader>("assets/depth.vs", "assets/depth.fs");
     depthShader->bind();
 
-    static int lightIndex = 0;
     for (auto& lightSceneNode : Scene::getLightSceneNodes())
     {
-        auto depthTexture = TextureManager::createDepthTexture({512, 512});
+        if (lightSceneNode->getLightType() == ELT_POINT)
+        {
+            // Point lights don't cast shadows
+            continue;
+        }
+
+        auto depthTexture = TextureManager::createDepthTexture({2048, 2048});
         auto shadowMapPassQueue =
             Scene::getRenderQueue([](const Ref<MeshSceneNode>& node) { return node->isOpaque(); });
 
@@ -59,16 +63,12 @@ void Renderer::update()
         const auto lightSpaceMatrix = shadowCam->getProjectionMatrix() * shadowCam->getViewMatrix();
         depthShader->setUniformMatrix4fv("lightSpaceMatrix", lightSpaceMatrix);
 
-        glCullFace(GL_FRONT);
         executeShadowPass(shadowMapPassQueue);
-        glCullFace(GL_BACK);
 
         s_Data.shadowCasters.push_back({.lightSpaceMatrix = lightSpaceMatrix, .depthTexture = depthTexture});
 
         Scene::clearRenderQueue();
         shadowCasterPass.unbind();
-
-        lightIndex++;
     }
 
     depthShader->unbind();
@@ -90,13 +90,21 @@ void Renderer::update()
 
 void Renderer::executeShadowPass(const RenderQueue& queue)
 {
+    glCullFace(GL_FRONT);
+    std::unordered_map<Ref<Mesh>, std::vector<glm::mat4>> transformedMeshs = {};
     for (const auto& [_, meshMap] : queue)
     {
         for (const auto& [mesh, transforms] : meshMap)
         {
-            drawInstanceBatch(mesh, transforms);
+            transformedMeshs[mesh] = transforms;
         }
     }
+    for (const auto& [mesh, transforms] : transformedMeshs)
+    {
+        drawInstanceBatch(mesh, transforms);
+    }
+    transformedMeshs.clear();
+    glCullFace(GL_BACK);
 }
 
 void Renderer::executePass(const RenderQueue& queue)
@@ -139,12 +147,12 @@ void Renderer::executePass(const RenderQueue& queue)
         // Shadows
         for (size_t i = 0; i < s_Data.shadowCasters.size(); ++i)
         {
-            auto shadowCaster = s_Data.shadowCasters[i];
-            auto lightSpaceMatrixUniformName = fmt::format("lightSpaceMatrices[{}]", i);
+            RendererData::ShadowCaster shadowCaster = s_Data.shadowCasters[i];
+            std::string lightSpaceMatrixUniformName = fmt::format("lightSpaceMatrices[{}]", i);
             if (lightUniformBlockIndex != GL_INVALID_INDEX && material->hasUniform(lightSpaceMatrixUniformName.c_str()))
                 material->setUniformMatrix4fv(lightSpaceMatrixUniformName.c_str(), shadowCaster.lightSpaceMatrix);
 
-            auto shadowMapUniformName = fmt::format("shadowMaps[{}]", i);
+            std::string shadowMapUniformName = fmt::format("shadowMaps[{}]", i);
             if (material->hasUniform(shadowMapUniformName.c_str()))
             {
                 // Color = 0, shadow[n] = n + 1

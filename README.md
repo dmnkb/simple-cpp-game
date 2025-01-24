@@ -16,13 +16,14 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [x] Shadow mapping
 - [ ] Materials
 - [ ] Basic deferred rendering
+- [ ] Editor mode with entity control
 - [ ] Integrate Assimp mesh and material loading
 - [ ] Integrate Bullet Physics
 - [ ] Simple particle system OR grass rendering
 - [ ] Rendering a heightmap from a texture
 - [ ] Scene (de)serialization (and loading)
-- [ ] Skeletal animation and GPU skinning
 - [ ] Audio using [miniaudio](https://github.com/mackron/miniaudio)
+- [ ] Skeletal animation and GPU skinning
 - [ ] UI using [clay](https://github.com/nicbarker/clay)
 
 

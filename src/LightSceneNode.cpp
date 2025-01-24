@@ -24,6 +24,11 @@ void LightSceneNode::setLookAt(const glm::vec3& lookAt)
     m_rotation = glm::degrees(eulerAngles);
 }
 
+const ELightType LightSceneNode::getLightType()
+{
+    return m_lightType;
+}
+
 const Light LightSceneNode::prepareLight()
 {
     return {
@@ -42,9 +47,13 @@ const Light LightSceneNode::prepareLight()
 
 const Ref<Camera> LightSceneNode::createShadowCamera()
 {
-    CameraProps shadowCamProps = {static_cast<float>(60.0f * (M_PI / 180.0f)), 1, 0.1f, 1000.0f};
+    CameraProps shadowCamProps = {.aspect = static_cast<float>(60.0f * (M_PI / 180.0f)),
+                                  .aspect = 1.0f,
+                                  .near = 0.1f,
+                                  .far = 1000.0f,
+                                  .position = m_position,
+                                  .target = m_position + m_rotation,
+                                  .type = m_lightType == ELT_SPOT ? ECT_PROJECTION : ECT_ORTHOGRAPHIC};
     auto camera = CreateRef<Camera>(shadowCamProps);
-    camera->setPosition(m_position);
-    camera->lookAt(m_position + m_rotation);
     return camera;
 }
