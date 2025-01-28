@@ -8,16 +8,19 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [x] Lighting
     - [x] Blinn-Phong lighting model
     - [x] Dynamic amount of lights (using UBO)
-    - [x] Spotlights
+    - [x] Spot, point, directional
 - [x] Refactor the renderer to become more generic (Introduce Mesh class)
 - [x] Scene graph & scene nodes
 - [x] Instanced rendering
 - [x] Render pass abstraction
 - [x] Shadow mapping
-- [ ] Materials
+- [x] Materials
+- [ ] Basic post processing
+- [ ] HDR image based lighting
+- [ ] Cascaded shadow maps 
 - [ ] Basic deferred rendering
-- [ ] Editor mode with entity control
 - [ ] Integrate Assimp mesh and material loading
+- [ ] Editor mode with selection and entity control
 - [ ] Integrate Bullet Physics
 - [ ] Simple particle system OR grass rendering
 - [ ] Rendering a heightmap from a texture

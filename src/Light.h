@@ -11,6 +11,7 @@ enum ELightType
     ELT_SPOT
 };
 
+// TODO: Light intensity
 struct Light
 {
     glm::vec3 position = {0.0f, 0.0f, 0.0f};      // 3 floats, 16 bytes due to std140 padding
