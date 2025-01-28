@@ -12,26 +12,33 @@ void Sandbox::init()
 {
     auto mesh = CreateRef<Mesh>("my/unused/model/path/model.glb");
 
-    // Load textures
-    auto groundTexture = TextureManager::loadTextureFromFile("assets/texture_13.png");
-    auto contastTexture = TextureManager::loadTextureFromFile("assets/texture_13.png");
+    auto lightTexture = TextureManager::loadTextureFromFile("assets/texture_08.png");
+    auto darkTexture = TextureManager::loadTextureFromFile("assets/texture_01.png");
+    auto oragngeTexture = TextureManager::loadTextureFromFile("assets/texture_02.png");
 
-    // Load shader
     auto shader = CreateRef<Shader>("assets/phong.vs", "assets/phong.fs");
 
-    // Create ground cube
-    auto material1 = CreateRef<Material>(shader);
-    material1->setColorTexture(groundTexture);
-    material1->setColorTextureScale(16);
+    auto materialLight = CreateRef<Material>(shader);
+    materialLight->setdiffuseMap(lightTexture);
+    materialLight->setTextureRepeat(256);
 
-    auto groundNode = CreateRef<MeshSceneNode>(mesh, material1);
+    auto materialDark = CreateRef<Material>(shader);
+    materialDark->setdiffuseMap(darkTexture);
+
+    auto materialOrange = CreateRef<Material>(shader);
+    materialOrange->setdiffuseMap(oragngeTexture);
+
+    auto groundNode = CreateRef<MeshSceneNode>(mesh, materialLight);
     groundNode->setPosition(glm::vec3(0, -1, 0));
-    groundNode->setScale(glm::vec3(500, 1, 500));
+    groundNode->setScale(glm::vec3(512, 1, 512));
     Scene::addMeshSceneNode(groundNode);
 
+    auto foo = CreateRef<MeshSceneNode>(mesh, materialOrange);
+    foo->setScale(glm::vec3(2, 2, 2));
+    foo->setPosition(glm::vec3(0, .5, 0));
+    Scene::addMeshSceneNode(foo);
+
     // Create floating cubes
-    auto material2 = CreateRef<Material>(shader);
-    material2->setColorTexture(contastTexture);
 
     const int numCubes = 16;
     const float radius = 10.0f;
@@ -42,7 +49,7 @@ void Sandbox::init()
         float x = radius * glm::cos(angle);
         float z = radius * glm::sin(angle);
 
-        auto floatingNode = CreateRef<MeshSceneNode>(mesh, material2);
+        auto floatingNode = CreateRef<MeshSceneNode>(mesh, materialDark);
         floatingNode->setName("Floating Cube " + std::to_string(i));
         floatingNode->setPosition(glm::vec3(x, 4.0f, z));
         Scene::addMeshSceneNode(floatingNode);

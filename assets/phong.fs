@@ -23,9 +23,8 @@ in vec3 v_Normal;
 in vec3 FragPos;
 
 uniform vec3 viewPos;
-uniform float colorMapScale;
 
-uniform sampler2D colorMap;
+uniform sampler2D diffuseMap;
 uniform sampler2D shadowMaps[7];
 uniform mat4 lightSpaceMatrices[8];
 
@@ -35,6 +34,13 @@ out vec4 FragColor;
 layout(std140) uniform LightsBlock
 {
     Light lights[NUM_LIGHTS];
+};
+
+layout(std140) uniform MaterialPropsBlock
+{
+    float textureRepeat;     // Controls UV scaling
+    float shininess;         // Controls the sharpness of specular highlights
+    float specularIntensity; // Controls the visibility of specular highlights
 };
 
 // Function to calculate shadow factor
@@ -50,7 +56,7 @@ float calculateShadow(int lightIndex, vec4 fragPosLightSpace)
 
     float closestDepth = texture(shadowMaps[lightIndex], projCoords.xy).r;
     float currentDepth = projCoords.z;
-    float shadow = (currentDepth - 0.0000) > closestDepth ? 1.0 : 0.0;
+    float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
 
     return shadow;
 }
@@ -63,10 +69,10 @@ vec3 calculatePointLight(vec3 lightPos, vec3 fragPos, vec3 viewPos, vec3 normal,
 
     vec3 viewDir = normalize(viewPos - fragPos);
     vec3 halfwayDir = normalize(lightDir + viewDir);
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), 16);
+    float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
 
     vec3 diffuse = color * diff;
-    vec3 specular = color * spec;
+    vec3 specular = color * spec * specularIntensity;
 
     return diffuse + specular;
 }
@@ -80,10 +86,10 @@ vec3 calculateDirectionalLight(vec3 lightDir, vec3 viewPos, vec3 fragPos, vec3 n
 
     vec3 viewDir = normalize(viewPos - fragPos);
     vec3 halfwayDir = normalize(lightDir + viewDir);
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), 100);
+    float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
 
     vec3 diffuse = color * diff;
-    vec3 specular = color * spec;
+    vec3 specular = color * spec * specularIntensity;
 
     return (diffuse + specular) * shadow;
 }
@@ -109,10 +115,10 @@ vec3 calculateSpotLight(vec3 lightPos, vec3 lightDir, vec3 fragPos, vec3 viewPos
 
         vec3 viewDir = normalize(viewPos - fragPos);
         vec3 halfwayDir = normalize(fragToLight + viewDir);
-        float spec = pow(max(dot(normal, halfwayDir), 0.0), 100);
+        float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
 
         vec3 diffuse = color * diff;
-        vec3 specular = color * spec;
+        vec3 specular = color * spec * specularIntensity;
 
         resultColor = (diffuse + specular) * intensity * shadow;
     }
@@ -150,6 +156,7 @@ void main()
         }
     }
 
-    vec4 baseColor = texture(colorMap, v_UV * colorMapScale);
+    vec2 scaledUV = v_UV * textureRepeat;
+    vec4 baseColor = texture(diffuseMap, scaledUV);
     FragColor = vec4(resultColor + ambient, 1.0) * baseColor;
 }

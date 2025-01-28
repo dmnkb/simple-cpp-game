@@ -1,31 +1,57 @@
 #include "Material.h"
 #include <fmt/core.h>
 
-Material::Material(Ref<Shader>& shader) : m_shader(shader) {}
+Material::Material(Ref<Shader>& shader, MaterialProps props) : m_shader(shader), m_props(props)
+{
+    // Create and bind the Uniform Buffer Object
+    glGenBuffers(1, &m_uboMaterial);
+    glBindBuffer(GL_UNIFORM_BUFFER, m_uboMaterial);
+
+    // Allocate memory for the UBO (empty for now)
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(MaterialProps), nullptr, GL_DYNAMIC_DRAW);
+
+    // Bind the UBO to the binding point
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uboMaterial); // Binding point 0
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
 
 void Material::bind()
 {
     m_shader->bind();
+
+    // Bind the diffuse map sampler
     // 0 = Default color layer across all fragment shaders
-    m_colorTexture->bind(0);
-    m_shader->setUniform1i("colorMap", 0);
-    m_shader->setUniformFloat("colorMapScale", m_colorTextureScale);
+    m_diffuseMap->bind(0);
+    m_shader->setUniform1i("diffuseMap", 0);
+
+    // Bind the material's properties
+    GLuint uboBindingPoint = 1; // 0 = LightsBlock, 1 = MaterialPropsBlock
+    GLuint blockIndex = glGetUniformBlockIndex(m_shader->getProgramID(), "MaterialPropsBlock");
+    if (blockIndex != GL_INVALID_INDEX)
+    {
+        glUniformBlockBinding(m_shader->getProgramID(), blockIndex, uboBindingPoint);
+        glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, m_uboMaterial);
+
+        glBindBuffer(GL_UNIFORM_BUFFER, m_uboMaterial);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(MaterialProps), &m_props);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0); // Unbind
+    }
 }
 
 void Material::unbind()
 {
     m_shader->unbind();
-    m_colorTexture->unbind();
+    m_diffuseMap->unbind();
 }
 
-void Material::setColorTexture(Ref<Texture>& texture)
+void Material::setdiffuseMap(Ref<Texture>& texture)
 {
-    m_colorTexture = texture;
+    m_diffuseMap = texture;
 }
 
-void Material::setColorTextureScale(const int& scale)
+void Material::setTextureRepeat(const int& repeat)
 {
-    m_colorTextureScale = scale;
+    m_props.textureRepeat = repeat;
 }
 
 void Material::setUniformMatrix4fv(const char* name, const glm::mat4 value)
@@ -46,11 +72,6 @@ void Material::setUniform1i(const char* name, GLint value)
 Ref<Shader> Material::getShader() const
 {
     return m_shader;
-}
-
-Ref<Texture> Material::getColorTexture() const
-{
-    return m_colorTexture;
 }
 
 const bool Material::hasUniform(const char* name)

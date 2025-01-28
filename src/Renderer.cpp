@@ -90,20 +90,15 @@ void Renderer::update()
 
 void Renderer::executeShadowPass(const RenderQueue& queue)
 {
+    // FIXME: We only bind one material anyway, render all meshes in a single call instead.
     glCullFace(GL_FRONT);
-    std::unordered_map<Ref<Mesh>, std::vector<glm::mat4>> transformedMeshs = {};
-    for (const auto& [_, meshMap] : queue)
+    for (const auto& [material, meshMap] : queue)
     {
         for (const auto& [mesh, transforms] : meshMap)
         {
-            transformedMeshs[mesh] = transforms;
+            drawInstanceBatch(mesh, transforms);
         }
     }
-    for (const auto& [mesh, transforms] : transformedMeshs)
-    {
-        drawInstanceBatch(mesh, transforms);
-    }
-    transformedMeshs.clear();
     glCullFace(GL_BACK);
 }
 
