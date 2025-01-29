@@ -15,11 +15,13 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [x] Render pass abstraction
 - [x] Shadow mapping
 - [x] Materials
+- [ ] Update render stats debugging
 - [ ] Basic post processing
 - [ ] HDR image based lighting
 - [ ] Cascaded shadow maps 
 - [ ] Basic deferred rendering
 - [ ] Integrate Assimp mesh and material loading
+- [ ] Improve event system referencing ([this](https://github.com/TheCherno/Hazel/blob/1feb70572fa87fa1c4ba784a2cfeada5b4a500db/Hazel/src/Hazel/Core/Base.h#L26))
 - [ ] Editor mode with selection and entity control
 - [ ] Integrate Bullet Physics
 - [ ] Simple particle system OR grass rendering

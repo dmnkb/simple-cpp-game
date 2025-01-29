@@ -1,4 +1,4 @@
-#include "Game.h"
+#include "Application.h"
 #include "EventManager.h"
 #include "Renderer.h"
 #include "Sandbox.h"
@@ -11,14 +11,14 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 
-Game::Game() : m_Player()
+Application::Application() : m_Player()
 {
     // Device
     // TODO: to be updated on window resize
     const int windowWidth = 640;
     const int windowHeigth = 480;
 
-    WindowProps windowProps = {windowWidth, windowHeigth, "Simple CPP Game", NULL, NULL};
+    WindowProps windowProps = {windowWidth, windowHeigth, "Simple CPP Application", NULL, NULL};
     Window::init(windowProps);
 
     // ImGUI
@@ -38,7 +38,7 @@ Game::Game() : m_Player()
     Sandbox::init();
 }
 
-void Game::run()
+void Application::run()
 {
     int previousDrawCalls = 0;
     int previousVertexCount = 0;
@@ -113,7 +113,7 @@ void Game::run()
     }
 }
 
-void Game::onKeyEvent(Event* event)
+void Application::onKeyEvent(Event* event)
 {
     auto keyEvent = dynamic_cast<KeyEvent*>(event);
     if (!keyEvent)
@@ -145,7 +145,7 @@ void Game::onKeyEvent(Event* event)
     }
 }
 
-Game::~Game()
+Application::~Application()
 {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -158,7 +158,7 @@ Game::~Game()
     exit(EXIT_SUCCESS);
 }
 
-void Game::initImGui()
+void Application::initImGui()
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();

@@ -1,8 +1,8 @@
-#include "Game.h"
+#include "Application.h"
 
 int main(void)
 {
-    Game* game = new Game();
+    Application* application = new Application();
 
-    game->run();
+    application->run();
 }

@@ -3,11 +3,11 @@
 #include "EventManager.h"
 #include "Player.h"
 
-class Game
+class Application
 {
   public:
-    Game();
-    ~Game();
+    Application();
+    ~Application();
 
     void run();
     void onKeyEvent(Event* event);
