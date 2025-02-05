@@ -1,7 +1,4 @@
 #include "Scene.h"
-#include "LightSceneNode.h"
-#include "MeshSceneNode.h"
-#include "Renderer.h"
 
 static SceneData s_sceneData;
 
@@ -42,29 +39,28 @@ std::optional<SceneNodeVariant> Scene::getByName(const std::string& name)
     return std::nullopt;
 }
 
-RenderQueue& Scene::getRenderQueue(const RenderPassFilter& filter)
+/**
+ * TODO:
+ * For more complex scenes, implement a culling stage that processes the scene graph and produces
+ * Renderables only for visible objects. This can be integrated with spatial partitioning techniques like BVH or
+ * octrees.
+ *
+ * Example:
+ * std::vector<Renderable*> candidates = spatialPartition.Query(cameraFrustum);
+ */
+RenderQueue Scene::getRenderQueue(const RenderPassFilter& filter)
 {
-    /**
-     * TODO:
-     * For more complex scenes, implement a culling stage that processes the scene graph and produces
-     * Renderables only for visible objects. This can be integrated with spatial partitioning techniques like BVH or
-     * octrees.
-     */
+    RenderQueue renderQueue = {};
 
     for (const auto& node : s_sceneData.meshSceneNodes)
     {
         if (filter(node))
         {
-            auto renderable = node->prepareRenderable();
-            s_sceneData.renderQueue[renderable.material][renderable.mesh].push_back(renderable.transform);
+            auto renderable = node->getRenderable();
+            renderQueue[renderable->material][renderable->mesh].push_back(renderable->transform);
         }
     }
-    return s_sceneData.renderQueue;
-}
-
-void Scene::clearRenderQueue()
-{
-    s_sceneData.renderQueue.clear();
+    return renderQueue;
 }
 
 std::vector<Ref<LightSceneNode>> Scene::getLightSceneNodes()

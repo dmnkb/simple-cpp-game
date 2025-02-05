@@ -7,9 +7,10 @@
 
 enum ERenderFlags
 {
-    OPAQUE,
-    TRANSLUCENT,
-    CASTS_SHADOW,
+    ERF_ALL, // Placeholder as it corresponds to simply returning "true" during the filtering stage
+    ERF_OPAQUE_ONLY,
+    ERF_TRANSLUCENT_ONLY,
+    ERF_CASTS_SHADOW,
 };
 
 // An atomic, stateless POD (plain old data) that contains mesh, material and transform.
@@ -34,23 +35,34 @@ class MeshSceneNode : public SceneNode
 
     const bool isOpaque() const
     {
-        return m_renderFlags.find(OPAQUE) != m_renderFlags.end();
+        return m_renderFlags.find(ERF_OPAQUE_ONLY) != m_renderFlags.end();
     }
 
     const bool isTransparent() const
     {
-        return m_renderFlags.find(TRANSLUCENT) != m_renderFlags.end();
+        return m_renderFlags.find(ERF_TRANSLUCENT_ONLY) != m_renderFlags.end();
     }
 
     const bool isCastsShadow() const
     {
-        return m_renderFlags.find(CASTS_SHADOW) != m_renderFlags.end();
+        return m_renderFlags.find(ERF_CASTS_SHADOW) != m_renderFlags.end();
     }
 
-    const Renderable prepareRenderable();
+    void setPosition(const glm::vec3& position);
+    void setRotation(const glm::vec3& rotation);
+    void setScale(const glm::vec3& scale);
+
+    Ref<Renderable>& getRenderable()
+    {
+        return m_renderable;
+    }
+
+  private:
+    void updateTransform();
 
   private:
     Ref<Mesh> m_mesh;
     Ref<Material> m_material;
-    std::unordered_set<ERenderFlags> m_renderFlags = {OPAQUE};
+    std::unordered_set<ERenderFlags> m_renderFlags = {ERF_ALL};
+    Ref<Renderable> m_renderable;
 };

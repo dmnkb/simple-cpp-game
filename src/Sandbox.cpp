@@ -5,28 +5,28 @@
 #include "MeshSceneNode.h"
 #include "Scene.h"
 #include "Shader.h"
-#include "TextureManager.h"
+#include "Texture.h"
 #include "pch.h"
 
 void Sandbox::init()
 {
     auto mesh = CreateRef<Mesh>("my/unused/model/path/model.glb");
 
-    auto lightTexture = TextureManager::loadTextureFromFile("assets/texture_08.png");
-    auto darkTexture = TextureManager::loadTextureFromFile("assets/texture_01.png");
-    auto oragngeTexture = TextureManager::loadTextureFromFile("assets/texture_02.png");
+    Texture lightTexture("assets/texture_08.png");
+    Texture darkTexture("assets/texture_01.png");
+    Texture oragngeTexture("assets/texture_02.png");
 
     auto shader = CreateRef<Shader>("assets/phong.vs", "assets/phong.fs");
 
     auto materialLight = CreateRef<Material>(shader);
-    materialLight->setdiffuseMap(lightTexture);
+    materialLight->setDiffuseMap(lightTexture);
     materialLight->setTextureRepeat(256);
 
     auto materialDark = CreateRef<Material>(shader);
-    materialDark->setdiffuseMap(darkTexture);
+    materialDark->setDiffuseMap(darkTexture);
 
     auto materialOrange = CreateRef<Material>(shader);
-    materialOrange->setdiffuseMap(oragngeTexture);
+    materialOrange->setDiffuseMap(oragngeTexture);
 
     auto groundNode = CreateRef<MeshSceneNode>(mesh, materialLight);
     groundNode->setPosition(glm::vec3(0, -1, 0));

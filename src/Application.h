@@ -2,6 +2,7 @@
 
 #include "EventManager.h"
 #include "Player.h"
+#include "Renderer.h"
 
 class Application
 {
@@ -14,6 +15,9 @@ class Application
 
   private:
     void initImGui();
+
+  private:
+    Scope<Renderer> m_renderer;
     Player m_Player;
 
     double m_DeltaTime, m_FPSUpdateTime = 0.0;

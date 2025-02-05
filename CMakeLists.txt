@@ -24,7 +24,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME} PRIVATE 
     ${CMAKE_SOURCE_DIR}/src
-    # ${CMAKE_SOURCE_DIR}/src/scene
+    ${CMAKE_SOURCE_DIR}/src/renderer
     ${CMAKE_SOURCE_DIR}/include  # Add the include directory
     # Add more directories if needed
 )

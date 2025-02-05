@@ -36,11 +36,7 @@ class Camera
 
     glm::mat4 getProjectionMatrix() const
     {
-        if (m_props.type == ECT_PROJECTION)
-        {
-            return glm::perspective(m_props.fov, m_props.aspect, m_props.near, m_props.far);
-        }
-        else if (m_props.type == ECT_ORTHOGRAPHIC)
+        if (m_props.type == ECT_ORTHOGRAPHIC)
         {
             float orthoLeft = -50.0f;
             float orthoRight = 50.0f;
@@ -48,6 +44,7 @@ class Camera
             float orthoTop = 50.0f;
             return glm::ortho(orthoLeft, orthoRight, orthoBottom, orthoTop, m_props.near, m_props.far);
         }
+        return glm::perspective(m_props.fov, m_props.aspect, m_props.near, m_props.far);
     }
 
     glm::mat4 getViewMatrix() const

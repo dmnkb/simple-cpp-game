@@ -25,7 +25,7 @@ Application::Application() : m_Player()
     initImGui();
 
     // Renderer
-    Renderer::init();
+    m_renderer = CreateScope<Renderer>();
 
     // Scene
     CameraProps cameraProps = {45.0f * (M_PI / 180.0f), ((float)windowWidth / windowHeigth), 0.1f, 1000.0f};
@@ -62,7 +62,7 @@ void Application::run()
         m_Player.update(m_DeltaTime);
 
         Sandbox::update(m_DeltaTime);
-        Renderer::update();
+        m_renderer->update();
         EventManager::processEvents();
 
         // Start new ImGui frame
@@ -79,8 +79,8 @@ void Application::run()
         ImGui::Text("%s", fpsText.c_str());
 
         // Draw Calls
-        std::string drawCallsText = "Draw calls: " + std::to_string(Renderer::getStats().drawCallCount);
-        ImGui::Text("%s", drawCallsText.c_str());
+        // std::string drawCallsText = "Draw calls: " + std::to_string(Renderer::getStats().drawCallCount);
+        // ImGui::Text("%s", drawCallsText.c_str());
 
         // Shadow Caster Depth Textures
         // const auto& shadowDepthBuffers = Renderer::getShadowCasterDepthBuffers();
@@ -106,7 +106,7 @@ void Application::run()
         Window::pollEvents();
 
         // Reset stats for the next frame
-        Renderer::resetStats();
+        // Renderer::resetStats();
 
         // Update last time for next frame
         lastTime = currentTime;
@@ -150,8 +150,6 @@ Application::~Application()
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-
-    Renderer::shutdown();
 
     Window::shutdown();
 
