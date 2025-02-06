@@ -10,7 +10,12 @@
 
 ForwardPass::ForwardPass()
 {
-    initLightUBO();
+    unsigned int NUM_LIGHTS = 256;
+
+    glGenBuffers(1, &m_uboLights);
+    glBindBuffer(GL_UNIFORM_BUFFER, m_uboLights);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(LightSceneNode::LightUBO) * NUM_LIGHTS, nullptr, GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uboLights);
 }
 
 ForwardPass::~ForwardPass()
@@ -25,16 +30,12 @@ void ForwardPass::execute()
     glViewport(0, 0, Window::getFrameBufferDimensions().x, Window::getFrameBufferDimensions().y);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    updateLightUBO();
-
     Scene::setActiveCamera(Scene::getDefaultCamera());
 
     for (const auto& [material, meshMap] : Scene::getRenderQueue([](const Ref<MeshSceneNode>& node) { return true; }))
     {
         material->bind();
-        setViewUniforms(material);
-        setLightUniforms(material);
-        setShadowUniforms(material);
+        updateUniforms(material);
 
         for (const auto& [mesh, transforms] : meshMap)
         {
@@ -46,24 +47,7 @@ void ForwardPass::execute()
     }
 }
 
-void ForwardPass::updateLightUBO()
-{
-    const auto lights = Scene::getLightSceneNodes();
-    for (int i = 0; i < lights.size(); i++)
-        m_lightBuffer[i] = ((lights)[i])->toUBO();
-}
-
-void ForwardPass::initLightUBO()
-{
-    unsigned int NUM_LIGHTS = 256;
-
-    glGenBuffers(1, &m_uboLights);
-    glBindBuffer(GL_UNIFORM_BUFFER, m_uboLights);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(LightSceneNode::LightUBO) * NUM_LIGHTS, nullptr, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uboLights);
-}
-
-void ForwardPass::setViewUniforms(const Ref<Material>& material)
+void ForwardPass::updateUniforms(const Ref<Material>& material)
 {
     const auto viewMatrix = Scene::getActiveCamera()->getViewMatrix();
     const auto projectionMatrix = Scene::getActiveCamera()->getProjectionMatrix();
@@ -72,10 +56,7 @@ void ForwardPass::setViewUniforms(const Ref<Material>& material)
 
     material->setUniformMatrix4fv("u_ViewProjection", viewProjectionMatrix);
     material->setUniform3fv("viewPos", camPos);
-}
 
-void ForwardPass::setLightUniforms(const Ref<Material>& material)
-{
     GLuint uboBindingPoint = 0;
     GLuint lightUniformBlockIndex = glGetUniformBlockIndex(material->getShader()->getProgramID(), "LightsBlock");
     if (lightUniformBlockIndex != GL_INVALID_INDEX)
@@ -86,14 +67,12 @@ void ForwardPass::setLightUniforms(const Ref<Material>& material)
         glBindBuffer(GL_UNIFORM_BUFFER, m_uboLights);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(m_lightBuffer), m_lightBuffer);
     }
-}
 
-void ForwardPass::setShadowUniforms(const Ref<Material>& material)
-{
     auto lights = Scene::getLightSceneNodes();
     for (size_t i = 0; i < lights.size(); ++i)
     {
         auto light = lights[i];
+        m_lightBuffer[i] = ((lights)[i])->toUBO();
 
         const auto lightSpaceMatrix =
             light->getShadowCam()->getProjectionMatrix() * light->getShadowCam()->getViewMatrix();

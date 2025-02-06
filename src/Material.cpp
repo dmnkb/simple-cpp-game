@@ -21,7 +21,7 @@ void Material::bind()
 
     // Bind the diffuse map sampler
     // 0 = Default color layer across all fragment shaders
-    m_diffuseMap.bind(0);
+    m_diffuseMap->bind(0);
     m_shader->setUniform1i("diffuseMap", 0);
 
     // Bind the material's properties
@@ -41,10 +41,10 @@ void Material::bind()
 void Material::unbind()
 {
     m_shader->unbind();
-    m_diffuseMap.unbind();
+    m_diffuseMap->unbind();
 }
 
-void Material::setDiffuseMap(Texture& texture)
+void Material::setDiffuseMap(Ref<Texture>& texture)
 {
     m_diffuseMap = texture;
 }

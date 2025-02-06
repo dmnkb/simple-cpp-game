@@ -5,16 +5,16 @@
 #include "MeshSceneNode.h"
 #include "Scene.h"
 #include "Shader.h"
-#include "Texture.h"
+#include "TextureManager.h"
 #include "pch.h"
 
 void Sandbox::init()
 {
     auto mesh = CreateRef<Mesh>("my/unused/model/path/model.glb");
 
-    Texture lightTexture("assets/texture_08.png");
-    Texture darkTexture("assets/texture_01.png");
-    Texture oragngeTexture("assets/texture_02.png");
+    auto lightTexture = TextureManager::loadTextureFromFile("assets/texture_08.png");
+    auto darkTexture = TextureManager::loadTextureFromFile("assets/texture_01.png");
+    auto oragngeTexture = TextureManager::loadTextureFromFile("assets/texture_02.png");
 
     auto shader = CreateRef<Shader>("assets/phong.vs", "assets/phong.fs");
 
@@ -55,14 +55,14 @@ void Sandbox::init()
         Scene::addMeshSceneNode(floatingNode);
     }
 
-    // auto light1 = CreateRef<LightSceneNode>(glm::vec3(10, 15, -10), glm::vec3(1, 0, 0), glm::vec3(-1, -1, 0),
-    // ELT_SPOT); Scene::addLightSceneNode(light1);
+    auto light1 = CreateRef<LightSceneNode>(glm::vec3(10, 15, -10), glm::vec3(1, 0, 0), glm::vec3(-1, -1, 0), ELT_SPOT);
+    Scene::addLightSceneNode(light1);
 
-    // auto light2 = CreateRef<LightSceneNode>(glm::vec3(10, 15, 0), glm::vec3(0, 1, 0), glm::vec3(-1, -1, 0),
-    // ELT_SPOT); Scene::addLightSceneNode(light2);
+    auto light2 = CreateRef<LightSceneNode>(glm::vec3(10, 15, 0), glm::vec3(0, 1, 0), glm::vec3(-1, -1, 0), ELT_SPOT);
+    Scene::addLightSceneNode(light2);
 
-    // auto light3 = CreateRef<LightSceneNode>(glm::vec3(10, 15, 10), glm::vec3(0, 0, 1), glm::vec3(-1, -1, 0),
-    // ELT_SPOT); Scene::addLightSceneNode(light3);
+    auto light3 = CreateRef<LightSceneNode>(glm::vec3(10, 15, 10), glm::vec3(0, 0, 1), glm::vec3(-1, -1, 0), ELT_SPOT);
+    Scene::addLightSceneNode(light3);
 
     auto light4 = CreateRef<LightSceneNode>(glm::vec3(100.0f, 200.0f, 100.0f), // Position of the sun
                                             glm::vec3(0.8f, 0.7f, 0.6f),       // Softer warm color

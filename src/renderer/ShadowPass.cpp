@@ -22,10 +22,9 @@ void ShadowPass::execute()
         {
             // Spotlights or directional Light
             const auto& shadowCam = lightSceneNode->getShadowCam();
-            Scene::setActiveCamera(shadowCam);
+            // Scene::setActiveCamera(shadowCam);
 
-            lightSceneNode->getFrameBuffer()->bind();
-
+            lightSceneNode->getFrameBuffer()->bind(lightSceneNode->getDepthBuffer());
             const auto lightSpaceMatrix = shadowCam->getProjectionMatrix() * shadowCam->getViewMatrix();
             m_depthShader.setUniformMatrix4fv("lightSpaceMatrix", lightSpaceMatrix);
 
@@ -37,8 +36,6 @@ void ShadowPass::execute()
                     RendererAPI::drawInstanced(mesh, transforms);
                 }
             }
-
-            lightSceneNode->getFrameBuffer()->unbind();
         }
     }
 

@@ -2,7 +2,7 @@
 
 #include "RenderPass.h"
 #include "Shader.h"
-#include "Texture.h"
+#include "TextureManager.h"
 #include "pch.h"
 
 class ShadowPass : public RenderPass

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Shader.h"
-#include "Texture.h"
+#include "TextureManager.h"
 #include "pch.h"
 
 struct MaterialProps
@@ -18,7 +18,7 @@ class Material
 
     void bind();
     void unbind();
-    void setDiffuseMap(Texture& texture);
+    void setDiffuseMap(Ref<Texture>& texture);
     void setTextureRepeat(const int& repeat);
 
     void setUniformMatrix4fv(const char* name, const glm::mat4 value);
@@ -31,7 +31,7 @@ class Material
 
   private:
     Ref<Shader> m_shader = nullptr;
-    Texture m_diffuseMap;
+    Ref<Texture> m_diffuseMap;
 
     MaterialProps m_props;
     GLuint m_uboMaterial;

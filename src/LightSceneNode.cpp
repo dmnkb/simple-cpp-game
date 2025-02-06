@@ -1,4 +1,5 @@
 #include "LightSceneNode.h"
+#include "TextureManager.h"
 #include "pch.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -18,12 +19,14 @@ LightSceneNode::LightSceneNode(const glm::vec3& position, const glm::vec3& color
                                   .near = 0.1f,
                                   .far = 1000.0f,
                                   .position = m_position,
-                                  .target = m_position + m_rotation,
+                                  .target = position + rotation,
                                   .type = m_lightType == ELT_SPOT ? ECT_PROJECTION : ECT_ORTHOGRAPHIC};
+
     m_shadowCam = CreateRef<Camera>(shadowCamProps);
 
     m_frameBuffer = CreateRef<Framebuffer>();
-    m_depthBuffer = CreateRef<Texture>(1024, 1024, GL_DEPTH_COMPONENT, GL_FLOAT, GL_DEPTH_ATTACHMENT);
+
+    m_depthBuffer = TextureManager::createDepthTexture({2048, 2048});
     m_frameBuffer->attachTexture(m_depthBuffer);
 }
 

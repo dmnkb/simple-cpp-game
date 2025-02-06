@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Texture.h"
+#include "TextureManager.h"
 #include <iostream>
 #include <vector>
 
@@ -10,7 +10,7 @@ class Framebuffer
     Framebuffer();
     ~Framebuffer();
 
-    void bind();
+    void bind(const Ref<Texture>& attachment);
     void unbind();
     void attachTexture(const Ref<Texture>& attachment);
     void resize(int width, int height);

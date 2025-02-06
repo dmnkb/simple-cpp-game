@@ -13,12 +13,7 @@ class ForwardPass : public RenderPass
     void execute();
 
   private:
-    void initLightUBO();
-    void updateLightUBO();
-
-    void setViewUniforms(const Ref<Material>& material);
-    void setLightUniforms(const Ref<Material>& material);
-    void setShadowUniforms(const Ref<Material>& material);
+    void updateUniforms(const Ref<Material>& material);
 
   private:
     LightSceneNode::LightUBO m_lightBuffer[256];
