@@ -3,7 +3,7 @@
 #include "Camera.h"
 #include "Framebuffer.h"
 #include "SceneNode.h"
-#include "TextureManager.h"
+#include "Texture.h"
 #include "pch.h"
 
 enum ELightType

@@ -57,17 +57,7 @@ void ForwardPass::updateUniforms(const Ref<Material>& material)
     material->setUniformMatrix4fv("u_ViewProjection", viewProjectionMatrix);
     material->setUniform3fv("viewPos", camPos);
 
-    GLuint uboBindingPoint = 0;
-    GLuint lightUniformBlockIndex = glGetUniformBlockIndex(material->getShader()->getProgramID(), "LightsBlock");
-    if (lightUniformBlockIndex != GL_INVALID_INDEX)
-    {
-        glUniformBlockBinding(material->getShader()->getProgramID(), lightUniformBlockIndex, uboBindingPoint);
-        glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, m_uboLights);
-
-        glBindBuffer(GL_UNIFORM_BUFFER, m_uboLights);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(m_lightBuffer), m_lightBuffer);
-    }
-
+    // Shadows
     auto lights = Scene::getLightSceneNodes();
     for (size_t i = 0; i < lights.size(); ++i)
     {
@@ -87,5 +77,17 @@ void ForwardPass::updateUniforms(const Ref<Material>& material)
             light->getDepthBuffer()->bind(i + 1);                        // Bind texture to the i-th texture unit
             material->setUniform1i(shadowMapUniformName.c_str(), i + 1); // Tell shader which texture unit to use
         }
+    }
+
+    // Lights
+    GLuint uboBindingPoint = 0;
+    GLuint lightUniformBlockIndex = glGetUniformBlockIndex(material->getShader()->getProgramID(), "LightsBlock");
+    if (lightUniformBlockIndex != GL_INVALID_INDEX)
+    {
+        glUniformBlockBinding(material->getShader()->getProgramID(), lightUniformBlockIndex, uboBindingPoint);
+        glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, m_uboLights);
+
+        glBindBuffer(GL_UNIFORM_BUFFER, m_uboLights);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(m_lightBuffer), m_lightBuffer);
     }
 }

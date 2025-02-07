@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Shader.h"
-#include "TextureManager.h"
+#include "Texture.h"
 #include "pch.h"
 
 struct MaterialProps

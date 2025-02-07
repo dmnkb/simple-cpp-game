@@ -42,18 +42,3 @@ struct Texture
         glDeleteTextures(1, &id);
     }
 };
-
-class TextureManager
-{
-  public:
-    ~TextureManager();
-
-    static Ref<Texture> loadTextureFromFile(const std::string path);
-    static Ref<Texture> createColorTexture(const glm::vec2& dimensions, const int channelCount = 3,
-                                           unsigned char* data = NULL, bool generateMipmap = false);
-    static Ref<Texture> createDepthTexture(const glm::vec2& dimensions);
-    static void deleteTexture(const GLuint& textureID);
-
-  private:
-    static std::unordered_map<std::string, Ref<Texture>> s_textureCache;
-};

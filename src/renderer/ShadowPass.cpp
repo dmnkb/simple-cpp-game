@@ -22,7 +22,6 @@ void ShadowPass::execute()
         {
             // Spotlights or directional Light
             const auto& shadowCam = lightSceneNode->getShadowCam();
-            // Scene::setActiveCamera(shadowCam);
 
             lightSceneNode->getFrameBuffer()->bind(lightSceneNode->getDepthBuffer());
             const auto lightSpaceMatrix = shadowCam->getProjectionMatrix() * shadowCam->getViewMatrix();

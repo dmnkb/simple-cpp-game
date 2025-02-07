@@ -42,6 +42,8 @@ void Framebuffer::unbind()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+// TODO: For multiple attachments per pass (GBuffer)
+
 // void Framebuffer::attachTexture(const Ref<Texture>& attachment)
 // {
 //     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
