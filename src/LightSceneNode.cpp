@@ -26,8 +26,10 @@ LightSceneNode::LightSceneNode(const glm::vec3& position, const glm::vec3& color
 
     m_frameBuffer = CreateRef<Framebuffer>();
 
-    m_depthBuffer = TextureManager::createDepthTexture({2048, 2048});
-    m_frameBuffer->attachTexture(m_depthBuffer);
+    m_depthBuffer = CreateRef<Texture>(glm::vec2({1024, 1024}), GL_DEPTH_COMPONENT, GL_FLOAT, GL_DEPTH_ATTACHMENT);
+    // m_depthBuffer = TextureManager::createDepthTexture({1024, 1024});
+
+    // m_frameBuffer->attachTexture(m_depthBuffer);
 }
 
 void LightSceneNode::setLookAt(const glm::vec3& lookAt)

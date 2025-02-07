@@ -12,9 +12,12 @@ void Sandbox::init()
 {
     auto mesh = CreateRef<Mesh>("my/unused/model/path/model.glb");
 
-    auto lightTexture = TextureManager::loadTextureFromFile("assets/texture_08.png");
-    auto darkTexture = TextureManager::loadTextureFromFile("assets/texture_01.png");
-    auto oragngeTexture = TextureManager::loadTextureFromFile("assets/texture_02.png");
+    // auto lightTexture = TextureManager::loadTextureFromFile("assets/texture_08.png");
+    // auto darkTexture = TextureManager::loadTextureFromFile("assets/texture_01.png");
+    // auto oragngeTexture = TextureManager::loadTextureFromFile("assets/texture_02.png");
+    auto lightTexture = CreateRef<Texture>("assets/texture_08.png");
+    auto darkTexture = CreateRef<Texture>("assets/texture_01.png");
+    auto oragngeTexture = CreateRef<Texture>("assets/texture_02.png");
 
     auto shader = CreateRef<Shader>("assets/phong.vs", "assets/phong.fs");
 
