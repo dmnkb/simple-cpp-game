@@ -5,6 +5,8 @@
 #include "ShadowPass.h"
 #include "pch.h"
 
+// TODO: Check the frame time, benchmark, The Cherno's Sponsa with Shadows; ~8 ms
+
 // Scene
 //  ├── Stores Game Objects (Meshes, Lights, Cameras)
 //  └── Controls active camera (e.g., player, shadow pass, reflections, etc.)

@@ -56,7 +56,23 @@ float calculateShadow(int lightIndex, vec4 fragPosLightSpace)
 
     float closestDepth = texture(shadowMaps[lightIndex], projCoords.xy).r;
     float currentDepth = projCoords.z;
-    float shadow = (currentDepth - 0.0005) > closestDepth ? 1.0 : 0.0;
+
+    // Percentage-Closer Filtering (PCF)
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(shadowMaps[lightIndex], 0);
+    float filterRadius = 1.0; // Adjust this value to control blur strength
+
+    for (int x = -1; x <= 1; x++)
+    {
+        for (int y = -1; y <= 1; y++)
+        {
+            vec2 offset = vec2(x, y) * texelSize * filterRadius;
+            float sampleDepth = texture(shadowMaps[lightIndex], projCoords.xy + offset).r;
+            shadow += (currentDepth > sampleDepth) ? 1.0 : 0.0;
+        }
+    }
+
+    shadow /= 9.0; // Average over 9 samples
 
     return shadow;
 }

@@ -14,8 +14,7 @@ LightSceneNode::LightSceneNode(const glm::vec3& position, const glm::vec3& color
     m_position = position;
     m_direction = rotation;
 
-    CameraProps shadowCamProps = {.aspect = static_cast<float>(60.0f * (M_PI / 180.0f)),
-                                  .aspect = 1.0f,
+    CameraProps shadowCamProps = {.aspect = static_cast<float>(m_outerCone * 3 * (M_PI / 180.0f)),
                                   .near = 0.1f,
                                   .far = 1000.0f,
                                   .position = m_position,
@@ -25,7 +24,7 @@ LightSceneNode::LightSceneNode(const glm::vec3& position, const glm::vec3& color
     m_shadowCam = CreateRef<Camera>(shadowCamProps);
 
     m_frameBuffer = CreateRef<Framebuffer>();
-    m_depthBuffer = CreateRef<Texture>(glm::vec2({1024, 1024}), GL_DEPTH_COMPONENT, GL_FLOAT, GL_DEPTH_ATTACHMENT);
+    m_depthBuffer = CreateRef<Texture>(glm::vec2({2048, 2048}), GL_DEPTH_COMPONENT, GL_FLOAT, GL_DEPTH_ATTACHMENT);
 
     // m_frameBuffer->attachTexture(m_depthBuffer);
 }

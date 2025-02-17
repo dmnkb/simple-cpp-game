@@ -15,21 +15,28 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [x] Render pass abstraction
 - [x] Shadow mapping
 - [x] Materials
-- [ ] Update render stats debugging
-- [ ] Basic post processing
-- [ ] HDR image based lighting
+- [ ] Update render stats debugging (Frame time per pass)
+- [ ] Update FrameBuffer to support multiple attachments
+- [ ] Basic post processing (Screen quad)
+- [ ] Mip chain bloom
+- [ ] SSAO
+- [ ] Anti-Aliasing? (Might contrast the chased artstyle)
 - [ ] Cascaded shadow maps 
-- [ ] Basic deferred rendering
+- [ ] HDR image based lighting
 - [ ] Integrate Assimp mesh and material loading
+- [ ] Basic deferred rendering
+- [ ] Integrate Bullet Physics (Car demo)
+- [ ] UI using [clay](https://github.com/nicbarker/clay)
 - [ ] Improve event system referencing ([this](https://github.com/TheCherno/Hazel/blob/1feb70572fa87fa1c4ba784a2cfeada5b4a500db/Hazel/src/Hazel/Core/Base.h#L26))
-- [ ] Editor mode with selection and entity control
-- [ ] Integrate Bullet Physics
+- [ ] Editor mode
+    - [ ] Scene (de)serialization
+    - [ ] Frame buffer based picking
+    - [ ] Control position and rotation using [ImGuizmo](https://github.com/CedricGuillemet/ImGuizmo)
 - [ ] Simple particle system OR grass rendering
 - [ ] Rendering a heightmap from a texture
-- [ ] Scene (de)serialization (and loading)
 - [ ] Audio using [miniaudio](https://github.com/mackron/miniaudio)
 - [ ] Skeletal animation and GPU skinning
-- [ ] UI using [clay](https://github.com/nicbarker/clay)
+
 
 
 

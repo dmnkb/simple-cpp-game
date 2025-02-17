@@ -11,29 +11,22 @@
 void Sandbox::init()
 {
     auto mesh = CreateRef<Mesh>("my/unused/model/path/model.glb");
-
     auto lightTexture = CreateRef<Texture>("assets/texture_08.png");
-    auto darkTexture = CreateRef<Texture>("assets/texture_01.png");
-    auto oragngeTexture = CreateRef<Texture>("assets/texture_02.png");
-
     auto shader = CreateRef<Shader>("assets/phong.vs", "assets/phong.fs");
 
-    auto materialLight = CreateRef<Material>(shader);
-    materialLight->setDiffuseMap(lightTexture);
-    materialLight->setTextureRepeat(256);
+    auto groundMaterial = CreateRef<Material>(shader);
+    groundMaterial->setDiffuseMap(lightTexture);
+    groundMaterial->setTextureRepeat(256);
 
-    auto materialDark = CreateRef<Material>(shader);
-    materialDark->setDiffuseMap(darkTexture);
+    auto blockMaterial = CreateRef<Material>(shader);
+    blockMaterial->setDiffuseMap(lightTexture);
 
-    auto materialOrange = CreateRef<Material>(shader);
-    materialOrange->setDiffuseMap(oragngeTexture);
-
-    auto groundNode = CreateRef<MeshSceneNode>(mesh, materialLight);
+    auto groundNode = CreateRef<MeshSceneNode>(mesh, groundMaterial);
     groundNode->setPosition(glm::vec3(0, -1, 0));
     groundNode->setScale(glm::vec3(512, 1, 512));
     Scene::addMeshSceneNode(groundNode);
 
-    auto foo = CreateRef<MeshSceneNode>(mesh, materialOrange);
+    auto foo = CreateRef<MeshSceneNode>(mesh, blockMaterial);
     foo->setScale(glm::vec3(2, 2, 2));
     foo->setPosition(glm::vec3(0, .5, 0));
     Scene::addMeshSceneNode(foo);
@@ -49,7 +42,7 @@ void Sandbox::init()
         float x = radius * glm::cos(angle);
         float z = radius * glm::sin(angle);
 
-        auto floatingNode = CreateRef<MeshSceneNode>(mesh, materialDark);
+        auto floatingNode = CreateRef<MeshSceneNode>(mesh, blockMaterial);
         floatingNode->setName("Floating Cube " + std::to_string(i));
         floatingNode->setPosition(glm::vec3(x, 4.0f, z));
         Scene::addMeshSceneNode(floatingNode);

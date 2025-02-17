@@ -9,6 +9,7 @@ ShadowPass::ShadowPass() : m_depthShader("assets/depth.vs", "assets/depth.fs") {
 void ShadowPass::execute()
 {
     m_depthShader.bind();
+    glCullFace(GL_FRONT);
 
     for (auto& lightSceneNode : Scene::getLightSceneNodes())
     {
@@ -38,5 +39,6 @@ void ShadowPass::execute()
         }
     }
 
+    glCullFace(GL_BACK);
     m_depthShader.unbind();
 }
