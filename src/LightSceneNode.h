@@ -57,6 +57,11 @@ class LightSceneNode : public SceneNode
         return m_depthBuffer;
     }
 
+    Ref<Texture> getDebugDepthTexture()
+    {
+        return m_debugDepthTexture;
+    }
+
     // Converts this light to its GPU-ready format
     LightUBO toUBO() const
     {
@@ -75,6 +80,6 @@ class LightSceneNode : public SceneNode
 
     // Shadow mapping
     Ref<Camera> m_shadowCam;
-    Ref<Texture> m_depthBuffer;
+    Ref<Texture> m_depthBuffer, m_debugDepthTexture;
     Ref<Framebuffer> m_frameBuffer;
 };

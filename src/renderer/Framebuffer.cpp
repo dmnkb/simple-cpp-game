@@ -11,30 +11,31 @@ Framebuffer::~Framebuffer()
     // reset();
 }
 
-void Framebuffer::bind(const Ref<Texture>& attachment)
+void Framebuffer::bind()
 {
-    // Mask out all colors if attachment is a depth texture
-    const bool isColorBuffer = attachment->attachmentType == GL_COLOR_ATTACHMENT0;
-    glColorMask(isColorBuffer, isColorBuffer, isColorBuffer, isColorBuffer);
-
-    if (!m_fbo)
-        glGenFramebuffers(1, &m_fbo);
-
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-
-    attachment->bind();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, attachment->attachmentType, GL_TEXTURE_2D, attachment->id, 0);
-
-    // Check if FBO is complete
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        std::cerr << "Framebuffer is not complete!" << std::endl;
-
-    // Render to FBO
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-    glViewport(0, 0, attachment->texWidth, attachment->texHeight);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Render scene ...
+    if (!m_attachments.empty())
+    {
+        // Determine if there are color attachments
+        std::vector<GLenum> drawBuffers;
+        for (size_t i = 0; i < m_attachments.size(); ++i)
+        {
+            if (m_attachments[i]->format != GL_DEPTH_COMPONENT) // Avoid setting draw buffers for depth-only textures
+                drawBuffers.push_back(GL_COLOR_ATTACHMENT0 + i);
+        }
+        // Only set draw buffers if color attachments exist
+        if (!drawBuffers.empty())
+            glDrawBuffers(static_cast<GLsizei>(drawBuffers.size()), drawBuffers.data());
+        else
+            glDrawBuffer(GL_NONE); // Disable color writing if no color attachments exist
+        // Set viewport to match the first attachment
+        glViewport(0, 0, m_attachments[0]->texWidth, m_attachments[0]->texHeight);
+    }
+    // Clear framebuffer
+    GLbitfield clearMask = GL_DEPTH_BUFFER_BIT; // Always clear depth
+    if (!m_attachments.empty() && m_attachments[0]->format != GL_DEPTH_COMPONENT)
+        clearMask |= GL_COLOR_BUFFER_BIT; // Only clear color buffer if there are color attachments
+    glClear(clearMask);
 }
 
 void Framebuffer::unbind()
@@ -42,28 +43,26 @@ void Framebuffer::unbind()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-// TODO: For multiple attachments per pass (GBuffer)
+void Framebuffer::attachTexture(const Ref<Texture>& attachment)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    attachment->bind();
+    glFramebufferTexture2D(GL_FRAMEBUFFER, attachment->attachmentType, GL_TEXTURE_2D, attachment->id, 0);
+    m_attachments.push_back(attachment);
 
-// void Framebuffer::attachTexture(const Ref<Texture>& attachment)
-// {
-//     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-//     attachment->bind();
-//     glFramebufferTexture2D(GL_FRAMEBUFFER, attachment->attachmentType, GL_TEXTURE_2D, attachment->id, 0);
-//     m_attachments.push_back(attachment);
+    // Update draw buffers
+    std::vector<GLenum> drawBuffers;
+    for (size_t i = 0; i < m_attachments.size(); ++i)
+        drawBuffers.push_back(GL_COLOR_ATTACHMENT0 + i);
 
-//     // Update draw buffers
-//     std::vector<GLenum> drawBuffers;
-//     for (size_t i = 0; i < m_attachments.size(); ++i)
-//         drawBuffers.push_back(GL_COLOR_ATTACHMENT0 + i);
+    glDrawBuffers(drawBuffers.size(), drawBuffers.data());
 
-//     glDrawBuffers(drawBuffers.size(), drawBuffers.data());
+    // Check if the framebuffer is complete
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cerr << "Framebuffer is not complete!" << std::endl;
 
-//     // Check if the framebuffer is complete
-//     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-//         std::cerr << "Framebuffer is not complete!" << std::endl;
-
-//     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-// }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
 
 // void Framebuffer::resize(int width, int height)
 // {

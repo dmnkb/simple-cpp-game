@@ -2,14 +2,14 @@
 
 #include "ForwardPass.h"
 #include "RendererTypes.h"
+#include "Scene.h"
 #include "ShadowPass.h"
 #include "pch.h"
 
 // TODO: Check the frame time, benchmark, The Cherno's Sponsa with Shadows; ~8 ms
 
 // Scene
-//  ├── Stores Game Objects (Meshes, Lights, Cameras)
-//  └── Controls active camera (e.g., player, shadow pass, reflections, etc.)
+//  └── Stores Game Objects (Meshes, Lights, Player Cam, Sun, Environment Map)
 
 // Renderer
 //  ├── Stores Render Passes (ShadowPass, GBufferPass, ForwardPass, etc.)
@@ -34,6 +34,16 @@ class Renderer
     ~Renderer();
 
     void update();
+
+    std::vector<Ref<Texture>> getDepthDebugTextures()
+    {
+        std::vector<Ref<Texture>> textures = {};
+        for (const auto& light : Scene::getLightSceneNodes())
+        {
+            textures.push_back(light->getDebugDepthTexture());
+        }
+        return textures;
+    }
 
   private:
     ForwardPass m_forwardPass;

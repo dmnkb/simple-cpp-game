@@ -43,6 +43,19 @@ layout(std140) uniform MaterialPropsBlock
     float specularIntensity; // Controls the visibility of specular highlights
 };
 
+// Function to debug shadow
+vec3 debugShadow(int lightIndex, vec4 fragPosLightSpace)
+{
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5;
+
+    if (projCoords.z > 1.0 || projCoords.x < 0.0 || projCoords.x > 1.0 || projCoords.y < 0.0 || projCoords.y > 1.0)
+    {
+        return vec3(0, 0, 0);
+    }
+
+    return texture(shadowMaps[lightIndex], projCoords.xy).rgb;
+}
 // Function to calculate shadow factor
 float calculateShadow(int lightIndex, vec4 fragPosLightSpace)
 {
@@ -170,6 +183,8 @@ void main()
             resultColor += calculateSpotLight(lightPos, lightDir, FragPos, viewPos, norm, color, lights[i].innerCone,
                                               lights[i].outerCone, shadow);
         }
+
+        // resultColor += debugShadow(i, fragPosLightSpace);
     }
 
     vec2 scaledUV = v_UV * textureRepeat;

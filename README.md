@@ -15,8 +15,9 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [x] Render pass abstraction
 - [x] Shadow mapping
 - [x] Materials
+- [x] Update FrameBuffer to support multiple attachments
 - [ ] Update render stats debugging (Frame time per pass)
-- [ ] Update FrameBuffer to support multiple attachments
+- [ ] Support viewport resizing
 - [ ] Basic post processing (Screen quad)
 - [ ] Mip chain bloom
 - [ ] SSAO
