@@ -157,6 +157,39 @@ vec3 calculateSpotLight(vec3 lightPos, vec3 lightDir, vec3 fragPos, vec3 viewPos
     return resultColor;
 }
 
+// Referencing: https://www.emutalk.net/threads/emulating-nintendo-64-3-sample-bilinear-filtering-using-shaders.54215/
+vec4 N64_3Point_Filter(sampler2D tex, vec2 uv, vec2 texSize)
+{
+    vec2 texelSize = 1.0 / texSize;
+    vec2 half_tex = texelSize * 0.5;
+    vec2 UVCentered = uv - half_tex; // Align UV to match HLSL behavior
+
+    vec2 pixelPos = UVCentered * texSize;
+    vec2 texelPos = floor(pixelPos);
+    vec2 f = fract(pixelPos);
+
+    if (pixelPos.x < 0)
+        f.x = 1 - f.x;
+    if (pixelPos.y < 0)
+        f.y = 1 - f.y;
+
+    vec2 uv00 = (texelPos + vec2(0.0, 0.0)) / texSize;
+    vec2 uv10 = (texelPos + vec2(1.0, 0.0)) / texSize;
+    vec2 uv01 = (texelPos + vec2(0.0, 1.0)) / texSize;
+    vec2 uv11 = (texelPos + vec2(1.0, 1.0)) / texSize;
+
+    vec4 t00 = texture(tex, uv00);
+    vec4 t10 = texture(tex, uv10);
+    vec4 t01 = texture(tex, uv01);
+    vec4 t11 = texture(tex, uv11);
+
+    vec4 diffuseColor = t00 + f.x * (t10 - t00) + f.y * (t01 - t00);
+    diffuseColor *= (1.0 - step(1.0, f.x + f.y));
+    diffuseColor += (t11 + (1.0 - f.x) * (t01 - t11) + (1.0 - f.y) * (t10 - t11)) * step(1.0, f.x + f.y);
+
+    return diffuseColor;
+}
+
 void main()
 {
     vec3 norm = normalize(v_Normal);
@@ -190,6 +223,10 @@ void main()
     }
 
     vec2 scaledUV = v_UV * textureRepeat;
+    vec2 texSize = vec2(textureSize(diffuseMap, 0)); // Get texture resolution
+
+    vec4 filteredColor = N64_3Point_Filter(diffuseMap, scaledUV, texSize);
     vec4 baseColor = texture(diffuseMap, scaledUV);
-    FragColor = vec4(resultColor + ambient, 1.0) * baseColor;
+
+    FragColor = vec4(resultColor + ambient, 1.0) * filteredColor;
 }
