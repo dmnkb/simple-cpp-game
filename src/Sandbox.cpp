@@ -70,7 +70,8 @@ static float s_increment = 0.0f;
 
 void Sandbox::update(double deltaTime)
 {
-    s_increment += 0.5 * deltaTime;
+    // s_increment += 0.5 * deltaTime;
+    s_increment += 0 * deltaTime;
 
     const int numCubes = 16;
     const float radius = 10.0f;

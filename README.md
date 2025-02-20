@@ -16,6 +16,7 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [x] Shadow mapping
 - [x] Materials
 - [x] Update FrameBuffer to support multiple attachments
+- [ ] Integrate Assimp mesh and material loading
 - [ ] Update render stats debugging (Frame time per pass)
 - [ ] Support viewport resizing
 - [ ] Basic post processing (Screen quad)
@@ -24,7 +25,6 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [ ] Anti-Aliasing? (Might contrast the chased artstyle)
 - [ ] Cascaded shadow maps 
 - [ ] HDR image based lighting
-- [ ] Integrate Assimp mesh and material loading
 - [ ] Basic deferred rendering
 - [ ] Integrate Bullet Physics (Car demo)
 - [ ] UI using [clay](https://github.com/nicbarker/clay)
