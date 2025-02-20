@@ -24,10 +24,10 @@ LightSceneNode::LightSceneNode(const glm::vec3& position, const glm::vec3& color
     m_shadowCam = CreateRef<Camera>(shadowCamProps);
 
     m_frameBuffer = CreateRef<Framebuffer>();
-    m_depthBuffer = CreateRef<Texture>(glm::vec2({2048, 2048}), GL_DEPTH_COMPONENT, GL_FLOAT, GL_DEPTH_ATTACHMENT);
+    m_depthBuffer = CreateRef<Texture>(glm::vec2({4096, 4096}), GL_DEPTH_COMPONENT, GL_FLOAT, GL_DEPTH_ATTACHMENT);
     m_frameBuffer->attachTexture(m_depthBuffer);
 
-    m_debugDepthTexture = CreateRef<Texture>(glm::vec2({2048, 2048}), GL_RGB, GL_UNSIGNED_BYTE, GL_COLOR_ATTACHMENT0);
+    m_debugDepthTexture = CreateRef<Texture>(glm::vec2({4096, 4096}), GL_RGB, GL_UNSIGNED_BYTE, GL_COLOR_ATTACHMENT0);
     m_frameBuffer->attachTexture(m_debugDepthTexture);
 }
 

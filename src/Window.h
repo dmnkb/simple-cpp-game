@@ -36,6 +36,7 @@ class Window
     static bool getIsWindowOpen();
     static void swapBuffers();
     static void pollEvents();
+    static double getElapsedTime();
 
     static GLFWwindow*& getNativeWindow();
     static glm::vec2 getFrameBufferDimensions();

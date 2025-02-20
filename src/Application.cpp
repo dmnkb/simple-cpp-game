@@ -35,7 +35,8 @@ Application::Application() : m_Player()
     EventManager::registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
 
     // Sandbox
-    Sandbox::init();
+    m_Sandbox = CreateScope<Sandbox>();
+    m_Sandbox->init();
 }
 
 void Application::run()
@@ -61,8 +62,8 @@ void Application::run()
 
         m_Player.update(m_DeltaTime);
 
-        Sandbox::update(m_DeltaTime);
         m_renderer->update();
+        m_Sandbox->update(m_DeltaTime);
         EventManager::processEvents();
 
         // Start new ImGui frame

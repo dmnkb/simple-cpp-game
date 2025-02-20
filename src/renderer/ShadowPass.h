@@ -12,4 +12,5 @@ class ShadowPass : public RenderPass
 
   private:
     Shader m_depthShader;
+    Shader m_depthShaderFoliage;
 };

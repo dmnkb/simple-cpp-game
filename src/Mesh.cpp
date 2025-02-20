@@ -1,36 +1,57 @@
+
+
+#include <glad/glad.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include "Material.h"
 #include "Mesh.h"
 #include "pch.h"
 
-Mesh::Mesh(const std::string& modelPath)
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, const Ref<Material>& material)
 {
-    glGenVertexArrays(1, &m_VertexArray);
-    glBindVertexArray(m_VertexArray);
+    this->vertices = vertices;
+    this->indices = indices;
+    this->material = material;
 
-    glGenBuffers(1, &m_VertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, m_VertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    setupMesh();
+}
 
-    glGenBuffers(1, &m_IndexBuffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IndexBuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+void Mesh::setupMesh()
+{
+    // create buffers/arrays
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Position));
+    glBindVertexArray(VAO);
+    // load data into vertex buffers
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    // A great thing about structs is that their memory layout is sequential for all its items.
+    // The effect is that we can simply pass a pointer to the struct and it translates perfectly to a glm::vec3/2
+    // array which again translates to 3/2 floats which translates to a byte array.
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+
+    // set the vertex attribute pointers
+    // vertex Positions
     glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, UV));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+    // vertex normals
     glEnableVertexAttribArray(1);
-
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+    // vertex texture coords
     glEnableVertexAttribArray(2);
-
-    // Unbind VBO and VAO
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
     glBindVertexArray(0);
 }
 
 void Mesh::bind()
 {
-    glBindVertexArray(m_VertexArray);
+    glBindVertexArray(VAO);
 }
 
 void Mesh::unbind()
@@ -40,13 +61,5 @@ void Mesh::unbind()
 
 GLsizei Mesh::getIndexCount() const
 {
-    constexpr GLsizei IndexCount = sizeof(indices) / sizeof(indices[0]);
-    return IndexCount;
-}
-
-Mesh::~Mesh()
-{
-    glDeleteBuffers(1, &m_VertexBuffer);
-    glDeleteBuffers(1, &m_IndexBuffer);
-    glDeleteVertexArrays(1, &m_VertexArray);
+    return static_cast<unsigned int>(indices.size());
 }

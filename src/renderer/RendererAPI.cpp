@@ -13,6 +13,11 @@ void RendererAPI::init()
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
+    // TODO:
+    // Requires back-to-from sorting of transparent objects
+    // glEnable(GL_BLEND);
+    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     glGenBuffers(1, &s_Data.instanceBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, s_Data.instanceBuffer);
 }

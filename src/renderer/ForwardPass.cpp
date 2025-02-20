@@ -2,7 +2,6 @@
 #include "Framebuffer.h"
 #include "RenderPass.h"
 #include "RendererAPI.h"
-#include "RendererTypes.h"
 #include "Scene.h"
 #include "Window.h"
 #include <fmt/core.h>
@@ -32,19 +31,35 @@ void ForwardPass::execute()
 
     Scene::setActiveCamera(Scene::getDefaultCamera());
 
-    for (const auto& [material, meshMap] : Scene::getRenderQueue([](const Ref<MeshSceneNode>& node) { return true; }))
+    int i = 0;
+
+    for (const auto& [material, meshMap] : Scene::getRenderQueue())
     {
         material->bind();
+        material->update();
         updateUniforms(material);
+
+        if (material->name == "foliage")
+        {
+            glDisable(GL_CULL_FACE);
+        }
+        else
+        {
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
+        }
 
         for (const auto& [mesh, transforms] : meshMap)
         {
+            i++;
             RendererAPI::drawInstanced(mesh, transforms);
         }
 
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
         material->unbind();
     }
+
+    // std::cout << "number draw calls: " << i << std::endl;
 }
 
 void ForwardPass::updateUniforms(const Ref<Material>& material)

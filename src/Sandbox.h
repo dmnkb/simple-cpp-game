@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Model.h"
 #include "pch.h"
 
 /**
@@ -8,6 +9,6 @@
 class Sandbox
 {
   public:
-    static void init();
-    static void update(double deltaTime);
+    void init();
+    void update(double deltyaTime);
 };

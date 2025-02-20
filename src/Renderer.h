@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ForwardPass.h"
-#include "RendererTypes.h"
 #include "Scene.h"
 #include "ShadowPass.h"
 #include "pch.h"
