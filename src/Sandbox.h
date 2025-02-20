@@ -1,5 +1,7 @@
 #pragma once
 
+#include "LearnOpenGLShader.h"
+#include "Model.h"
 #include "pch.h"
 
 /**
@@ -8,6 +10,10 @@
 class Sandbox
 {
   public:
-    static void init();
-    static void update(double deltyaTime);
+    void init();
+    void update(double deltyaTime);
+
+  private:
+    LearnOpenGLShader ourShader;
+    Model ourModel;
 };

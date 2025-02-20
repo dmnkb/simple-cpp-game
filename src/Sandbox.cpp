@@ -1,4 +1,5 @@
 #include "Sandbox.h"
+#include "LearnOpenGLShader.h"
 #include "LightSceneNode.h"
 #include "Material.h"
 #include "Mesh.h"
@@ -20,7 +21,7 @@ void Sandbox::init()
     groundMaterial->setTextureRepeat(256);
 
     auto groundNode = CreateRef<MeshSceneNode>(mesh, groundMaterial);
-    groundNode->setPosition(glm::vec3(0, -1, 0));
+    groundNode->setPosition(glm::vec3(0, -10, 0));
     groundNode->setScale(glm::vec3(512, 1, 512));
     Scene::addMeshSceneNode(groundNode);
 
@@ -31,6 +32,34 @@ void Sandbox::init()
     );
 
     Scene::addLightSceneNode(light4);
+
+    // LearnOpenGL example
+    LearnOpenGLShader ourShader("assets/model_loading.vs", "assets/model_loading.fs");
+
+    // load models
+    // -----------
+    Model ourModel("assets/backpack/backpack.fbx");
 }
 
-void Sandbox::update(double deltaTime) {}
+void Sandbox::update(double deltaTime)
+{
+    // don't forget to enable shader before setting uniforms
+    ourShader.use();
+
+    const auto viewMatrix = Scene::getActiveCamera()->getViewMatrix();
+    const auto projectionMatrix = Scene::getActiveCamera()->getProjectionMatrix();
+    const auto viewProjectionMatrix = projectionMatrix * viewMatrix;
+
+    // view/projection transformations
+    glm::mat4 projection = Scene::getActiveCamera()->getProjectionMatrix();
+    glm::mat4 view = Scene::getActiveCamera()->getViewMatrix();
+    ourShader.setMat4("projection", projection);
+    ourShader.setMat4("view", view);
+
+    // render the loaded model
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));     // it's a bit too big for our scene, so scale it down
+    ourShader.setMat4("model", model);
+    ourModel.Draw(ourShader);
+}

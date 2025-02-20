@@ -61,7 +61,7 @@ class LearnOpenGLMesh
     }
 
     // render the mesh
-    void Draw(LeanOpenGLShader& shader)
+    void Draw(LearnOpenGLShader& shader)
     {
         // bind appropriate textures
         unsigned int diffuseNr = 1;

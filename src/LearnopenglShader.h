@@ -9,13 +9,16 @@
 #include <sstream>
 #include <string>
 
-class LeanOpenGLShader
+class LearnOpenGLShader
 {
   public:
     unsigned int ID;
+
+    LearnOpenGLShader(){};
+
     // constructor generates the shader on the fly
     // ------------------------------------------------------------------------
-    LeanOpenGLShader(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr)
+    LearnOpenGLShader(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr)
     {
         // 1. retrieve the vertex/fragment source code from filePath
         std::string vertexCode;
