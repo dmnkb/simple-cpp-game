@@ -27,5 +27,5 @@ template <typename T, typename... Args> constexpr Ref<T> CreateRef(Args&&... arg
     return std::make_shared<T>(std::forward<Args>(args)...);
 }
 
-#define Is(type, variant) std::holds_alternative<type>(variant)
-#define Get(type, variant) std::get<type>(variant)
+// #define Is(type, variant) std::holds_alternative<type>(variant)
+// #define Get(type, variant) std::get<type>(variant)

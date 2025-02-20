@@ -8,6 +8,8 @@
 #include <assimp/scene.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_STATIC
 #include <stb_image.h>
 
 #include "LearnOpenGLMesh.h"
@@ -89,14 +91,14 @@ class Model
     LearnOpenGLMesh processMesh(aiMesh* mesh, const aiScene* scene)
     {
         // data to fill
-        vector<Vertex> vertices;
+        vector<LearnOpenGLVertex> vertices;
         vector<unsigned int> indices;
         vector<LearnOpenGLTexture> textures;
 
         // walk through each of the mesh's vertices
         for (unsigned int i = 0; i < mesh->mNumVertices; i++)
         {
-            Vertex vertex;
+            LearnOpenGLVertex vertex;
             glm::vec3
                 vector; // we declare a placeholder vector since assimp uses its own vector class that doesn't directly
                         // convert to glm's vec3 class so we transfer the data to this placeholder glm::vec3 first.
