@@ -34,17 +34,17 @@ void Sandbox::init()
     Scene::addLightSceneNode(light4);
 
     // LearnOpenGL example
-    LearnOpenGLShader ourShader("assets/model_loading.vs", "assets/model_loading.fs");
+    m_OurShader = CreateRef<LearnOpenGLShader>("assets/model_loading.vs", "assets/model_loading.fs");
 
     // load models
     // -----------
-    Model ourModel("assets/backpack/backpack.fbx");
+    m_Model = CreateRef<Model>("assets/KhronosGroup glTF-Sample-Assets main Models-Sponza/glTF/Sponza.gltf");
 }
 
 void Sandbox::update(double deltaTime)
 {
     // don't forget to enable shader before setting uniforms
-    ourShader.use();
+    m_OurShader->use();
 
     const auto viewMatrix = Scene::getActiveCamera()->getViewMatrix();
     const auto projectionMatrix = Scene::getActiveCamera()->getProjectionMatrix();
@@ -53,13 +53,13 @@ void Sandbox::update(double deltaTime)
     // view/projection transformations
     glm::mat4 projection = Scene::getActiveCamera()->getProjectionMatrix();
     glm::mat4 view = Scene::getActiveCamera()->getViewMatrix();
-    ourShader.setMat4("projection", projection);
-    ourShader.setMat4("view", view);
+    m_OurShader->setMat4("projection", projection);
+    m_OurShader->setMat4("view", view);
 
     // render the loaded model
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-    model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));     // it's a bit too big for our scene, so scale it down
-    ourShader.setMat4("model", model);
-    ourModel.Draw(ourShader);
+    model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));     // it's a bit too big for our scene, so scale it down
+    m_OurShader->setMat4("model", model);
+    m_Model->Draw(m_OurShader);
 }

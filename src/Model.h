@@ -8,12 +8,14 @@
 #include <assimp/scene.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/string_cast.hpp>
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_STATIC
 #include <stb_image.h>
 
 #include "LearnOpenGLMesh.h"
 #include "LearnOpenGLShader.h"
+#include "pch.h"
 
 #include <fstream>
 #include <iostream>
@@ -42,7 +44,7 @@ class Model
     }
 
     // draws the model, and thus all its meshes
-    void Draw(LearnOpenGLShader& shader)
+    void Draw(Ref<LearnOpenGLShader>& shader)
     {
         for (unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].Draw(shader);
@@ -90,6 +92,7 @@ class Model
 
     LearnOpenGLMesh processMesh(aiMesh* mesh, const aiScene* scene)
     {
+
         // data to fill
         vector<LearnOpenGLVertex> vertices;
         vector<unsigned int> indices;
@@ -107,6 +110,7 @@ class Model
             vector.y = mesh->mVertices[i].y;
             vector.z = mesh->mVertices[i].z;
             vertex.Position = vector;
+
             // normals
             if (mesh->HasNormals())
             {
@@ -175,6 +179,8 @@ class Model
             loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
         textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
+        std::cout << "diffuse map count " << diffuseMaps.size() << std::endl;
+
         // return a mesh object created from the extracted mesh data
         return LearnOpenGLMesh(vertices, indices, textures);
     }
@@ -206,6 +212,7 @@ class Model
                 texture.id = TextureFromFile(str.C_Str(), this->directory);
                 texture.type = typeName;
                 texture.path = str.C_Str();
+                std::cout << "loading texture: " << str.C_Str() << std::endl;
                 textures.push_back(texture);
                 textures_loaded.push_back(texture); // store it as texture loaded for entire model, to ensure we won't
                                                     // unnecessary load duplicate textures.

@@ -7,6 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "LearnOpenGLShader.h"
+#include "pch.h"
 
 #include <string>
 #include <vector>
@@ -61,7 +62,7 @@ class LearnOpenGLMesh
     }
 
     // render the mesh
-    void Draw(LearnOpenGLShader& shader)
+    void Draw(Ref<LearnOpenGLShader>& shader)
     {
         // bind appropriate textures
         unsigned int diffuseNr = 1;
@@ -84,7 +85,7 @@ class LearnOpenGLMesh
                 number = std::to_string(heightNr++); // transfer unsigned int to string
 
             // now set the sampler to the correct texture unit
-            glUniform1i(glGetUniformLocation(shader.ID, (name + number).c_str()), i);
+            glUniform1i(glGetUniformLocation(shader->ID, (name + number).c_str()), i);
             // and finally bind the texture
             glBindTexture(GL_TEXTURE_2D, textures[i].id);
         }

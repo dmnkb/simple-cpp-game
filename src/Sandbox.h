@@ -14,6 +14,6 @@ class Sandbox
     void update(double deltyaTime);
 
   private:
-    LearnOpenGLShader ourShader;
-    Model ourModel;
+    Ref<LearnOpenGLShader> m_OurShader;
+    Ref<Model> m_Model;
 };
