@@ -179,8 +179,6 @@ class Model
             loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
         textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
-        std::cout << "diffuse map count " << diffuseMaps.size() << std::endl;
-
         // return a mesh object created from the extracted mesh data
         return LearnOpenGLMesh(vertices, indices, textures);
     }
@@ -212,7 +210,6 @@ class Model
                 texture.id = TextureFromFile(str.C_Str(), this->directory);
                 texture.type = typeName;
                 texture.path = str.C_Str();
-                std::cout << "loading texture: " << str.C_Str() << std::endl;
                 textures.push_back(texture);
                 textures_loaded.push_back(texture); // store it as texture loaded for entire model, to ensure we won't
                                                     // unnecessary load duplicate textures.

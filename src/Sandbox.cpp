@@ -25,6 +25,11 @@ void Sandbox::init()
     groundNode->setScale(glm::vec3(512, 1, 512));
     Scene::addMeshSceneNode(groundNode);
 
+    auto oneMeterCube = CreateRef<MeshSceneNode>(mesh, groundMaterial);
+    oneMeterCube->setPosition(glm::vec3(0, 0, 0));
+    oneMeterCube->setScale(glm::vec3(1, 1, 1));
+    Scene::addMeshSceneNode(oneMeterCube);
+
     auto light4 = CreateRef<LightSceneNode>(glm::vec3(100.0f, 200.0f, 100.0f), // Position of the sun
                                             glm::vec3(0.8f, 0.7f, 0.6f),       // Softer warm color
                                             glm::vec3(-0.5f, -1.0f, -0.5f),    // Direction of sunlight
@@ -58,8 +63,8 @@ void Sandbox::update(double deltaTime)
 
     // render the loaded model
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-    model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));     // it's a bit too big for our scene, so scale it down
+    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+    model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
     m_OurShader->setMat4("model", model);
     m_Model->Draw(m_OurShader);
 }
