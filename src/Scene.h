@@ -1,32 +1,33 @@
 #pragma once
 
 #include "LightSceneNode.h"
-#include "MeshSceneNode.h"
+#include "Model.h"
 #include "RendererTypes.h"
 #include "pch.h"
 
-using SceneNodeVariant = std::variant<Ref<MeshSceneNode>, Ref<LightSceneNode>>;
+// using SceneNodeVariant = std::variant<Ref<MeshSceneNode>, Ref<LightSceneNode>>;
 
 struct SceneData
 {
     std::vector<Ref<LightSceneNode>> lightSceneNodes;
-    std::vector<Ref<MeshSceneNode>> meshSceneNodes;
+    std::vector<Ref<Model>> models;
     Ref<Camera> defaultCamera = nullptr;
     Ref<Camera> activeCamera = nullptr;
 };
 
-using RenderPassFilter = std::function<bool(const Ref<MeshSceneNode>&)>;
+// using RenderPassFilter = std::function<bool(const Ref<MeshSceneNode>&)>;
 
 class Scene
 {
   public:
     static void init(const CameraProps& cameraProps);
 
-    static void addMeshSceneNode(const Ref<MeshSceneNode>& node);
+    static void addModel(const Ref<Model>& model);
     static void addLightSceneNode(const Ref<LightSceneNode>& node);
 
-    static std::optional<SceneNodeVariant> getByName(const std::string& name);
-    static RenderQueue getRenderQueue(const RenderPassFilter& filter);
+    // static std::optional<SceneNodeVariant> getByName(const std::string& name);
+    // static RenderQueue getRenderQueue(const RenderPassFilter& filter);
+    static RenderQueue getRenderQueue();
     static std::vector<Ref<LightSceneNode>> getLightSceneNodes();
 
     static void setActiveCamera(const Ref<Camera>& camera);

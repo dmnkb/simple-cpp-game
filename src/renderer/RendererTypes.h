@@ -1,7 +1,7 @@
 #pragma once
 
+#include "LearnOpenGLMesh.h"
 #include "Material.h"
-#include "Mesh.h"
 #include "pch.h"
 
 // Current:
@@ -37,4 +37,4 @@
 // │   └── ...
 // └── ...
 
-using RenderQueue = std::unordered_map<Ref<Material>, std::unordered_map<Ref<Mesh>, std::vector<glm::mat4>>>;
+using RenderQueue = std::unordered_map<Ref<Material>, std::unordered_map<Ref<LearnOpenGLMesh>, std::vector<glm::mat4>>>;

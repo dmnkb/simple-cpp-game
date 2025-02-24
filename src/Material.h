@@ -14,6 +14,8 @@ struct MaterialProps
 class Material
 {
   public:
+    std::string name;
+
     Material(Ref<Shader>& shader, MaterialProps props = MaterialProps());
 
     void bind();

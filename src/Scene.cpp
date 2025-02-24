@@ -8,9 +8,14 @@ void Scene::init(const CameraProps& cameraProps)
     setActiveCamera(s_sceneData.defaultCamera);
 }
 
-void Scene::addMeshSceneNode(const Ref<MeshSceneNode>& node)
+// void Scene::addMeshSceneNode(const Ref<MeshSceneNode>& node)
+// {
+//     s_sceneData.meshSceneNodes.push_back(node);
+// }
+
+void Scene::addModel(const Ref<Model>& model)
 {
-    s_sceneData.meshSceneNodes.push_back(node);
+    s_sceneData.models.push_back(model);
 }
 
 void Scene::addLightSceneNode(const Ref<LightSceneNode>& node)
@@ -18,26 +23,27 @@ void Scene::addLightSceneNode(const Ref<LightSceneNode>& node)
     s_sceneData.lightSceneNodes.push_back(node);
 }
 
-std::optional<SceneNodeVariant> Scene::getByName(const std::string& name)
-{
-    auto meshSceneNodeIt = std::find_if(s_sceneData.meshSceneNodes.begin(), s_sceneData.meshSceneNodes.end(),
-                                        [&name](const Ref<MeshSceneNode>& node) { return node->getName() == name; });
+// std::optional<SceneNodeVariant> Scene::getByName(const std::string& name)
+// {
+//     auto meshSceneNodeIt = std::find_if(s_sceneData.meshSceneNodes.begin(), s_sceneData.meshSceneNodes.end(),
+//                                         [&name](const Ref<MeshSceneNode>& node) { return node->getName() == name; });
 
-    if (meshSceneNodeIt != s_sceneData.meshSceneNodes.end())
-    {
-        return (*meshSceneNodeIt);
-    }
+//     if (meshSceneNodeIt != s_sceneData.meshSceneNodes.end())
+//     {
+//         return (*meshSceneNodeIt);
+//     }
 
-    auto lightSceneNodeIt = std::find_if(s_sceneData.lightSceneNodes.begin(), s_sceneData.lightSceneNodes.end(),
-                                         [&name](const Ref<LightSceneNode>& node) { return node->getName() == name; });
+//     auto lightSceneNodeIt = std::find_if(s_sceneData.lightSceneNodes.begin(), s_sceneData.lightSceneNodes.end(),
+//                                          [&name](const Ref<LightSceneNode>& node) { return node->getName() == name;
+//                                          });
 
-    if (lightSceneNodeIt != s_sceneData.lightSceneNodes.end())
-    {
-        return (*lightSceneNodeIt);
-    }
+//     if (lightSceneNodeIt != s_sceneData.lightSceneNodes.end())
+//     {
+//         return (*lightSceneNodeIt);
+//     }
 
-    return std::nullopt;
-}
+//     return std::nullopt;
+// }
 
 /**
  * TODO:
@@ -48,18 +54,28 @@ std::optional<SceneNodeVariant> Scene::getByName(const std::string& name)
  * Example:
  * std::vector<Renderable*> candidates = spatialPartition.Query(cameraFrustum);
  */
-RenderQueue Scene::getRenderQueue(const RenderPassFilter& filter)
+RenderQueue Scene::getRenderQueue()
 {
     RenderQueue renderQueue = {};
 
-    for (const auto& node : s_sceneData.meshSceneNodes)
+    // for (const auto& node : s_sceneData.meshSceneNodes)
+    // {
+    //     if (filter(node))
+    //     {
+    //         auto renderable = node->getRenderable();
+    //         renderQueue[renderable->material][renderable->mesh].push_back(renderable->transform);
+    //     }
+    // }
+    // return renderQueue;
+
+    for (const auto& m : s_sceneData.models)
     {
-        if (filter(node))
+        for (const auto& renderable : m->renderables)
         {
-            auto renderable = node->getRenderable();
             renderQueue[renderable->material][renderable->mesh].push_back(renderable->transform);
         }
     }
+
     return renderQueue;
 }
 

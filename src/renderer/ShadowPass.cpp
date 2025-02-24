@@ -28,8 +28,9 @@ void ShadowPass::execute()
             const auto lightSpaceMatrix = shadowCam->getProjectionMatrix() * shadowCam->getViewMatrix();
             m_depthShader.setUniformMatrix4fv("lightSpaceMatrix", lightSpaceMatrix);
 
-            for (const auto& [material, meshMap] :
-                 Scene::getRenderQueue([](const Ref<MeshSceneNode>& node) { return true; }))
+            // for (const auto& [material, meshMap] :
+            //      Scene::getRenderQueue([](const Ref<MeshSceneNode>& node) { return true; }))
+            for (const auto& [material, meshMap] : Scene::getRenderQueue())
             {
                 for (const auto& [mesh, transforms] : meshMap)
                 {

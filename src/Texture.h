@@ -4,6 +4,8 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
+#include <assimp/material.h>
+
 struct Texture
 {
     GLuint id;
@@ -12,6 +14,8 @@ struct Texture
     GLenum type = GL_FLOAT;
     GLenum attachmentType = GL_COLOR_ATTACHMENT0;
     bool mipmaps = true;
+    aiTextureType materialTextureType;
+    std::string path;
 
     Texture() = default;
     Texture(const std::string& path);

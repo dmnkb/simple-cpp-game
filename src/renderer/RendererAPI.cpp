@@ -22,7 +22,7 @@ void RendererAPI::shutdown()
     glDeleteBuffers(1, &s_Data.instanceBuffer);
 }
 
-void RendererAPI::drawInstanced(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& transforms)
+void RendererAPI::drawInstanced(const Ref<LearnOpenGLMesh>& mesh, const std::vector<glm::mat4>& transforms)
 {
     // TODO: Draw call stats?
     mesh->bind();

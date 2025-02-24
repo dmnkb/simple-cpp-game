@@ -1,4 +1,4 @@
-#include "Mesh.h"
+#include "LearnOpenGLMesh.h"
 #include "pch.h"
 
 struct RendererAPIData
@@ -11,7 +11,7 @@ class RendererAPI
   public:
     static void init();
     static void shutdown();
-    static void drawInstanced(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& transforms);
+    static void drawInstanced(const Ref<LearnOpenGLMesh>& mesh, const std::vector<glm::mat4>& transforms);
 
   private:
     static void bindInstanceBuffer(const std::vector<glm::mat4>& transforms);
