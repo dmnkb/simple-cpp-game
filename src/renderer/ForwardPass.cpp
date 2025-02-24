@@ -60,39 +60,39 @@ void ForwardPass::updateUniforms(const Ref<Material>& material)
     const auto camPos = Scene::getActiveCamera()->getPosition();
 
     material->setUniformMatrix4fv("u_ViewProjection", viewProjectionMatrix);
-    // material->setUniform3fv("viewPos", camPos);
+    material->setUniform3fv("viewPos", camPos);
 
-    // // Shadows
-    // auto lights = Scene::getLightSceneNodes();
-    // for (size_t i = 0; i < lights.size(); ++i)
-    // {
-    //     auto light = lights[i];
-    //     m_lightBuffer[i] = ((lights)[i])->toUBO();
+    // Shadows
+    auto lights = Scene::getLightSceneNodes();
+    for (size_t i = 0; i < lights.size(); ++i)
+    {
+        auto light = lights[i];
+        m_lightBuffer[i] = ((lights)[i])->toUBO();
 
-    //     const auto lightSpaceMatrix =
-    //         light->getShadowCam()->getProjectionMatrix() * light->getShadowCam()->getViewMatrix();
+        const auto lightSpaceMatrix =
+            light->getShadowCam()->getProjectionMatrix() * light->getShadowCam()->getViewMatrix();
 
-    //     std::string lightSpaceMatrixUniformName = fmt::format("lightSpaceMatrices[{}]", i);
-    //     material->setUniformMatrix4fv(lightSpaceMatrixUniformName.c_str(), lightSpaceMatrix);
+        std::string lightSpaceMatrixUniformName = fmt::format("lightSpaceMatrices[{}]", i);
+        material->setUniformMatrix4fv(lightSpaceMatrixUniformName.c_str(), lightSpaceMatrix);
 
-    //     std::string shadowMapUniformName = fmt::format("shadowMaps[{}]", i);
-    //     if (material->hasUniform(shadowMapUniformName.c_str()))
-    //     {
-    //         // Color = 0, shadow[n] = n + 1
-    //         light->getDepthBuffer()->bind(i + 1);                        // Bind texture to the i-th texture unit
-    //         material->setUniform1i(shadowMapUniformName.c_str(), i + 1); // Tell shader which texture unit to use
-    //     }
-    // }
+        std::string shadowMapUniformName = fmt::format("shadowMaps[{}]", i);
+        if (material->hasUniform(shadowMapUniformName.c_str()))
+        {
+            // Color = 0, shadow[n] = n + 1
+            light->getDepthBuffer()->bind(i + 1);                        // Bind texture to the i-th texture unit
+            material->setUniform1i(shadowMapUniformName.c_str(), i + 1); // Tell shader which texture unit to use
+        }
+    }
 
-    // // Lights
-    // GLuint uboBindingPoint = 0;
-    // GLuint lightUniformBlockIndex = glGetUniformBlockIndex(material->getShader()->getProgramID(), "LightsBlock");
-    // if (lightUniformBlockIndex != GL_INVALID_INDEX)
-    // {
-    //     glUniformBlockBinding(material->getShader()->getProgramID(), lightUniformBlockIndex, uboBindingPoint);
-    //     glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, m_uboLights);
+    // Lights
+    GLuint uboBindingPoint = 0;
+    GLuint lightUniformBlockIndex = glGetUniformBlockIndex(material->getShader()->getProgramID(), "LightsBlock");
+    if (lightUniformBlockIndex != GL_INVALID_INDEX)
+    {
+        glUniformBlockBinding(material->getShader()->getProgramID(), lightUniformBlockIndex, uboBindingPoint);
+        glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, m_uboLights);
 
-    //     glBindBuffer(GL_UNIFORM_BUFFER, m_uboLights);
-    //     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(m_lightBuffer), m_lightBuffer);
-    // }
+        glBindBuffer(GL_UNIFORM_BUFFER, m_uboLights);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(m_lightBuffer), m_lightBuffer);
+    }
 }
