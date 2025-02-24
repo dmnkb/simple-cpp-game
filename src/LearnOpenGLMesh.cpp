@@ -49,22 +49,6 @@ void LearnOpenGLMesh::setupMesh()
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(LearnOpenGLVertex),
                           (void*)offsetof(LearnOpenGLVertex, TexCoords));
-    // vertex tangent
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(LearnOpenGLVertex),
-                          (void*)offsetof(LearnOpenGLVertex, Tangent));
-    // vertex bitangent
-    glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(LearnOpenGLVertex),
-                          (void*)offsetof(LearnOpenGLVertex, Bitangent));
-    // ids
-    glEnableVertexAttribArray(5);
-    glVertexAttribIPointer(5, 4, GL_INT, sizeof(LearnOpenGLVertex), (void*)offsetof(LearnOpenGLVertex, m_BoneIDs));
-
-    // weights
-    glEnableVertexAttribArray(6);
-    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(LearnOpenGLVertex),
-                          (void*)offsetof(LearnOpenGLVertex, m_Weights));
     glBindVertexArray(0);
 }
 
@@ -80,6 +64,6 @@ void LearnOpenGLMesh::unbind()
 
 GLsizei LearnOpenGLMesh::getIndexCount() const
 {
-    constexpr GLsizei IndexCount = sizeof(indices) / sizeof(indices[0]);
-    return IndexCount;
+    // constexpr GLsizei IndexCount = sizeof(indices) / sizeof(indices[0]);
+    return static_cast<unsigned int>(indices.size());
 }

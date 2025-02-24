@@ -30,6 +30,11 @@ void RendererAPI::drawInstanced(const Ref<LearnOpenGLMesh>& mesh, const std::vec
     glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndexCount(), GL_UNSIGNED_INT, nullptr, transforms.size());
     unbindInstanceBuffer();
     mesh->unbind();
+
+    // draw mesh
+    // glBindVertexArray(mesh->VAO);
+    // glDrawElements(GL_TRIANGLES, mesh->getIndexCount(), GL_UNSIGNED_INT, 0);
+    // glBindVertexArray(0);
 }
 
 void RendererAPI::bindInstanceBuffer(const std::vector<glm::mat4>& transforms)
