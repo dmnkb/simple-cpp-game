@@ -38,10 +38,10 @@ class Camera
     {
         if (m_props.type == ECT_ORTHOGRAPHIC)
         {
-            float orthoLeft = -50.0f;
-            float orthoRight = 50.0f;
-            float orthoBottom = -50.0f;
-            float orthoTop = 50.0f;
+            float orthoLeft = -20.0f;
+            float orthoRight = 20.0f;
+            float orthoBottom = -20.0f;
+            float orthoTop = 20.0f;
             return glm::ortho(orthoLeft, orthoRight, orthoBottom, orthoTop, m_props.near, m_props.far);
         }
         return glm::perspective(m_props.fov, m_props.aspect, m_props.near, m_props.far);

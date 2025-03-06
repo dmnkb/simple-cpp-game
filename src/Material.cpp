@@ -1,4 +1,5 @@
 #include "Material.h"
+#include "Window.h"
 #include <fmt/core.h>
 
 Material::Material(Ref<Shader>& shader, MaterialProps props) : m_shader(shader), m_props(props)
@@ -34,7 +35,7 @@ void Material::bind()
 
         glBindBuffer(GL_UNIFORM_BUFFER, m_uboMaterial);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(MaterialProps), &m_props);
-        glBindBuffer(GL_UNIFORM_BUFFER, 0); // Unbind
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
     }
 }
 
@@ -44,9 +45,20 @@ void Material::unbind()
     m_diffuseMap->unbind();
 }
 
+void Material::update()
+{
+    float time = Window::getElapsedTime();
+    m_shader->setUniform1f("u_Time", time);
+}
+
 void Material::setDiffuseMap(Ref<Texture>& texture)
 {
     m_diffuseMap = texture;
+}
+
+const Ref<Texture>& Material::getDiffuseMap()
+{
+    return m_diffuseMap;
 }
 
 void Material::setTextureRepeat(const int& repeat)

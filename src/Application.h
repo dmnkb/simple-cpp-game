@@ -3,6 +3,7 @@
 #include "EventManager.h"
 #include "Player.h"
 #include "Renderer.h"
+#include "Sandbox.h"
 
 class Application
 {
@@ -24,4 +25,6 @@ class Application
     int m_FrameCount = 0;
 
     bool m_CanDisableCursor = true;
+
+    Scope<Sandbox> m_Sandbox;
 };

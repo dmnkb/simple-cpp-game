@@ -40,6 +40,7 @@ class Shader
     void setUniformMatrix3fv(const char* name, const glm::mat3 value);
     void setUniform3fv(const char* name, const glm::vec3 value);
     void setUniform1i(const char* name, GLint value);
+    void setUniform1f(const char* name, float value);
     void setUniform1iv(const char* name, GLint samplerIDs[16]);
     void setIntArray(const char* name, GLint* values, GLsizei count);
 

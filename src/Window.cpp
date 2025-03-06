@@ -30,7 +30,7 @@ void Window::init(const WindowProps& props)
 
     glfwMakeContextCurrent(s_windowData.window);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
 
     // TODO: Add resize event
 
@@ -59,6 +59,11 @@ void Window::swapBuffers()
 void Window::pollEvents()
 {
     glfwPollEvents();
+}
+
+double Window::getElapsedTime()
+{
+    return glfwGetTime();
 }
 
 GLFWwindow*& Window::getNativeWindow()

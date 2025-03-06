@@ -14,11 +14,17 @@ struct MaterialProps
 class Material
 {
   public:
+    std::string name;
+
     Material(Ref<Shader>& shader, MaterialProps props = MaterialProps());
 
     void bind();
     void unbind();
+
+    void update();
+
     void setDiffuseMap(Ref<Texture>& texture);
+    const Ref<Texture>& getDiffuseMap();
     void setTextureRepeat(const int& repeat);
 
     void setUniformMatrix4fv(const char* name, const glm::mat4 value);
@@ -28,6 +34,8 @@ class Material
     Ref<Shader> getShader() const;
 
     const bool hasUniform(const char* name);
+
+    static const Ref<Material> getDefaultMaterial();
 
   private:
     Ref<Shader> m_shader = nullptr;

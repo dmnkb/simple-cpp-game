@@ -76,6 +76,8 @@
         "set": "cpp",
         "source_location": "cpp",
         "span": "cpp",
-        "typeindex": "cpp"
+        "typeindex": "cpp",
+        "cinttypes": "cpp",
+        "regex": "cpp"
     }
 }

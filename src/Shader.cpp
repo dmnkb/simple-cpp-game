@@ -132,6 +132,13 @@ void Shader::setUniform1i(const char* name, GLint value)
         glUniform1i(location, value);
 }
 
+void Shader::setUniform1f(const char* name, float value)
+{
+    auto location = getCachedLocation(name);
+    if (location != -1)
+        glUniform1f(location, value);
+}
+
 void Shader::setUniform1iv(const char* name, GLint samplerIDs[16])
 {
     auto location = getCachedLocation(name);
