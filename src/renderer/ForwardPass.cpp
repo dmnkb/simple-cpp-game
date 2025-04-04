@@ -1,6 +1,5 @@
 #include "ForwardPass.h"
 #include "Framebuffer.h"
-#include "RenderPass.h"
 #include "RendererAPI.h"
 #include "Scene.h"
 #include "Window.h"
@@ -22,22 +21,22 @@ ForwardPass::~ForwardPass()
     glDeleteBuffers(1, &m_uboLights);
 }
 
-void ForwardPass::execute()
+void ForwardPass::execute(Scene& scene)
 {
     glColorMask(true, true, true, true);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, Window::getFrameBufferDimensions().x, Window::getFrameBufferDimensions().y);
+    glViewport(0, 0, Window::frameBufferDimensions.x, Window::frameBufferDimensions.y);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    Scene::setActiveCamera(Scene::getDefaultCamera());
+    scene.setActiveCamera(scene.getDefaultCamera());
 
     int i = 0;
 
-    for (const auto& [material, meshMap] : Scene::getRenderQueue())
+    for (const auto& [material, meshMap] : scene.getRenderQueue())
     {
         material->bind();
         material->update();
-        updateUniforms(material);
+        updateUniforms(scene, material);
 
         if (material->name == "foliage")
         {
@@ -62,21 +61,21 @@ void ForwardPass::execute()
     // std::cout << "number draw calls: " << i << std::endl;
 }
 
-void ForwardPass::updateUniforms(const Ref<Material>& material)
+void ForwardPass::updateUniforms(Scene& scene, const Ref<Material>& material)
 {
-    const auto viewMatrix = Scene::getActiveCamera()->getViewMatrix();
-    const auto projectionMatrix = Scene::getActiveCamera()->getProjectionMatrix();
+    const auto viewMatrix = scene.getActiveCamera()->getViewMatrix();
+    const auto projectionMatrix = scene.getActiveCamera()->getProjectionMatrix();
     const auto viewProjectionMatrix = projectionMatrix * viewMatrix;
-    const auto camPos = Scene::getActiveCamera()->getPosition();
+    const auto camPos = scene.getActiveCamera()->getPosition();
 
     material->setUniformMatrix4fv("u_ViewProjection", viewProjectionMatrix);
     material->setUniform3fv("viewPos", camPos);
 
     // Shadows
-    auto lights = Scene::getLightSceneNodes();
+    auto lights = scene.getLightSceneNodes();
     for (size_t i = 0; i < lights.size(); ++i)
     {
-        auto light = lights[i];
+        const auto light = lights[i];
         m_lightBuffer[i] = ((lights)[i])->toUBO();
 
         const auto lightSpaceMatrix =

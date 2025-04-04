@@ -3,12 +3,13 @@
 
 static EventData s_eventData;
 
+// TODO: ENUM
 void EventManager::registerListeners(const std::string& eventType, EventCallback callback)
 {
     s_eventData.listeners[eventType].push_back(callback);
 }
 
-void EventManager::queueEvent(Event* event)
+void EventManager::queueEvent(const Ref<Event> event)
 {
     s_eventData.eventQueue.push_back(event);
 }
@@ -19,14 +20,10 @@ void EventManager::processEvents()
     {
         dispatchEvent(event);
     }
-    for (auto event : s_eventData.eventQueue)
-    {
-        delete event;
-    }
     s_eventData.eventQueue.clear();
 }
 
-void EventManager::dispatchEvent(Event* event)
+void EventManager::dispatchEvent(Ref<Event> event)
 {
     auto eventType = typeid(*event).name();
     if (s_eventData.listeners.find(eventType) != s_eventData.listeners.end())

@@ -11,10 +11,10 @@ ShadowPass::ShadowPass()
 {
 }
 
-void ShadowPass::execute()
+void ShadowPass::execute(Scene& scene)
 {
 
-    for (auto& lightSceneNode : Scene::getLightSceneNodes())
+    for (auto& lightSceneNode : scene.getLightSceneNodes())
     {
         const auto lightType = lightSceneNode->getLightType();
         if (lightType == ELT_POINT)
@@ -31,8 +31,8 @@ void ShadowPass::execute()
             const auto lightSpaceMatrix = shadowCam->getProjectionMatrix() * shadowCam->getViewMatrix();
 
             // for (const auto& [material, meshMap] :
-            //      Scene::getRenderQueue([](const Ref<MeshSceneNode>& node) { return true; }))
-            for (const auto& [material, meshMap] : Scene::getRenderQueue())
+            //      scene.getRenderQueue([](const Ref<MeshSceneNode>& node) { return true; }))
+            for (const auto& [material, meshMap] : scene.getRenderQueue())
             {
                 glEnable(GL_CULL_FACE);
                 if (material->name == "foliage")

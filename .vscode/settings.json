@@ -1,6 +1,8 @@
 {
     "editor.defaultFormatter": "xaver.clang-format",
     "editor.formatOnSave": true,
+    "cmake.cmakePath": "/opt/homebrew/bin/cmake",
+    "clang-format.executable": "/opt/homebrew/bin/clang-format",
     "files.associations": {
         "ratio": "cpp",
         "ios": "cpp",
@@ -78,6 +80,8 @@
         "span": "cpp",
         "typeindex": "cpp",
         "cinttypes": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "concepts": "cpp",
+        "numeric": "cpp"
     }
 }

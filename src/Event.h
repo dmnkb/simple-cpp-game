@@ -1,3 +1,5 @@
+#include "pch.h"
+
 #pragma once
 
 class Event
@@ -17,6 +19,11 @@ class KeyEvent : public Event
 class MouseMoveEvent : public Event
 {
   public:
-    MouseMoveEvent(float speedX, float speedY) : speedX(speedX), speedY(speedY) {}
-    float speedX, speedY;
+    MouseMoveEvent(float speedX, float speedY, bool cursorDisabled)
+        : speedX(speedX), speedY(speedY), cursorDisabled(cursorDisabled)
+    {
+    }
+    float speedX = 0.0f;
+    float speedY = 0.0f;
+    bool cursorDisabled = false;
 };

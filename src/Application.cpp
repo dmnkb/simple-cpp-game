@@ -13,12 +13,12 @@
 
 Application::Application() : m_Player()
 {
-    // Device
-    // TODO: to be updated on window resize
-    const int windowWidth = 640;
-    const int windowHeigth = 480;
-
-    WindowProps windowProps = {windowWidth, windowHeigth, "Simple CPP Application", NULL, NULL};
+    // Window
+    WindowProps windowProps = {
+        .initialWidth = 640,
+        .initialHeight = 480,
+        .title = "Game",
+    };
     Window::init(windowProps);
 
     // ImGUI
@@ -28,15 +28,17 @@ Application::Application() : m_Player()
     m_renderer = CreateScope<Renderer>();
 
     // Scene
-    CameraProps cameraProps = {45.0f * (M_PI / 180.0f), ((float)windowWidth / windowHeigth), 0.1f, 1000.0f};
-    Scene::init(cameraProps);
+    CameraProps cameraProps = {45.0f * (M_PI / 180.0f), ((float)Window::dimensions.x / Window::dimensions.y), 0.1f,
+                               1000.0f};
+    m_Scene.init(cameraProps);
 
     // Events
-    EventManager::registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
+    EventManager::registerListeners(typeid(KeyEvent).name(),
+                                    [this](const Ref<Event> event) { this->onKeyEvent(event); });
 
     // Sandbox
     m_Sandbox = CreateScope<Sandbox>();
-    m_Sandbox->init();
+    m_Sandbox->init(m_Scene);
 }
 
 void Application::run()
@@ -45,7 +47,7 @@ void Application::run()
     int previousVertexCount = 0;
     double fps = 0.0;
 
-    while (Window::getIsWindowOpen())
+    while (Window::open)
     {
         // Calculate delta time
         static double lastTime = glfwGetTime();
@@ -60,10 +62,12 @@ void Application::run()
             m_FrameCount = 0;
         }
 
-        m_Player.update(m_DeltaTime);
+        m_Player.update(m_Scene, m_DeltaTime);
 
-        m_renderer->update();
+        m_renderer->update(m_Scene);
+
         m_Sandbox->update(m_DeltaTime);
+
         EventManager::processEvents();
 
         // Start new ImGui frame
@@ -84,14 +88,13 @@ void Application::run()
         // ImGui::Text("%s", drawCallsText.c_str());
 
         // Shadow Caster Depth Textures
-        const auto& shadowDepthBuffers = m_renderer->getDepthDebugTextures();
-        if (!shadowDepthBuffers.empty())
+        if (!m_Scene.getLightSceneNodes().empty())
         {
             ImGui::Separator();
             ImGui::Text("Shadow Depth Buffers:");
-            for (size_t i = 0; i < shadowDepthBuffers.size(); ++i)
+            for (size_t i = 0; i < m_Scene.getLightSceneNodes().size(); ++i)
             {
-                const auto& texture = shadowDepthBuffers[i];
+                const auto& texture = m_Scene.getLightSceneNodes()[i]->getDebugDepthTexture();
                 ImGui::Image((void*)(intptr_t)texture->id, ImVec2(128, 96), ImVec2(1, 1), ImVec2(0, 0));
             }
         }
@@ -103,8 +106,7 @@ void Application::run()
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         // Swap buffers and poll events
-        Window::swapBuffers();
-        Window::pollEvents();
+        Window::update();
 
         // Reset stats for the next frame
         // Renderer::resetStats();
@@ -114,35 +116,23 @@ void Application::run()
     }
 }
 
-void Application::onKeyEvent(Event* event)
+void Application::onKeyEvent(const Ref<Event> event)
 {
-    auto keyEvent = dynamic_cast<KeyEvent*>(event);
+    auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(event);
     if (!keyEvent)
         return;
 
-    // lock cursor
     if (keyEvent->key == GLFW_KEY_ESCAPE && keyEvent->action == GLFW_PRESS)
     {
-        int currentMode = glfwGetInputMode(Window::getNativeWindow(), GLFW_CURSOR);
-        m_CanDisableCursor = false;
-        if (currentMode == GLFW_CURSOR_DISABLED)
+        if (m_CanLockCursor)
         {
-            glfwSetInputMode(Window::getNativeWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            m_Player.setIsCursorDisabled(true);
-
-            int windowWidth, windowHeight;
-            glfwGetWindowSize(Window::getNativeWindow(), &windowWidth, &windowHeight);
-            glfwSetCursorPos(Window::getNativeWindow(), windowWidth / 2, windowHeight / 2);
-        }
-        else
-        {
-            glfwSetInputMode(Window::getNativeWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            m_Player.setIsCursorDisabled(false);
+            Window::toggleCursorLock();
+            m_CanLockCursor = false;
         }
     }
     if (keyEvent->key == GLFW_KEY_ESCAPE && keyEvent->action == GLFW_RELEASE)
     {
-        m_CanDisableCursor = true;
+        m_CanLockCursor = true;
     }
 }
 
@@ -165,6 +155,6 @@ void Application::initImGui()
     (void)io;
     ImGui::StyleColorsDark();
 
-    ImGui_ImplGlfw_InitForOpenGL(Window::getNativeWindow(), true);
+    ImGui_ImplGlfw_InitForOpenGL(Window::glfwWindow, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 }

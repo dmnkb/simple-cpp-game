@@ -2,18 +2,18 @@
 
 #include "LightSceneNode.h"
 #include "Material.h"
-#include "RenderPass.h"
+#include "Scene.h"
 #include "pch.h"
 
-class ForwardPass : public RenderPass
+class ForwardPass
 {
   public:
     ForwardPass();
     ~ForwardPass();
-    void execute();
+    void execute(Scene& scene);
 
   private:
-    void updateUniforms(const Ref<Material>& material);
+    void updateUniforms(Scene& scene, const Ref<Material>& material);
 
   private:
     LightSceneNode::LightUBO m_lightBuffer[256];

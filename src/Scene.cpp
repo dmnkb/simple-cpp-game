@@ -1,76 +1,29 @@
 #include "Scene.h"
 
-static SceneData s_sceneData;
-
 void Scene::init(const CameraProps& cameraProps)
 {
-    s_sceneData.defaultCamera = CreateRef<Camera>(cameraProps);
-    setActiveCamera(s_sceneData.defaultCamera);
+    m_DefaultCamera = CreateRef<Camera>(cameraProps);
+    setActiveCamera(m_DefaultCamera);
 }
-
-// void Scene::addMeshSceneNode(const Ref<MeshSceneNode>& node)
-// {
-//     s_sceneData.meshSceneNodes.push_back(node);
-// }
 
 void Scene::addModel(const Model& model)
 {
-    s_sceneData.models.push_back(model);
+    m_Models.push_back(model);
 }
 
 void Scene::addLightSceneNode(const Ref<LightSceneNode>& node)
 {
-    s_sceneData.lightSceneNodes.push_back(node);
+    m_LightSceneNodes.push_back(node);
 }
 
-// std::optional<SceneNodeVariant> Scene::getByName(const std::string& name)
-// {
-//     auto meshSceneNodeIt = std::find_if(s_sceneData.meshSceneNodes.begin(), s_sceneData.meshSceneNodes.end(),
-//                                         [&name](const Ref<MeshSceneNode>& node) { return node->getName() == name; });
-
-//     if (meshSceneNodeIt != s_sceneData.meshSceneNodes.end())
-//     {
-//         return (*meshSceneNodeIt);
-//     }
-
-//     auto lightSceneNodeIt = std::find_if(s_sceneData.lightSceneNodes.begin(), s_sceneData.lightSceneNodes.end(),
-//                                          [&name](const Ref<LightSceneNode>& node) { return node->getName() == name;
-//                                          });
-
-//     if (lightSceneNodeIt != s_sceneData.lightSceneNodes.end())
-//     {
-//         return (*lightSceneNodeIt);
-//     }
-
-//     return std::nullopt;
-// }
-
-/**
- * TODO:
- * For more complex scenes, implement a culling stage that processes the scene graph and produces
- * Renderables only for visible objects. This can be integrated with spatial partitioning techniques like BVH or
- * octrees.
- *
- * Example:
- * std::vector<Renderable*> candidates = spatialPartition.Query(cameraFrustum);
- */
-
-// Sort renderabled back-to-front
-// TODO: Limit to transparent meshes
-// std::sort(sortedModels.begin(), sortedModels.end(),
-//           [](const Ref<Model>& a, const Ref<Model>& b)
-//           {
-//               return glm::length(a->m_position - getActiveCamera()->getPosition()) >
-//                      glm::length(b->m_position - getActiveCamera()->getPosition());
-//           });
-
+// TODO: Sort renderables back-to-front
 RenderQueue Scene::getRenderQueue()
 {
     RenderQueue renderQueue = {};
 
     // Group renderables by their name to ensure identical meshes are processed together
     std::unordered_map<std::string, std::vector<Ref<Renderable>>> sortedRenderables = {};
-    for (const auto& model : s_sceneData.models)
+    for (const auto& model : m_Models)
     {
         for (const auto& renderable : model.renderables)
         {
@@ -101,20 +54,20 @@ RenderQueue Scene::getRenderQueue()
 
 std::vector<Ref<LightSceneNode>> Scene::getLightSceneNodes()
 {
-    return s_sceneData.lightSceneNodes;
+    return m_LightSceneNodes;
 }
 
 void Scene::setActiveCamera(const Ref<Camera>& camera)
 {
-    s_sceneData.activeCamera = camera;
+    m_ActiveCamera = camera;
 }
 
-const Ref<Camera> Scene::getActiveCamera()
+Ref<Camera> Scene::getActiveCamera() const
 {
-    return s_sceneData.activeCamera;
+    return m_ActiveCamera;
 }
 
-const Ref<Camera> Scene::getDefaultCamera()
+Ref<Camera> Scene::getDefaultCamera() const
 {
-    return s_sceneData.defaultCamera;
+    return m_DefaultCamera;
 }

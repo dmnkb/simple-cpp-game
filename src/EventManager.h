@@ -3,20 +3,20 @@
 #include "Event.h"
 #include "pch.h"
 
-using EventCallback = std::function<void(Event*)>;
+using EventCallback = std::function<void(const Ref<Event>)>;
 struct EventData
 {
     std::unordered_map<std::string, std::vector<EventCallback>> listeners;
-    std::vector<Event*> eventQueue;
+    std::vector<Ref<Event>> eventQueue;
 };
 
 class EventManager
 {
   public:
     static void registerListeners(const std::string& eventType, EventCallback callback);
-    static void queueEvent(Event* event);
+    static void queueEvent(const Ref<Event> event);
     static void processEvents();
 
   private:
-    static void dispatchEvent(Event* event);
+    static void dispatchEvent(const Ref<Event> event);
 };

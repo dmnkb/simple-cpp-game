@@ -2,6 +2,7 @@
 
 #include "Camera.h"
 #include "EventManager.h"
+#include "Scene.h"
 #include "pch.h"
 #include <glm/glm.hpp>
 
@@ -10,9 +11,9 @@ class Player
   public:
     Player();
 
-    void onKeyEvent(Event* event);
-    void onMouseMoveEvent(Event* event);
-    void update(double deltaTime);
+    void onKeyEvent(const Ref<Event> event);
+    void onMouseMoveEvent(const Ref<Event> event);
+    void update(const Scene& scene, double deltaTime);
     bool isKeyPressed(unsigned int key);
 
     glm::vec3 getPosition()
@@ -22,11 +23,6 @@ class Player
     glm::vec2 getRotation()
     {
         return m_Rotation;
-    }
-
-    void setIsCursorDisabled(bool disabled)
-    {
-        m_IsCursorDisabled = disabled;
     }
 
   private:
@@ -39,8 +35,8 @@ class Player
     // Camera
     glm::vec2 m_camChange = glm::vec2(0, 0);
     glm::vec2 m_cursorPositionOld;
-    bool m_IsCursorDisabled = true;
 
+    // TODO: Hashset
     // Input handling
     std::vector<unsigned int> m_PressedKeys;
 

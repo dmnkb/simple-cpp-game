@@ -22,6 +22,7 @@ Model::Model(std::string const& path, const glm::vec3& position, const glm::vec3
     loadModel(path);
 }
 
+// TODO: Filesystem path
 void Model::loadModel(std::string const& path)
 {
     // read file via ASSIMP
@@ -57,7 +58,7 @@ void Model::processNode(aiNode* node, const aiScene* scene)
                               glm::rotate(glm::mat4(1.0f), glm::radians(m_rotation.z), {0.0f, 0.0f, 1.0f}) *
                               glm::scale(glm::mat4(1.0f), m_scale);
 
-        const auto renderable =
+        const Ref<Renderable> renderable =
             CreateRef<Renderable>(processedMesh, processedMesh->material, transform, mesh->mName.C_Str());
         renderables.push_back(renderable);
     }
@@ -122,6 +123,7 @@ Ref<Mesh> Model::processMesh(aiMesh* mesh, const aiScene* scene)
             indices.push_back(face.mIndices[j]);
     }
 
+    // TODO: Move to ECS / Scene
     // process materials
     aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
     const std::string materialName = material->GetName().C_Str();

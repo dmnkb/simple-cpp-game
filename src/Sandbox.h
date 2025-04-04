@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Model.h"
+#include "Scene.h"
 #include "pch.h"
 
 /**
@@ -9,6 +10,6 @@
 class Sandbox
 {
   public:
-    void init();
+    void init(Scene& scene);
     void update(double deltyaTime);
 };

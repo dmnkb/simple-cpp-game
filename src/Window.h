@@ -11,39 +11,28 @@
 
 struct WindowProps
 {
-    int width, height;
+    const int initialWidth;
+    const int initialHeight;
     const char* title;
-    GLFWmonitor* monitor;
-    GLFWwindow* share;
 };
 
-struct WindowData
+namespace Window
 {
-    GLFWwindow* window;
-    WindowProps windowProps;
-    glm::vec2 frameBufferDimensions = glm::vec2(0, 0);
+void init(const WindowProps& props);
+void update();
+void shutdown();
+double getElapsedTime();
+void toggleCursorLock();
 
-    bool isWindowOpen = false;
-    bool firstMosue = true;
-    float cursorLastX, cursorLastY = 0.f;
-};
+extern GLFWwindow* glfwWindow;
+extern bool open;
+extern bool firstMosue;
+extern float cursorLastX;
+extern float cursorLastY;
+extern glm::vec2 frameBufferDimensions;
+extern glm::vec2 dimensions;
 
-class Window
-{
-  public:
-    static void init(const WindowProps& props);
-    static void shutdown();
-    static bool getIsWindowOpen();
-    static void swapBuffers();
-    static void pollEvents();
-    static double getElapsedTime();
-
-    static GLFWwindow*& getNativeWindow();
-    static glm::vec2 getFrameBufferDimensions();
-
-  private:
-    static Window* instance;
-
-    static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-    static void mousePosCallback(GLFWwindow* window, double xpos, double ypos);
-};
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void mousePosCallback(GLFWwindow* window, double xpos, double ypos);
+void resizeCallback(GLFWwindow* window, int width, int height);
+}; // namespace Window

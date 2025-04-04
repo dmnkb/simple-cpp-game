@@ -1,5 +1,4 @@
 #include "Player.h"
-#include "Scene.h"
 #include "pch.h"
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -8,14 +7,15 @@
 
 Player::Player()
 {
-    EventManager::registerListeners(typeid(KeyEvent).name(), [this](Event* event) { this->onKeyEvent(event); });
+    EventManager::registerListeners(typeid(KeyEvent).name(),
+                                    [this](const Ref<Event> event) { this->onKeyEvent(event); });
     EventManager::registerListeners(typeid(MouseMoveEvent).name(),
-                                    [this](Event* event) { this->onMouseMoveEvent(event); });
+                                    [this](const Ref<Event> event) { this->onMouseMoveEvent(event); });
 }
 
-void Player::onKeyEvent(Event* event)
+void Player::onKeyEvent(const Ref<Event> event)
 {
-    auto keyEvent = dynamic_cast<KeyEvent*>(event);
+    auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(event);
     if (!keyEvent)
         return;
 
@@ -36,19 +36,20 @@ void Player::onKeyEvent(Event* event)
     }
 }
 
-void Player::onMouseMoveEvent(Event* event)
+void Player::onMouseMoveEvent(const Ref<Event> event)
 {
-    if (m_IsCursorDisabled)
-        return;
-
-    if (auto mouseMoveEvent = dynamic_cast<MouseMoveEvent*>(event))
+    if (auto mouseMoveEvent = std::dynamic_pointer_cast<MouseMoveEvent>(event))
     {
-        m_camChange.x = mouseMoveEvent->speedX;
-        m_camChange.y = mouseMoveEvent->speedY;
+        if (mouseMoveEvent->cursorDisabled)
+        {
+            m_camChange.x = mouseMoveEvent->speedX;
+            m_camChange.y = mouseMoveEvent->speedY;
+        }
     }
 }
 
-void Player::update(double deltaTime)
+// TODO: Pass Scene
+void Player::update(const Scene& scene, double deltaTime)
 {
     // Rotation
     float mouseSpeed = 0.3f;
@@ -97,12 +98,13 @@ void Player::update(double deltaTime)
     m_Position.y += m_verticalVelocity * deltaTime;
 
     // Camera Update
-    Scene::getActiveCamera()->setPosition(m_Position);
-    Scene::getActiveCamera()->lookAt(m_Position + m_Direction);
+    scene.getActiveCamera()->setPosition(m_Position);
+    scene.getActiveCamera()->lookAt(m_Position + m_Direction);
 }
 
 bool Player::isKeyPressed(unsigned int key)
 {
+    // TODO: Hashmap instead of find(ing) inside a vector
     auto it = std::find(m_PressedKeys.begin(), m_PressedKeys.end(), key);
     return it != m_PressedKeys.end();
 }

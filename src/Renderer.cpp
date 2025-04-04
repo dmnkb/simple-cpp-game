@@ -11,8 +11,8 @@ Renderer::~Renderer()
     RendererAPI::shutdown();
 }
 
-void Renderer::update()
+void Renderer::update(Scene& scene)
 {
-    m_shadowPass.execute();
-    m_forwardPass.execute();
+    m_shadowPass.execute(scene);
+    m_forwardPass.execute(scene);
 }

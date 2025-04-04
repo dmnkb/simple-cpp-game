@@ -32,17 +32,7 @@ class Renderer
     Renderer();
     ~Renderer();
 
-    void update();
-
-    std::vector<Ref<Texture>> getDepthDebugTextures()
-    {
-        std::vector<Ref<Texture>> textures = {};
-        for (const auto& light : Scene::getLightSceneNodes())
-        {
-            textures.push_back(light->getDebugDepthTexture());
-        }
-        return textures;
-    }
+    void update(Scene& scene);
 
   private:
     ForwardPass m_forwardPass;

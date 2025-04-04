@@ -1,14 +1,14 @@
 #pragma once
 
-#include "RenderPass.h"
+#include "Scene.h"
 #include "Shader.h"
 #include "pch.h"
 
-class ShadowPass : public RenderPass
+class ShadowPass
 {
   public:
     ShadowPass();
-    void execute() override;
+    void execute(Scene& scene);
 
   private:
     Shader m_depthShader;

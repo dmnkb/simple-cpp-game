@@ -7,7 +7,7 @@
 #include "Texture.h"
 #include "pch.h"
 
-void Sandbox::init()
+void Sandbox::init(Scene& scene)
 {
     // auto mesh = CreateRef<Mesh>("my/unused/model/path/model.glb");
     // auto lightTexture = CreateRef<Texture>("assets/texture_08.png");
@@ -43,18 +43,18 @@ void Sandbox::init()
                                             ELT_DIRECTIONAL                    // Type: Directional light
     );
 
-    Scene::addLightSceneNode(light4);
+    scene.addLightSceneNode(light4);
 
     // load models
     // -----------
-    // auto sponza = CreateRef<Model>("assets/models/sponza/glTF/Sponza.gltf");
-    // Scene::addModel(sponza);
 
-    Scene::addModel(Model("assets/models/tree/scene.gltf", glm::vec3(-10.0, 0.0, 5.0)));
-    Scene::addModel(Model("assets/models/tree/scene.gltf", glm::vec3(10.0, 0.0, -2.0)));
-    Scene::addModel(Model("assets/models/tree/scene.gltf"));
+    // scene.addModel(Model("assets/models/sponza/glTF/Sponza.gltf"));
 
-    Scene::addModel(Model("assets/models/cube/cube.gltf", glm::vec3(0.0, -0.5, 0.0), glm::vec3(1000.0, 1, 1000.0)));
+    scene.addModel(Model("assets/models/tree/scene.gltf", glm::vec3(-10.0, 0.0, 5.0)));
+    scene.addModel(Model("assets/models/tree/scene.gltf", glm::vec3(10.0, 0.0, -2.0)));
+    scene.addModel(Model("assets/models/tree/scene.gltf"));
+
+    scene.addModel(Model("assets/models/cube/cube.gltf", glm::vec3(0.0, -0.5, 0.0), glm::vec3(1000.0, 1, 1000.0)));
 }
 
 void Sandbox::update(double deltaTime) {}
