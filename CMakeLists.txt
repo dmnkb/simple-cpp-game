@@ -8,9 +8,6 @@ file(GLOB_RECURSE MY_SOURCES src/*.cpp include/*.h)
 
 add_executable(${PROJECT_NAME} ${MY_SOURCES})
 
-# Find Assimp installed via Homebrew
-# find_package(Assimp REQUIRED)
-
 # Add vendored dependencies
 add_subdirectory(vendor/glfw EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/glad EXCLUDE_FROM_ALL)
