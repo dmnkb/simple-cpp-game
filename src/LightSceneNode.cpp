@@ -11,24 +11,47 @@ LightSceneNode::LightSceneNode(const glm::vec3& position, const glm::vec3& color
                                const ELightType& lightType, const float& innerCone, const float& outerCone)
     : SceneNode(), m_color(color), m_lightType(lightType), m_innerCone(innerCone), m_outerCone(outerCone)
 {
+    // TODO: maybe get rid of SceneNode polymorphism?
     m_position = position;
     m_direction = rotation;
 
-    CameraProps shadowCamProps = {.aspect = static_cast<float>(m_outerCone * 3 * (M_PI / 180.0f)),
-                                  .near = 0.1f,
-                                  .far = 1000.0f,
-                                  .position = m_position,
-                                  .target = position + rotation,
-                                  .type = m_lightType == ELT_SPOT ? ECT_PROJECTION : ECT_ORTHOGRAPHIC};
+    m_shadowCam = CreateRef<Camera>(CameraProps{.aspect = static_cast<float>(m_outerCone * 3 * (M_PI / 180.0f)),
+                                                .near = 0.1f,
+                                                .far = 1000.0f,
+                                                .position = m_position,
+                                                .target = position + rotation,
+                                                .type = m_lightType == ELT_SPOT ? ECT_PROJECTION : ECT_ORTHOGRAPHIC});
 
-    m_shadowCam = CreateRef<Camera>(shadowCamProps);
-
-    m_frameBuffer = CreateRef<Framebuffer>();
-    m_depthBuffer = CreateRef<Texture>(glm::vec2({4096, 4096}), GL_DEPTH_COMPONENT, GL_FLOAT, GL_DEPTH_ATTACHMENT);
-    m_frameBuffer->attachTexture(m_depthBuffer);
-
-    m_debugDepthTexture = CreateRef<Texture>(glm::vec2({4096, 4096}), GL_RGB, GL_UNSIGNED_BYTE, GL_COLOR_ATTACHMENT0);
-    m_frameBuffer->attachTexture(m_debugDepthTexture);
+    // Depth buffer
+    // clang-format off
+    m_shadowFramebuffer = CreateRef<Framebuffer>();
+    m_shadowDepthTexture = CreateRef<Texture>(
+        TextureProperties{
+            .internalFormat = GL_DEPTH_COMPONENT,
+            .width = 4096,
+            .height = 4096,
+            .format = GL_DEPTH_COMPONENT,
+            .type = GL_FLOAT,
+        },
+        CustomProperties{
+            .attachmentType = GL_DEPTH_ATTACHMENT,
+        });
+    m_shadowFramebuffer->attachTexture(m_shadowDepthTexture);
+    
+    // Debug depth buffer
+    m_shadowDebugColorTexture = CreateRef<Texture>(
+        TextureProperties{
+            .internalFormat = GL_RGB,
+            .width = 4096,
+            .height = 4096,
+            .format = GL_RGB,
+            .type = GL_UNSIGNED_BYTE,
+        },
+        CustomProperties{
+            .attachmentType = GL_COLOR_ATTACHMENT0,
+        });
+    m_shadowFramebuffer->attachTexture(m_shadowDebugColorTexture);
+    // clang-format on
 }
 
 void LightSceneNode::setLookAt(const glm::vec3& lookAt)

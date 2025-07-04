@@ -22,17 +22,6 @@ class Scene
     Ref<Camera> getActiveCamera() const;
     Ref<Camera> getDefaultCamera() const;
 
-    // void OnRuntimeStart();
-    // void OnRuntimeStop();
-
-    // void OnSimulationStart();
-    // void OnSimulationStop();
-
-    // void OnUpdateRuntime(Timestep ts);
-    // void OnUpdateSimulation(Timestep ts, EditorCamera& camera);
-    // void OnUpdateEditor(Timestep ts, EditorCamera& camera);
-    // void OnViewportResize(uint32_t width, uint32_t height);
-
   private:
     std::vector<Ref<LightSceneNode>> m_LightSceneNodes;
     std::vector<Model> m_Models;

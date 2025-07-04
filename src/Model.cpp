@@ -175,7 +175,7 @@ std::vector<Ref<Texture>> Model::loadMaterialTextures(aiMaterial* mat, aiTexture
         bool skip = false;
         for (unsigned int j = 0; j < textures_loaded.size(); j++)
         {
-            if (std::strcmp(textures_loaded[j]->path.data(), texturePath.C_Str()) == 0)
+            if (std::strcmp(textures_loaded[j]->customProperties.path.data(), texturePath.C_Str()) == 0)
             {
                 textures.push_back(textures_loaded[j]);
                 skip = true; // a texture with the same filepath has already been loaded, continue to next one.
@@ -188,8 +188,8 @@ std::vector<Ref<Texture>> Model::loadMaterialTextures(aiMaterial* mat, aiTexture
             std::string filename = std::string(texturePath.C_Str());
             filename = directory + '/' + filename;
             auto texture = CreateRef<Texture>(filename);
-            texture->materialTextureType = type;
-            texture->path = texturePath.C_Str();
+            texture->customProperties.materialTextureType = type;
+            texture->customProperties.path = texturePath.C_Str();
             textures.push_back(texture);
             textures_loaded.push_back(texture); // store it as texture loaded for entire model, to ensure we won't
                                                 // unnecessary load duplicate textures.

@@ -47,19 +47,19 @@ class LightSceneNode : public SceneNode
         return m_shadowCam;
     }
 
-    Ref<Framebuffer> getFrameBuffer()
+    Ref<Framebuffer> getShadowFrameBuffer()
     {
-        return m_frameBuffer;
+        return m_shadowFramebuffer;
     }
 
-    Ref<Texture> getDepthBuffer()
+    Ref<Texture> getShadowDepthTexture()
     {
-        return m_depthBuffer;
+        return m_shadowDepthTexture;
     }
 
-    Ref<Texture> getDebugDepthTexture()
+    Ref<Texture> getShadowDebugColorTexture()
     {
-        return m_debugDepthTexture;
+        return m_shadowDebugColorTexture;
     }
 
     // Converts this light to its GPU-ready format
@@ -80,6 +80,7 @@ class LightSceneNode : public SceneNode
 
     // Shadow mapping
     Ref<Camera> m_shadowCam;
-    Ref<Texture> m_depthBuffer, m_debugDepthTexture;
-    Ref<Framebuffer> m_frameBuffer;
+    Ref<Texture> m_shadowDepthTexture;      // stores depth values from light's POV
+    Ref<Texture> m_shadowDebugColorTexture; // color attachment for visualizing during shadow pass
+    Ref<Framebuffer> m_shadowFramebuffer;
 };

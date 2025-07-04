@@ -1,70 +1,98 @@
 #include "Texture.h"
 #include "pch.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_STATIC
-#include <glm/glm.hpp>
 #include <stb_image.h>
+
+#include <filesystem>
+#include <iostream>
 
 Texture::Texture(const std::string& path)
 {
     if (!std::filesystem::exists(path))
-        fprintf(stderr, "[ERROR] Texture file not found: %s\n", path.c_str());
+    {
+        std::cerr << "[ERROR] Texture file not found: " << path << "\n";
+        return;
+    }
 
-    int channelCount;
-    unsigned char* data = stbi_load(path.c_str(), &texWidth, &texHeight, &channelCount, 0);
+    int channelCount = 0;
+    unsigned char* data = stbi_load(path.c_str(), &properties.width, &properties.height, &channelCount, 0);
 
     if (!data)
     {
-        std::cout << "Failed to load texture: " << path << std::endl;
-        // Could return std::nullopt here or throw. But I'll return empty data for now.
+        std::cerr << "[ERROR] Failed to load texture: " << path << "\n";
+        return;
     }
 
-    GLenum format = GL_RGB;
-    if (channelCount == 1)
-        format = GL_RED;
-    else if (channelCount == 3)
-        format = GL_RGB;
-    else if (channelCount == 4)
-        format = GL_RGBA;
+    // Determine internal and external format
+    switch (channelCount)
+    {
+    case 1:
+        properties.internalFormat = GL_R8;
+        properties.format = GL_RED;
+        break;
+    case 3:
+        properties.internalFormat = GL_RGB8;
+        properties.format = GL_RGB;
+        break;
+    case 4:
+        properties.internalFormat = GL_RGBA8;
+        properties.format = GL_RGBA;
+        break;
+    default:
+        properties.internalFormat = GL_RGB8;
+        properties.format = GL_RGB;
+        break;
+    }
 
-    create({texWidth, texHeight}, format, GL_UNSIGNED_BYTE, GL_COLOR_ATTACHMENT0, data, true);
+    properties.pixels = data;
+    customProperties.path = path;
+    customProperties.mipmaps = true;
+
+    create();
 
     stbi_image_free(data);
 }
 
-Texture::Texture(const glm::vec2& dimensions, GLenum format, GLenum type, GLenum attachmentType, unsigned char* data,
-                 bool generateMipmap)
-    : attachmentType(attachmentType)
+Texture::Texture(TextureProperties props, CustomProperties customProps)
+    : properties(std::move(props)), customProperties(std::move(customProps))
 {
-    create(dimensions, format, type, attachmentType, data);
+    create();
 }
 
-void Texture::create(const glm::vec2& dimensions, GLenum format, GLenum type, GLenum attachmentType,
-                     unsigned char* data, bool generateMipmap)
+void Texture::create()
 {
-    texWidth = dimensions.x;
-    texHeight = dimensions.y;
-
     glGenTextures(1, &id);
-    glBindTexture(GL_TEXTURE_2D, id);
+    glBindTexture(properties.target, id);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, format, dimensions.x, dimensions.y, 0, format, type, data);
+    glTexImage2D(properties.target, properties.level, properties.internalFormat, properties.width, properties.height,
+                 properties.border, properties.format, properties.type, properties.pixels);
 
-    if (generateMipmap)
+    if (customProperties.mipmaps)
         glGenerateMipmap(GL_TEXTURE_2D);
 
-    if (format == GL_DEPTH_COMPONENT)
-    {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    }
-    else
-    {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, generateMipmap ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }
+    bool isDepth = properties.internalFormat == GL_DEPTH_COMPONENT;
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, isDepth ? GL_LINEAR : customProperties.minFilter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, isDepth ? GL_LINEAR : customProperties.magFilter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, isDepth ? GL_CLAMP_TO_EDGE : customProperties.wrapS);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, isDepth ? GL_CLAMP_TO_EDGE : customProperties.wrapT);
+}
+
+void Texture::bind(uint32_t slot) const
+{
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(properties.target, id);
+}
+
+void Texture::unbind(uint32_t slot) const
+{
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(properties.target, 0);
+}
+
+Texture::~Texture()
+{
+    glDeleteTextures(1, &id);
 }

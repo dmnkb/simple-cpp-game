@@ -27,9 +27,9 @@ void Sandbox::init(Scene& scene)
     // oneMeterCube->setScale(glm::vec3(1, 1, 1));
     // Scene::addMeshSceneNode(oneMeterCube);
 
-    // auto light1 =
-    //     CreateRef<LightSceneNode>(glm::vec3(-10, 15, 50), glm::vec3(1, 0, 0), glm::vec3(0, -.5, -1), ELT_SPOT);
-    // Scene::addLightSceneNode(light1);
+    auto light1 =
+        CreateRef<LightSceneNode>(glm::vec3(-10, 15, 50), glm::vec3(1, 0, 0), glm::vec3(0, -.5, -1), ELT_SPOT);
+    scene.addLightSceneNode(light1);
 
     // auto light2 = CreateRef<LightSceneNode>(glm::vec3(0, 15, 50), glm::vec3(0, 1, 0), glm::vec3(0, -.5, -1),
     // ELT_SPOT); Scene::addLightSceneNode(light2);
@@ -37,13 +37,14 @@ void Sandbox::init(Scene& scene)
     // auto light3 = CreateRef<LightSceneNode>(glm::vec3(10, 15, 50), glm::vec3(0, 0, 1), glm::vec3(0, -.5, -1),
     // ELT_SPOT); Scene::addLightSceneNode(light3);
 
-    auto light4 = CreateRef<LightSceneNode>(glm::vec3(100.0f, 200.0f, 100.0f), // Position of the sun
-                                            glm::vec3(0.8f, 0.7f, 0.6f),       // Softer warm color
-                                            glm::vec3(-0.5f, -1.0f, -0.5f),    // Direction of sunlight
-                                            ELT_DIRECTIONAL                    // Type: Directional light
-    );
+    scene.addLightSceneNode(
+        CreateRef<LightSceneNode>(glm::vec3(10, 15, 50), glm::vec3(0, 0, 1), glm::vec3(0, -.5, -1), ELT_SPOT));
 
-    scene.addLightSceneNode(light4);
+    scene.addLightSceneNode(CreateRef<LightSceneNode>(glm::vec3(100.0f, 200.0f, 100.0f), // Position of the sun
+                                                      glm::vec3(0.8f, 0.7f, 0.6f),       // Softer warm color
+                                                      glm::vec3(-0.5f, -1.0f, -0.5f),    // Direction of sunlight
+                                                      ELT_DIRECTIONAL                    // Type: Directional light
+                                                      ));
 
     // load models
     // -----------

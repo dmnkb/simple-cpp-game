@@ -82,6 +82,7 @@
         "cinttypes": "cpp",
         "regex": "cpp",
         "concepts": "cpp",
-        "numeric": "cpp"
+        "numeric": "cpp",
+        "thread": "cpp"
     }
 }

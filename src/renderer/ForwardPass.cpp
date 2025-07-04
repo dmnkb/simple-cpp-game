@@ -88,7 +88,7 @@ void ForwardPass::updateUniforms(Scene& scene, const Ref<Material>& material)
         if (material->hasUniform(shadowMapUniformName.c_str()))
         {
             // Color = 0, shadow[n] = n + 1
-            light->getDepthBuffer()->bind(i + 1);                        // Bind texture to the i-th texture unit
+            light->getShadowDepthTexture()->bind(i + 1);                 // Bind texture to the i-th texture unit
             material->setUniform1i(shadowMapUniformName.c_str(), i + 1); // Tell shader which texture unit to use
         }
     }

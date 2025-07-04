@@ -48,7 +48,6 @@ void Player::onMouseMoveEvent(const Ref<Event> event)
     }
 }
 
-// TODO: Pass Scene
 void Player::update(const Scene& scene, double deltaTime)
 {
     // Rotation

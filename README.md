@@ -17,24 +17,12 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [x] Materials
 - [x] Update FrameBuffer to support multiple attachments
 - [x] Integrate Assimp mesh and material loading
-- [ ] ECS
-    - [ ] Transform component
-    - [ ] Mesh component
-    - [ ] Material component
-- [ ] Editor mode
-    - [ ] Support viewport resizing
-    - [ ] Scene (de)serialization
-    - [ ] Control position and rotation using [ImGuizmo](https://github.com/CedricGuillemet/ImGuizmo)
-    - [ ] Frame buffer based picking
-    - [ ] Make the sun controllable using the editor
-- [ ] Update render stats debugging (Frame time per pass)
-- [ ] Cascaded shadow maps 
 - [ ] Basic post processing (Screen quad)
-- [ ] Mip chain bloom
 - [ ] SSAO
-- [ ] Anti-Aliasing? (Might conflict with the chased artstyle)
-- [ ] HDR image based lighting
-- [ ] Basic deferred rendering
+- [ ] Cascaded shadow maps 
+- [ ] Mip chain bloom
+- [ ] Update render stats debugging (Frame time per pass)
+- [ ] Anti-Aliasing? (Might conflict with the chased art style)
 - [ ] Integrate Bullet Physics (Car demo)
 - [ ] UI using [clay](https://github.com/nicbarker/clay)
 - [ ] Improve event system referencing ([this](https://github.com/TheCherno/Hazel/blob/1feb70572fa87fa1c4ba784a2cfeada5b4a500db/Hazel/src/Hazel/Core/Base.h#L26))

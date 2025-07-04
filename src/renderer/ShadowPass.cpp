@@ -13,7 +13,6 @@ ShadowPass::ShadowPass()
 
 void ShadowPass::execute(Scene& scene)
 {
-
     for (auto& lightSceneNode : scene.getLightSceneNodes())
     {
         const auto lightType = lightSceneNode->getLightType();
@@ -27,7 +26,9 @@ void ShadowPass::execute(Scene& scene)
             // Spotlights or directional Light
             const auto& shadowCam = lightSceneNode->getShadowCam();
 
-            lightSceneNode->getFrameBuffer()->bind();
+            // Bind the light's framebuffer in order to render to it
+            lightSceneNode->getShadowFrameBuffer()->bind();
+
             const auto lightSpaceMatrix = shadowCam->getProjectionMatrix() * shadowCam->getViewMatrix();
 
             // for (const auto& [material, meshMap] :
@@ -69,6 +70,7 @@ void ShadowPass::execute(Scene& scene)
                     m_depthShader.unbind();
                 }
             }
+            lightSceneNode->getShadowFrameBuffer()->unbind();
         }
     }
 }
