@@ -71,8 +71,9 @@ void ForwardPass::updateUniforms(Scene& scene, const Ref<Material>& material)
     material->setUniformMatrix4fv("u_ViewProjection", viewProjectionMatrix);
     material->setUniform3fv("viewPos", camPos);
 
+    std::vector<Ref<LightSceneNode>> lights = scene.getLightSceneNodes();
+
     // Shadows
-    auto lights = scene.getLightSceneNodes();
     for (size_t i = 0; i < lights.size(); ++i)
     {
         const auto light = lights[i];
@@ -94,6 +95,8 @@ void ForwardPass::updateUniforms(Scene& scene, const Ref<Material>& material)
     }
 
     // Lights
+    material->setUniform1i("u_numLights", lights.size());
+
     GLuint uboBindingPoint = 0;
     GLuint lightUniformBlockIndex = glGetUniformBlockIndex(material->getShader()->getProgramID(), "LightsBlock");
     if (lightUniformBlockIndex != GL_INVALID_INDEX)

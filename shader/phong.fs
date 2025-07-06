@@ -28,12 +28,13 @@ uniform sampler2D diffuseMap;
 uniform sampler2D shadowMaps[7];
 uniform mat4 lightSpaceMatrices[8];
 
-out vec4 FragColor;
+#define MAX_LIGHTS 64
+uniform int u_numLights;
 
-#define NUM_LIGHTS 4
 layout(std140) uniform LightsBlock
 {
-    Light lights[NUM_LIGHTS];
+    // TODO: consider struct of arrays
+    Light lights[MAX_LIGHTS];
 };
 
 layout(std140) uniform MaterialPropsBlock
@@ -42,6 +43,8 @@ layout(std140) uniform MaterialPropsBlock
     float shininess;         // Controls the sharpness of specular highlights
     float specularIntensity; // Controls the visibility of specular highlights
 };
+
+out vec4 FragColor;
 
 // Function to debug shadow
 vec3 debugShadow(int lightIndex, vec4 fragPosLightSpace)
@@ -226,7 +229,7 @@ void main()
     vec3 ambient = vec3(0.2f, 0.25f, 0.3f);
     vec3 resultColor = vec3(0.0);
 
-    for (int i = 0; i < NUM_LIGHTS; i++)
+    for (int i = 0; i < u_numLights; i++)
     {
         vec3 lightPos = lights[i].position;
         vec3 lightDir = normalize(lights[i].rotation);
