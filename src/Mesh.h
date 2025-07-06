@@ -21,11 +21,10 @@ class Mesh
   public:
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
-    Ref<Material> material;
 
     unsigned int VAO;
 
-    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, const Ref<Material>& material);
+    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices);
 
     void bind();
     void unbind();

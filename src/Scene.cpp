@@ -21,13 +21,14 @@ RenderQueue Scene::getRenderQueue()
 {
     RenderQueue renderQueue = {};
 
+    // TODO: Pool or cache renderables to assure close memory
     // Group renderables by their name to ensure identical meshes are processed together
-    std::unordered_map<std::string, std::vector<Ref<Renderable>>> sortedRenderables = {};
+    std::unordered_map<std::string, std::vector<Renderable>> sortedRenderables = {};
     for (const auto& model : m_Models)
     {
         for (const auto& renderable : model.renderables)
         {
-            sortedRenderables[renderable->name].push_back(renderable);
+            sortedRenderables[renderable.name].push_back(renderable);
         }
     }
 
@@ -39,12 +40,12 @@ RenderQueue Scene::getRenderQueue()
         Ref<Mesh> mesh = nullptr;
         for (const auto& renderable : renderables)
         {
-            transforms.push_back(renderable->transform);
+            transforms.push_back(renderable.transform);
             if (!material)
-                material = renderable->material;
+                material = renderable.material;
 
             if (!mesh)
-                mesh = renderable->mesh;
+                mesh = renderable.mesh;
         }
         renderQueue[material][mesh] = transforms;
     }

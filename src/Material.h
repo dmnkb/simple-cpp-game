@@ -4,6 +4,7 @@
 #include "Texture.h"
 #include "pch.h"
 
+// Uniform buffer ready
 struct MaterialProps
 {
     float textureRepeat = 1;
@@ -15,6 +16,7 @@ class Material
 {
   public:
     std::string name;
+    bool isDoubleSided = false;
 
     Material(Ref<Shader>& shader, MaterialProps props = MaterialProps());
 

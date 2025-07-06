@@ -9,11 +9,10 @@
 #include "Mesh.h"
 #include "pch.h"
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, const Ref<Material>& material)
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices)
 {
     this->vertices = vertices;
     this->indices = indices;
-    this->material = material;
 
     setupMesh();
 }

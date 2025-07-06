@@ -51,11 +51,18 @@ void Sandbox::init(Scene& scene)
 
     // scene.addModel(Model("assets/models/sponza/glTF/Sponza.gltf"));
 
-    scene.addModel(Model("assets/models/tree/scene.gltf", glm::vec3(-10.0, 0.0, 5.0)));
-    scene.addModel(Model("assets/models/tree/scene.gltf", glm::vec3(10.0, 0.0, -2.0)));
-    scene.addModel(Model("assets/models/tree/scene.gltf"));
+    MaterialManager materialManager;
+    ShaderManager shaderManager;
+    TextureManager textureManager;
 
-    scene.addModel(Model("assets/models/cube/cube.gltf", glm::vec3(0.0, -0.5, 0.0), glm::vec3(1000.0, 1, 1000.0)));
+    AssetContext context(materialManager, shaderManager, textureManager);
+
+    scene.addModel(Model("assets/models/tree/scene.gltf", context, glm::vec3(-10.0, 0.0, 5.0)));
+    scene.addModel(Model("assets/models/tree/scene.gltf", context, glm::vec3(10.0, 0.0, -2.0)));
+    scene.addModel(Model("assets/models/tree/scene.gltf", context));
+
+    scene.addModel(
+        Model("assets/models/cube/cube.gltf", context, glm::vec3(0.0, -0.5, 0.0), glm::vec3(1000.0, 1, 1000.0)));
 }
 
 void Sandbox::update(double deltaTime) {}

@@ -30,7 +30,7 @@ void ForwardPass::execute(Scene& scene)
 
     scene.setActiveCamera(scene.getDefaultCamera());
 
-    int i = 0;
+    // int i = 0;
 
     for (const auto& [material, meshMap] : scene.getRenderQueue())
     {
@@ -38,7 +38,7 @@ void ForwardPass::execute(Scene& scene)
         material->update();
         updateUniforms(scene, material);
 
-        if (material->name == "foliage")
+        if (material->isDoubleSided)
         {
             glDisable(GL_CULL_FACE);
         }
@@ -50,7 +50,7 @@ void ForwardPass::execute(Scene& scene)
 
         for (const auto& [mesh, transforms] : meshMap)
         {
-            i++;
+            // i++;
             RendererAPI::drawInstanced(mesh, transforms);
         }
 

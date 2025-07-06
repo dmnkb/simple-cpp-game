@@ -15,15 +15,18 @@
 #include "Mesh.h"
 #include "Texture.h"
 #include "pch.h"
+#include "renderer/MaterialManager.h"
+#include "renderer/ShaderManager.h"
+#include "renderer/TextureManager.h"
 
-Model::Model(std::string const& path, const glm::vec3& position, const glm::vec3& scale)
+Model::Model(std::string const& path, const AssetContext& assets, const glm::vec3& position, const glm::vec3& scale)
     : m_position(position), m_scale(scale)
 {
-    loadModel(path);
+    loadModel(path, assets);
 }
 
-// TODO: Filesystem path
-void Model::loadModel(std::string const& path)
+// TODO: Use filesystem path
+void Model::loadModel(std::string const& path, const AssetContext& assets)
 {
     // read file via ASSIMP
     Assimp::Importer importer;
@@ -39,10 +42,10 @@ void Model::loadModel(std::string const& path)
     directory = path.substr(0, path.find_last_of('/'));
 
     // process ASSIMP's root node recursively
-    processNode(scene->mRootNode, scene);
+    processNode(scene->mRootNode, scene, assets);
 }
 
-void Model::processNode(aiNode* node, const aiScene* scene)
+void Model::processNode(aiNode* node, const aiScene* scene, const AssetContext& assets)
 {
     // process each mesh located at the current node
     for (unsigned int i = 0; i < node->mNumMeshes; i++)
@@ -50,7 +53,7 @@ void Model::processNode(aiNode* node, const aiScene* scene)
         // the node object only contains indices to index the actual objects in the scene.
         // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        auto processedMesh = processMesh(mesh, scene);
+        auto meshData = processMesh(mesh, scene, assets);
 
         glm::mat4 transform = glm::translate(glm::mat4(1.0f), m_position) *
                               glm::rotate(glm::mat4(1.0f), glm::radians(m_rotation.x), {1.0f, 0.0f, 0.0f}) *
@@ -58,18 +61,17 @@ void Model::processNode(aiNode* node, const aiScene* scene)
                               glm::rotate(glm::mat4(1.0f), glm::radians(m_rotation.z), {0.0f, 0.0f, 1.0f}) *
                               glm::scale(glm::mat4(1.0f), m_scale);
 
-        const Ref<Renderable> renderable =
-            CreateRef<Renderable>(processedMesh, processedMesh->material, transform, mesh->mName.C_Str());
+        Renderable renderable = Renderable(meshData.mesh, meshData.material, transform, mesh->mName.C_Str());
         renderables.push_back(renderable);
     }
     // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
     for (unsigned int i = 0; i < node->mNumChildren; i++)
     {
-        processNode(node->mChildren[i], scene);
+        processNode(node->mChildren[i], scene, assets);
     }
 }
 
-Ref<Mesh> Model::processMesh(aiMesh* mesh, const aiScene* scene)
+const MeshData Model::processMesh(aiMesh* mesh, const aiScene* scene, const AssetContext& assets)
 {
     // data to fill
     std::vector<Vertex> vertices;
@@ -123,77 +125,61 @@ Ref<Mesh> Model::processMesh(aiMesh* mesh, const aiScene* scene)
             indices.push_back(face.mIndices[j]);
     }
 
-    // TODO: Move to ECS / Scene
     // process materials
-    aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-    const std::string materialName = material->GetName().C_Str();
-    std::cout << "Material name: " << materialName << std::endl;
+    aiMaterial* assimpMaterial = scene->mMaterials[mesh->mMaterialIndex];
+    const std::string materialName = assimpMaterial->GetName().C_Str();
 
-    auto diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE);
-    if (diffuseMaps.empty())
+    // Material
+    Ref<Material> material = assets.materialManager.getMaterialByHandle(materialName);
+    if (!material)
     {
-        std::cerr << "Warning: Missing diffuse map (Model::processMesh)" << std::endl;
-    }
-    auto diffuseMap = diffuseMaps[0];
+        // Shader
+        Ref<Shader> shader = assets.shaderManager.getShaderByHandle(materialName);
+        if (!shader)
+        {
+            Ref<Shader> newShader = CreateRef<Shader>("shader/phong.vs", "shader/phong.fs");
+            assets.shaderManager.addShader(materialName, newShader);
+            shader = newShader;
+        }
 
-    static const std::unordered_map<std::string, std::function<Ref<Mesh>()>> materialHandlers = {
-        {"foliage",
-         [&vertices, &indices, &diffuseMap]()
-         {
-             auto shader = CreateRef<Shader>("shader/foliage.vs", "shader/phong.fs");
-             auto material = CreateRef<Material>(shader);
-             material->name = "foliage";
-             material->setDiffuseMap(diffuseMap);
-             return CreateRef<Mesh>(vertices, indices, material);
-         }}
-        // ...
-    };
+        // Textures (TODO: Normal maps)
+        std::vector<Ref<Texture>> diffuseMaps = loadMaterialTextures(assimpMaterial, aiTextureType_DIFFUSE, assets);
+        if (diffuseMaps.empty())
+            std::cerr << "Warning: Missing diffuse map (Model::processMesh)" << std::endl;
+        Ref<Texture> diffuseMap = diffuseMaps[0];
 
-    auto it = materialHandlers.find(materialName);
-    if (it != materialHandlers.end())
-    {
-        return it->second();
-    }
-    else
-    {
-        auto shader = CreateRef<Shader>("shader/phong.vs", "shader/phong.fs");
-        auto material = CreateRef<Material>(shader);
-        material->name = "default";
+        material = CreateRef<Material>(shader);
         material->setDiffuseMap(diffuseMap);
-        return CreateRef<Mesh>(vertices, indices, material);
+
+        // Important for shadow mapping
+        if (materialName == "foliage")
+        {
+            material->isDoubleSided = true;
+        }
+
+        assets.materialManager.addMaterial(materialName, material);
     }
+
+    Ref<Mesh> newMesh = CreateRef<Mesh>(vertices, indices);
+
+    return {.mesh = newMesh, .material = material};
 }
 
-std::vector<Ref<Texture>> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type)
+std::vector<Ref<Texture>> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type, const AssetContext& assets)
 {
     std::vector<Ref<Texture>> textures;
     for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
     {
         aiString texturePath;
         mat->GetTexture(type, i, &texturePath);
-        // check if texture was loaded before and if so, continue to next iteration: skip loading a new texture
-        bool skip = false;
-        for (unsigned int j = 0; j < textures_loaded.size(); j++)
-        {
-            if (std::strcmp(textures_loaded[j]->customProperties.path.data(), texturePath.C_Str()) == 0)
-            {
-                textures.push_back(textures_loaded[j]);
-                skip = true; // a texture with the same filepath has already been loaded, continue to next one.
-                             // (optimization)
-                break;
-            }
-        }
-        if (!skip)
-        { // if texture hasn't been loaded already, load it
-            std::string filename = std::string(texturePath.C_Str());
-            filename = directory + '/' + filename;
-            auto texture = CreateRef<Texture>(filename);
-            texture->customProperties.materialTextureType = type;
-            texture->customProperties.path = texturePath.C_Str();
-            textures.push_back(texture);
-            textures_loaded.push_back(texture); // store it as texture loaded for entire model, to ensure we won't
-                                                // unnecessary load duplicate textures.
-        }
+
+        std::string filename = std::string(texturePath.C_Str());
+        filename = directory + '/' + filename;
+
+        Ref<Texture> texture = assets.textureManager.getTextureByPath(filename);
+        texture->customProperties.materialTextureType = type;
+        texture->customProperties.path = texturePath.C_Str();
+        textures.push_back(texture);
     }
     return textures;
 }

@@ -25,6 +25,9 @@ class Scene
   private:
     std::vector<Ref<LightSceneNode>> m_LightSceneNodes;
     std::vector<Model> m_Models;
+    // TODO: idea:
+    // std::vector<Renderable> m_cachedRenderables;
+    // bool m_renderablesDirty = true;
     Ref<Camera> m_DefaultCamera = nullptr;
     Ref<Camera> m_ActiveCamera = nullptr;
 };
