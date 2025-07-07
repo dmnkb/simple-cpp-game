@@ -74,10 +74,10 @@ void Texture::create()
 
     bool isDepth = properties.internalFormat == GL_DEPTH_COMPONENT;
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, isDepth ? GL_LINEAR : customProperties.minFilter);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, isDepth ? GL_LINEAR : customProperties.magFilter);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, isDepth ? GL_CLAMP_TO_EDGE : customProperties.wrapS);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, isDepth ? GL_CLAMP_TO_EDGE : customProperties.wrapT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, isDepth ? GL_NEAREST : customProperties.minFilter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, isDepth ? GL_NEAREST : customProperties.magFilter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, isDepth ? GL_CLAMP_TO_BORDER : customProperties.wrapS);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, isDepth ? GL_CLAMP_TO_BORDER : customProperties.wrapT);
 }
 
 void Texture::bind(uint32_t slot) const
