@@ -95,12 +95,11 @@ void Application::run()
             {
                 const auto& textureDepth = m_Scene.getLightSceneNodes()[i]->getShadowDepthTexture();
                 const auto& textureColor = m_Scene.getLightSceneNodes()[i]->getShadowDebugColorTexture();
-                ImGui::Text("Depth:");
                 ImGui::NewLine();
                 ImGui::Image((void*)(intptr_t)textureDepth->id, ImVec2(128, 96), ImVec2(1, 1), ImVec2(0, 0));
-                ImGui::Text("Debug:");
-                ImGui::NewLine();
-                ImGui::Image((void*)(intptr_t)textureColor->id, ImVec2(128, 96), ImVec2(1, 1), ImVec2(0, 0));
+                // ImGui::Text("Debug:");
+                // ImGui::NewLine();
+                // ImGui::Image((void*)(intptr_t)textureColor->id, ImVec2(128, 96), ImVec2(1, 1), ImVec2(0, 0));
             }
         }
 

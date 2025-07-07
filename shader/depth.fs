@@ -22,6 +22,6 @@ void main()
     const float farPlane = 1000.0f; // (Not accurate, but clamps the colors to something more visible)
     float linearDepth = (2.0 * nearPlane * farPlane) / (farPlane + nearPlane - depth * (farPlane - nearPlane));
     linearDepth = linearDepth / farPlane;
-    
-    FragColor = vec4(vec3(linearDepth), 1.0);
+
+    FragColor = vec4(baseColor);
 }

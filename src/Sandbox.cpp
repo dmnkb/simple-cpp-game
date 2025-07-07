@@ -9,17 +9,17 @@
 
 void Sandbox::init(Scene& scene)
 {
-    scene.addLightSceneNode(
-        CreateRef<LightSceneNode>(glm::vec3(-10, 15, 50), glm::vec3(1, 0, 0), glm::vec3(0, -.5, -1), ELT_SPOT));
+    // scene.addLightSceneNode(
+    //     CreateRef<LightSceneNode>(glm::vec3(-10, 15, 50), glm::vec3(1, 0, 0), glm::vec3(0, -.5, -1), ELT_SPOT));
 
-    scene.addLightSceneNode(
-        CreateRef<LightSceneNode>(glm::vec3(0, 15, 50), glm::vec3(0, 1, 0), glm::vec3(0, -.5, -1), ELT_SPOT));
+    // scene.addLightSceneNode(
+    //     CreateRef<LightSceneNode>(glm::vec3(0, 15, 50), glm::vec3(0, 1, 0), glm::vec3(0, -.5, -1), ELT_SPOT));
 
-    scene.addLightSceneNode(
-        CreateRef<LightSceneNode>(glm::vec3(10, 15, 50), glm::vec3(0, 0, 1), glm::vec3(0, -.5, -1), ELT_SPOT));
+    // scene.addLightSceneNode(
+    //     CreateRef<LightSceneNode>(glm::vec3(10, 15, 50), glm::vec3(0, 0, 1), glm::vec3(0, -.5, -1), ELT_SPOT));
 
-    scene.addLightSceneNode(
-        CreateRef<LightSceneNode>(glm::vec3(10, 15, 50), glm::vec3(0, 0, 1), glm::vec3(0, -.5, -1), ELT_SPOT));
+    // scene.addLightSceneNode(
+    //     CreateRef<LightSceneNode>(glm::vec3(10, 15, 50), glm::vec3(0, 0, 1), glm::vec3(0, -.5, -1), ELT_SPOT));
 
     scene.addLightSceneNode(CreateRef<LightSceneNode>(glm::vec3(100.0f, 200.0f, 100.0f), // Position of the sun
                                                       glm::vec3(0.8f, 0.7f, 0.6f),       // Softer warm color

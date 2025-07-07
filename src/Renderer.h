@@ -1,6 +1,7 @@
 #pragma once
 
-#include "ForwardPass.h"
+#include "LightingPass.h"
+#include "PostProcessingPass.h"
 #include "Scene.h"
 #include "ShadowPass.h"
 #include "pch.h"
@@ -35,6 +36,7 @@ class Renderer
     void update(Scene& scene);
 
   private:
-    ForwardPass m_forwardPass;
+    LightingPass m_lightingPass;
     ShadowPass m_shadowPass;
+    PostProcessingPass m_postProcessingPass;
 };

@@ -1,4 +1,4 @@
-#include "ForwardPass.h"
+#include "LightingPass.h"
 #include "Framebuffer.h"
 #include "RendererAPI.h"
 #include "Scene.h"
@@ -6,7 +6,7 @@
 #include <fmt/core.h>
 #include <glad/glad.h>
 
-ForwardPass::ForwardPass()
+LightingPass::LightingPass()
 {
     unsigned int NUM_LIGHTS = 256;
 
@@ -14,23 +14,51 @@ ForwardPass::ForwardPass()
     glBindBuffer(GL_UNIFORM_BUFFER, m_uboLights);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(LightSceneNode::LightUBO) * NUM_LIGHTS, nullptr, GL_DYNAMIC_DRAW);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uboLights);
+
+    m_frameBuffer = CreateRef<Framebuffer>();
+
+    m_renderTargetTexture = CreateRef<Texture>(
+        TextureProperties{
+            .internalFormat = GL_RGBA16F,
+            .width = (int)Window::dimensions.x,
+            .height = (int)Window::dimensions.y,
+            .format = GL_RGBA,
+            .type = GL_FLOAT,
+        },
+        CustomProperties{
+            .attachmentType = GL_COLOR_ATTACHMENT0,
+        });
+
+    m_frameBuffer->attachTexture(m_renderTargetTexture);
+
+    auto depthTexture = CreateRef<Texture>(
+        TextureProperties{
+            .internalFormat = GL_DEPTH_COMPONENT24,
+            .width = (int)Window::dimensions.x,
+            .height = (int)Window::dimensions.y,
+            .format = GL_DEPTH_COMPONENT,
+            .type = GL_FLOAT,
+        },
+        CustomProperties{.attachmentType = GL_DEPTH_ATTACHMENT,
+                         .minFilter = GL_NEAREST,
+                         .magFilter = GL_NEAREST,
+                         .wrapS = GL_CLAMP_TO_EDGE,
+                         .wrapT = GL_CLAMP_TO_EDGE,
+                         .mipmaps = false});
+
+    m_frameBuffer->attachTexture(depthTexture);
 }
 
-ForwardPass::~ForwardPass()
+LightingPass::~LightingPass()
 {
     glDeleteBuffers(1, &m_uboLights);
 }
 
-void ForwardPass::execute(Scene& scene)
+void LightingPass::execute(Scene& scene)
 {
-    glColorMask(true, true, true, true);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, Window::frameBufferDimensions.x, Window::frameBufferDimensions.y);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     scene.setActiveCamera(scene.getDefaultCamera());
 
-    // int i = 0;
+    m_frameBuffer->bind();
 
     for (const auto& [material, meshMap] : scene.getRenderQueue())
     {
@@ -58,10 +86,10 @@ void ForwardPass::execute(Scene& scene)
         material->unbind();
     }
 
-    // std::cout << "number draw calls: " << i << std::endl;
+    m_frameBuffer->unbind();
 }
 
-void ForwardPass::updateUniforms(Scene& scene, const Ref<Material>& material)
+void LightingPass::updateUniforms(Scene& scene, const Ref<Material>& material)
 {
     const auto viewMatrix = scene.getActiveCamera()->getViewMatrix();
     const auto projectionMatrix = scene.getActiveCamera()->getProjectionMatrix();

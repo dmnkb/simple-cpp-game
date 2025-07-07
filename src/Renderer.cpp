@@ -14,5 +14,6 @@ Renderer::~Renderer()
 void Renderer::update(Scene& scene)
 {
     m_shadowPass.execute(scene);
-    m_forwardPass.execute(scene);
+    m_lightingPass.execute(scene);
+    m_postProcessingPass.execute(scene, m_lightingPass.getRenderTargetTexture());
 }

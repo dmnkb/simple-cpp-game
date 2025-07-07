@@ -7,7 +7,8 @@ void RendererAPI::init()
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
     enableOpenGLDebugOutput();
 
-    glClearColor(0.2902f, 0.4196f, 0.9647f, 1.0f);
+    // glClearColor(0.2902f, 0.4196f, 0.9647f, 1.0f);
+    glClearColor(0.12f, 0.12f, 0.12f, 1.0f);
     glEnable(GL_DEPTH_TEST);
 
     glEnable(GL_CULL_FACE);

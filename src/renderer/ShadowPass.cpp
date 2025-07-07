@@ -1,14 +1,8 @@
 #include "ShadowPass.h"
-#include "Framebuffer.h"
 #include "RendererAPI.h"
 #include "Scene.h"
-#include "Shader.h"
-#include "Window.h"
 
-ShadowPass::ShadowPass()
-    : m_depthShader("shader/depth.vs", "shader/depth.fs"), m_depthShaderFoliage("shader/depth.vs", "shader/depth.fs")
-{
-}
+ShadowPass::ShadowPass() : m_depthShader("shader/depth.vs", "shader/depth.fs") {}
 
 void ShadowPass::execute(Scene& scene)
 {
