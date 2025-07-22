@@ -7,8 +7,7 @@ void RendererAPI::init()
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
     enableOpenGLDebugOutput();
 
-    // glClearColor(0.2902f, 0.4196f, 0.9647f, 1.0f);
-    glClearColor(0.12f, 0.12f, 0.12f, 1.0f);
+    glClearColor(s_Data.clearColor.red, s_Data.clearColor.green, s_Data.clearColor.blue, s_Data.clearColor.alpha);
     glEnable(GL_DEPTH_TEST);
 
     glEnable(GL_CULL_FACE);
@@ -30,12 +29,28 @@ void RendererAPI::shutdown()
 
 void RendererAPI::drawInstanced(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& transforms)
 {
-    // TODO: Draw call stats?
+    glClearColor(s_Data.clearColor.red, s_Data.clearColor.green, s_Data.clearColor.blue, s_Data.clearColor.alpha);
+
     mesh->bind();
     bindInstanceBuffer(transforms);
     glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndexCount(), GL_UNSIGNED_INT, nullptr, transforms.size());
     unbindInstanceBuffer();
     mesh->unbind();
+}
+
+void RendererAPI::setClearColor(const SClearColor& color)
+{
+    s_Data.clearColor = color;
+}
+
+int RendererAPI::getDrawCallCount()
+{
+    return s_Data.drawCallCount;
+}
+
+void RendererAPI::resetDrawCallCount()
+{
+    s_Data.drawCallCount = 0;
 }
 
 void RendererAPI::bindInstanceBuffer(const std::vector<glm::mat4>& transforms)

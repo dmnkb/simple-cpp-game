@@ -16,7 +16,7 @@ struct Light
     float innerCone; // Offset 52, size 4
     float outerCone; // Offset 56, size 4
     float padding4;  // Offset 60, size 4
-};                   // Total size: 64 bytes (aligned to 16 bytes)
+}; // Total size: 64 bytes (aligned to 16 bytes)
 
 in vec2 v_UV;
 in vec3 v_Normal;

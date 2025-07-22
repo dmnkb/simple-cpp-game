@@ -27,7 +27,7 @@ struct CustomProperties
     GLenum minFilter = GL_LINEAR;
     GLenum magFilter = GL_LINEAR;
     std::string path;
-    GLenum attachmentType = GL_COLOR_ATTACHMENT0; // TODO: Should be assigned automatically by the framebuffer
+    GLenum attachmentType = GL_COLOR_ATTACHMENT0;
     aiTextureType materialTextureType = aiTextureType_NONE;
 };
 

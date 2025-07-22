@@ -22,6 +22,7 @@
 Model::Model(std::string const& path, const AssetContext& assets, const glm::vec3& position, const glm::vec3& scale)
     : m_position(position), m_scale(scale)
 {
+    std::println("Loading model: {}", path.c_str());
     loadModel(path, assets);
 }
 

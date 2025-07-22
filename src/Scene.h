@@ -16,7 +16,7 @@ class Scene
     void addLightSceneNode(const Ref<LightSceneNode>& node);
 
     RenderQueue getRenderQueue();
-    std::vector<Ref<LightSceneNode>> getLightSceneNodes();
+    std::vector<Ref<LightSceneNode>> getLightSceneNodes() const;
 
     void setActiveCamera(const Ref<Camera>& camera);
     Ref<Camera> getActiveCamera() const;

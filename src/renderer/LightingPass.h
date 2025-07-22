@@ -12,7 +12,7 @@ class LightingPass
     LightingPass();
     ~LightingPass();
 
-    void execute(Scene& scene);
+    void execute(Scene& scene, int& drawCalls);
     Ref<Texture> getRenderTargetTexture()
     {
         return m_renderTargetTexture;

@@ -53,7 +53,7 @@ RenderQueue Scene::getRenderQueue()
     return renderQueue;
 }
 
-std::vector<Ref<LightSceneNode>> Scene::getLightSceneNodes()
+std::vector<Ref<LightSceneNode>> Scene::getLightSceneNodes() const
 {
     return m_LightSceneNodes;
 }

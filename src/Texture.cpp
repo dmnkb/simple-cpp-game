@@ -49,6 +49,7 @@ Texture::Texture(const std::string& path)
     properties.pixels = data;
     customProperties.path = path;
     customProperties.mipmaps = true;
+    customProperties.minFilter = GL_LINEAR_MIPMAP_LINEAR;
 
     create();
 

@@ -8,6 +8,9 @@ file(GLOB_RECURSE MY_SOURCES src/*.cpp include/*.h)
 
 add_executable(${PROJECT_NAME} ${MY_SOURCES})
 
+# Enable precompiled header
+target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.h)
+
 # Add vendored dependencies
 add_subdirectory(vendor/glfw EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/glad EXCLUDE_FROM_ALL)
@@ -24,6 +27,7 @@ set(ASSIMP_LIBRARY "${ASSIMP_DIR}/lib/libassimp.dylib")
 target_include_directories(${PROJECT_NAME} PRIVATE 
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/renderer
+    ${CMAKE_SOURCE_DIR}/src/debug
     ${CMAKE_SOURCE_DIR}/include
     ${ASSIMP_INCLUDE_DIR}
 )

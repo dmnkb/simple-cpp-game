@@ -27,6 +27,17 @@
 //  └── Provides draw functions (drawInstanced, drawIndexed, etc.)
 
 // Renderer orchestrates the rendering pipeline, but individual Render Passes control their own execution.
+
+enum class ERenderPass
+{
+    Shadow,
+    Lighting,
+    PostProcessing,
+    MaxElements
+};
+
+constexpr size_t RenderPassCount = static_cast<size_t>(ERenderPass::MaxElements);
+
 class Renderer
 {
   public:
@@ -35,8 +46,16 @@ class Renderer
 
     void update(Scene& scene);
 
+    std::array<int, RenderPassCount> getDrawCallCounts()
+    {
+        return m_drawCallCounts;
+    }
+
   private:
-    LightingPass m_lightingPass;
     ShadowPass m_shadowPass;
+    LightingPass m_lightingPass;
     PostProcessingPass m_postProcessingPass;
+
+    // Debug
+    std::array<int, RenderPassCount> m_drawCallCounts;
 };

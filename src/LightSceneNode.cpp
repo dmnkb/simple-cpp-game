@@ -9,11 +9,9 @@
 
 LightSceneNode::LightSceneNode(const glm::vec3& position, const glm::vec3& color, const glm::vec3& rotation,
                                const ELightType& lightType, const float& innerCone, const float& outerCone)
-    : SceneNode(), m_color(color), m_lightType(lightType), m_innerCone(innerCone), m_outerCone(outerCone)
+    : m_position(position), m_rotation(rotation), m_color(color), m_lightType(lightType), m_innerCone(innerCone),
+      m_outerCone(outerCone)
 {
-    // TODO: maybe get rid of SceneNode polymorphism?
-    m_position = position;
-    m_direction = rotation;
 
     m_shadowCam = CreateRef<Camera>(CameraProps{.aspect = static_cast<float>(m_outerCone * 3 * (M_PI / 180.0f)),
                                                 .near = 0.1f,
@@ -61,6 +59,7 @@ void LightSceneNode::setLookAt(const glm::vec3& lookAt)
     glm::quat rotationQuat = glm::rotation(forward, direction);
     glm::vec3 eulerAngles = glm::eulerAngles(rotationQuat);
     m_rotation = glm::degrees(eulerAngles);
+    m_direction = direction;
 
     m_shadowCam->lookAt(lookAt);
 }

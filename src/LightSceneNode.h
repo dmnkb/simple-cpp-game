@@ -13,7 +13,7 @@ enum ELightType
     ELT_SPOT
 };
 
-class LightSceneNode : public SceneNode
+class LightSceneNode
 {
   public:
     struct LightUBO // GPU ready, only contains data for the GPU
@@ -36,6 +36,12 @@ class LightSceneNode : public SceneNode
                    const float& innerCone = 20.f, const float& outerCone = 30.f);
 
     void setLookAt(const glm::vec3& lookAt = {0.f, 0.f, 0.f});
+
+    void setPosition(const glm::vec3& position)
+    {
+        m_position = position;
+        m_shadowCam->setPosition(position);
+    }
 
     ELightType getLightType() const
     {
@@ -65,11 +71,14 @@ class LightSceneNode : public SceneNode
     // Converts this light to its GPU-ready format
     LightUBO toUBO() const
     {
+        // FIXME: Currently there are both m_direction and m_rotation. Get rid of the later one
         return {m_position, 0.0f, m_color, 0.0f, m_direction, 0.0f, m_lightType, m_innerCone, m_outerCone, 0.0f};
     }
 
   private:
     // Common attributes
+    glm::vec3 m_position = glm::vec3{0.0f};
+    glm::vec3 m_rotation = glm::vec3{0.0f};
     ELightType m_lightType = ELightType::ELT_POINT;
     glm::vec3 m_color = {0.0f, 0.0f, 0.0f};
 

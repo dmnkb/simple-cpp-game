@@ -54,7 +54,7 @@ LightingPass::~LightingPass()
     glDeleteBuffers(1, &m_uboLights);
 }
 
-void LightingPass::execute(Scene& scene)
+void LightingPass::execute(Scene& scene, int& drawCalls)
 {
     scene.setActiveCamera(scene.getDefaultCamera());
 
@@ -78,8 +78,8 @@ void LightingPass::execute(Scene& scene)
 
         for (const auto& [mesh, transforms] : meshMap)
         {
-            // i++;
             RendererAPI::drawInstanced(mesh, transforms);
+            drawCalls++;
         }
 
         glBindBuffer(GL_UNIFORM_BUFFER, 0);

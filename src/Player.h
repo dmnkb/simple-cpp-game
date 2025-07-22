@@ -27,8 +27,8 @@ class Player
 
   private:
     // Core player attributes
-    glm::vec3 m_Position = glm::vec3({-25, 15, -20});
-    glm::vec2 m_Rotation = glm::vec2({55, -20});
+    glm::vec3 m_Position = glm::vec3({-50, 30, -50});
+    glm::vec2 m_Rotation = glm::vec2({45, -15});
     glm::vec3 m_Direction = glm::vec3(0.f);
     float m_verticalVelocity = 0;
 

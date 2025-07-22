@@ -8,7 +8,7 @@ class ShadowPass
 {
   public:
     ShadowPass();
-    void execute(Scene& scene);
+    void execute(Scene& scene, int& drawCalls);
 
   private:
     Shader m_depthShader;

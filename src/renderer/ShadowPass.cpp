@@ -4,7 +4,7 @@
 
 ShadowPass::ShadowPass() : m_depthShader("shader/depth.vs", "shader/depth.fs") {}
 
-void ShadowPass::execute(Scene& scene)
+void ShadowPass::execute(Scene& scene, int& drawCalls)
 {
     for (auto& lightSceneNode : scene.getLightSceneNodes())
     {
@@ -39,6 +39,7 @@ void ShadowPass::execute(Scene& scene)
                 for (const auto& [mesh, transforms] : meshMap)
                 {
                     RendererAPI::drawInstanced(mesh, transforms);
+                    drawCalls++;
                 }
 
                 if (!material->isDoubleSided)
