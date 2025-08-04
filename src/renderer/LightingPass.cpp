@@ -126,7 +126,9 @@ void LightingPass::updateUniforms(Scene& scene, const Ref<Material>& material)
     material->setUniform1i("u_numLights", lights.size());
 
     GLuint uboBindingPoint = 0;
+    // TODO: expensive call, should be cached
     GLuint lightUniformBlockIndex = glGetUniformBlockIndex(material->getShader()->getProgramID(), "LightsBlock");
+
     if (lightUniformBlockIndex != GL_INVALID_INDEX)
     {
         glUniformBlockBinding(material->getShader()->getProgramID(), lightUniformBlockIndex, uboBindingPoint);

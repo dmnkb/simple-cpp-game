@@ -18,12 +18,14 @@ void Scene::addLightSceneNode(const Ref<LightSceneNode>& node)
     m_LightSceneNodes.push_back(node);
 }
 
-// TODO: Sort renderables back-to-front
+// TODO: Sort transparent renderables back-to-front
 RenderQueue Scene::getRenderQueue(const std::string& passName)
 {
     Engine::Profiler::beginRegion("Prepare Render Queue (" + passName + ")");
+
     if (!m_renderablesDirty)
     {
+        Engine::Profiler::endRegion("Prepare Render Queue (" + passName + ")");
         return m_cachedRenderQueue;
     }
 
@@ -60,7 +62,7 @@ RenderQueue Scene::getRenderQueue(const std::string& passName)
     m_renderablesDirty = false;
     m_cachedRenderQueue = renderQueue;
 
-    Engine::Profiler::endRegion("Prepare Render Queue");
+    Engine::Profiler::endRegion("Prepare Render Queue (" + passName + ")");
     return renderQueue;
 }
 

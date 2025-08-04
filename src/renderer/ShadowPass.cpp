@@ -6,8 +6,10 @@ ShadowPass::ShadowPass() : m_depthShader("shader/depth.vs", "shader/depth.fs") {
 
 void ShadowPass::execute(Scene& scene, int& drawCalls)
 {
+    int lightIndex = 0;
     for (auto& lightSceneNode : scene.getLightSceneNodes())
     {
+        lightIndex++;
         const auto lightType = lightSceneNode->getLightType();
         if (lightType == ELT_POINT)
         {
@@ -24,7 +26,8 @@ void ShadowPass::execute(Scene& scene, int& drawCalls)
 
             const auto lightSpaceMatrix = shadowCam->getProjectionMatrix() * shadowCam->getViewMatrix();
 
-            for (const auto& [material, meshMap] : scene.getRenderQueue("Shadow Pass"))
+            for (const auto& [material, meshMap] :
+                 scene.getRenderQueue("Shadow Pass (Light " + std::to_string(lightIndex) + ")"))
             {
                 if (!material->isDoubleSided)
                 {

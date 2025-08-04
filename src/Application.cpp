@@ -69,9 +69,7 @@ void Application::run()
 
         m_renderer->update(m_Scene);
 
-        Engine::Profiler::beginRegion("Update Sandbox");
         m_Sandbox->update(m_DeltaTime);
-        Engine::Profiler::endRegion("Update Sandbox");
 
         EventManager::processEvents();
 

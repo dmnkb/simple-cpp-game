@@ -54,10 +54,13 @@ void PanelFrametime::render()
     for (size_t i = 0; i < cpuTimings.size(); ++i)
     {
         const auto& [name, time] = cpuTimings[i];
-        if (time <= 0.0f)
-            continue;
 
-        float width = availableWidth / longestDuration * time;
+        float minWidth = 5.0f;
+        float width =
+            std::max(minWidth, longestDuration > 0.0
+                                   ? (availableWidth / static_cast<float>(longestDuration)) * static_cast<float>(time)
+                                   : minWidth);
+
         ImVec2 p0 = ImVec2(basePos.x, basePos.y + (i * barHeight));
         ImVec2 p1 = ImVec2(basePos.x + width, basePos.y + (i * barHeight) + barHeight);
 
