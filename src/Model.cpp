@@ -155,6 +155,9 @@ const MeshData Model::processMesh(aiMesh* mesh, const aiScene* scene, const Asse
         // Important for shadow mapping
         if (materialName == "foliage")
         {
+            // FIXME: Depending on the order in which the materials are loaded,
+            // sometimes the wrong meshes / materials get isDoubleSided assigned.
+            // This causes shadow acne one the ground!
             material->isDoubleSided = true;
         }
 

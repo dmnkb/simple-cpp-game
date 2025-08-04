@@ -1,5 +1,6 @@
 #include "Application.h"
 #include "EventManager.h"
+#include "Profiler.h"
 #include "Renderer.h"
 #include "Sandbox.h"
 #include "Scene.h"
@@ -68,7 +69,9 @@ void Application::run()
 
         m_renderer->update(m_Scene);
 
+        Engine::Profiler::beginRegion("Update Sandbox");
         m_Sandbox->update(m_DeltaTime);
+        Engine::Profiler::endRegion("Update Sandbox");
 
         EventManager::processEvents();
 
@@ -136,6 +139,8 @@ void Application::initImGui()
 
     // Fonts (optional)
     io.Fonts->AddFontFromFileTTF("assets/fonts/Inter_24pt-Regular.ttf", 14.0f);
+    // io.Fonts->AddFontFromFileTTF("assets/fonts/alagard.ttf", 14.0f);
+    // io.Fonts->AddFontFromFileTTF("assets/fonts/Romulus.ttf", 13.f);
 
     // Base dark theme
     ImGui::StyleColorsDark();

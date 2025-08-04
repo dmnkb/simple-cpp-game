@@ -12,6 +12,7 @@
 #include <assimp/scene.h>
 
 // An atomic, stateless POD (plain old data) that contains mesh, material and transform.
+// TODO: Idea: This might only hold identifiers
 struct Renderable
 {
     Ref<Mesh> mesh;

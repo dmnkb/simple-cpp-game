@@ -1,4 +1,5 @@
 #include "Scene.h"
+#include "Profiler.h"
 
 void Scene::init(const CameraProps& cameraProps)
 {
@@ -9,6 +10,7 @@ void Scene::init(const CameraProps& cameraProps)
 void Scene::addModel(const Model& model)
 {
     m_Models.push_back(model);
+    m_renderablesDirty = true;
 }
 
 void Scene::addLightSceneNode(const Ref<LightSceneNode>& node)
@@ -17,11 +19,16 @@ void Scene::addLightSceneNode(const Ref<LightSceneNode>& node)
 }
 
 // TODO: Sort renderables back-to-front
-RenderQueue Scene::getRenderQueue()
+RenderQueue Scene::getRenderQueue(const std::string& passName)
 {
+    Engine::Profiler::beginRegion("Prepare Render Queue (" + passName + ")");
+    if (!m_renderablesDirty)
+    {
+        return m_cachedRenderQueue;
+    }
+
     RenderQueue renderQueue = {};
 
-    // TODO: Pool or cache renderables to assure close memory
     // Group renderables by their name to ensure identical meshes are processed together
     std::unordered_map<std::string, std::vector<Renderable>> sortedRenderables = {};
     for (const auto& model : m_Models)
@@ -50,6 +57,10 @@ RenderQueue Scene::getRenderQueue()
         renderQueue[material][mesh] = transforms;
     }
 
+    m_renderablesDirty = false;
+    m_cachedRenderQueue = renderQueue;
+
+    Engine::Profiler::endRegion("Prepare Render Queue");
     return renderQueue;
 }
 

@@ -24,7 +24,7 @@ void ShadowPass::execute(Scene& scene, int& drawCalls)
 
             const auto lightSpaceMatrix = shadowCam->getProjectionMatrix() * shadowCam->getViewMatrix();
 
-            for (const auto& [material, meshMap] : scene.getRenderQueue())
+            for (const auto& [material, meshMap] : scene.getRenderQueue("Shadow Pass"))
             {
                 if (!material->isDoubleSided)
                 {

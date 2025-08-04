@@ -15,7 +15,7 @@ class Scene
     void addModel(const Model& model);
     void addLightSceneNode(const Ref<LightSceneNode>& node);
 
-    RenderQueue getRenderQueue();
+    RenderQueue getRenderQueue(const std::string& passName);
     std::vector<Ref<LightSceneNode>> getLightSceneNodes() const;
 
     void setActiveCamera(const Ref<Camera>& camera);
@@ -25,9 +25,10 @@ class Scene
   private:
     std::vector<Ref<LightSceneNode>> m_LightSceneNodes;
     std::vector<Model> m_Models;
-    // TODO: idea:
-    // std::vector<Renderable> m_cachedRenderables;
-    // bool m_renderablesDirty = true;
+
+    RenderQueue m_cachedRenderQueue;
+    bool m_renderablesDirty = true;
+
     Ref<Camera> m_DefaultCamera = nullptr;
     Ref<Camera> m_ActiveCamera = nullptr;
 };

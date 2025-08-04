@@ -60,7 +60,7 @@ void LightingPass::execute(Scene& scene, int& drawCalls)
 
     m_frameBuffer->bind();
 
-    for (const auto& [material, meshMap] : scene.getRenderQueue())
+    for (const auto& [material, meshMap] : scene.getRenderQueue("Lighting Pass"))
     {
         material->bind();
         material->update();
