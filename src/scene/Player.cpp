@@ -5,6 +5,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+namespace Engine
+{
+
 Player::Player()
 {
     EventManager::registerListeners(typeid(KeyEvent).name(),
@@ -107,3 +110,5 @@ bool Player::isKeyPressed(unsigned int key)
     auto it = std::find(m_PressedKeys.begin(), m_PressedKeys.end(), key);
     return it != m_PressedKeys.end();
 }
+
+} // namespace Engine

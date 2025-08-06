@@ -4,7 +4,9 @@
 #include "PostProcessingPass.h"
 #include "Scene.h"
 #include "ShadowPass.h"
-#include "pch.h"
+
+namespace Engine
+{
 
 // TODO: Check the frame time, benchmark, The Cherno's Sponsa with Shadows; ~8 ms
 
@@ -12,18 +14,17 @@
 //  └── Stores Game Objects (Meshes, Lights, Player Cam, Sun, Environment Map)
 
 // Renderer
-//  ├── Stores Render Passes (ShadowPass, GBufferPass, ForwardPass, etc.)
+//  ├── Stores Render Passes (ShadowPass, LightingPass, etc.)
 //  └── Calls RenderPass::execute() for each pass
 
-// RenderPass (Abstract Base Class)
-//  ├── virtual void execute() = 0;
+// RenderPasses
 //  ├── Implements camera setup & FBO binding
 //  ├── Fetches renderables for specific render flags (e.g., "Only Opaque" or "Only Shadows")
 //  └── Delegates draw calls → RenderAPI
 
 // RenderAPI
 //  ├── Issues draw calls
-//  ├── Abstracts API-specific state changes
+//  ├── Abstracts state changes
 //  └── Provides draw functions (drawInstanced, drawIndexed, etc.)
 
 // Renderer orchestrates the rendering pipeline, but individual Render Passes control their own execution.
@@ -59,3 +60,5 @@ class Renderer
     // Debug
     std::array<int, RenderPassCount> m_drawCallCounts;
 };
+
+} // namespace Engine

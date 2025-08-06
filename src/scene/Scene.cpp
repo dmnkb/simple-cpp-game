@@ -1,5 +1,9 @@
 #include "Scene.h"
 #include "Profiler.h"
+#include "pch.h"
+
+namespace Engine
+{
 
 void Scene::init(const CameraProps& cameraProps)
 {
@@ -85,3 +89,5 @@ Ref<Camera> Scene::getDefaultCamera() const
 {
     return m_DefaultCamera;
 }
+
+} // namespace Engine

@@ -1,7 +1,9 @@
 #pragma once
 
-#include "pch.h"
 #include <chrono>
+
+namespace Engine
+{
 
 class Timer
 {
@@ -37,3 +39,5 @@ class Timer
     std::chrono::time_point<Clock> m_EndTime;
     bool m_bRunning = false;
 };
+
+} // namespace Engine

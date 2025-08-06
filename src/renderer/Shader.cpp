@@ -9,19 +9,19 @@ Shader::Shader(const char* vertexShaderPath, const char* fragmentShaderPath) : m
     assert(vertexShaderText && "[ERROR] in Shader::Shader: vertexShader is falsy.");
     assert(fragmentShaderText && "[ERROR] in Shader::Shader: fragmentShader is falsy.");
 
-    printf("Create vertex shader\n");
+    printf("[Shader] Create vertex shader\n");
     m_VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(m_VertexShaderID, 1, &vertexShaderText, NULL);
     glCompileShader(m_VertexShaderID);
     checkShaderCompilation(m_VertexShaderID);
 
-    printf("Create fragment shader\n");
+    printf("[Shader] Create fragment shader\n");
     m_FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(m_FragmentShaderID, 1, &fragmentShaderText, NULL);
     glCompileShader(m_FragmentShaderID);
     checkShaderCompilation(m_FragmentShaderID);
 
-    printf("Link shader\n");
+    printf("[Shader] Link shader\n");
     glAttachShader(m_ProgramID, m_VertexShaderID);
     glAttachShader(m_ProgramID, m_FragmentShaderID);
     glLinkProgram(m_ProgramID);
@@ -88,8 +88,8 @@ void Shader::setVertexAttribute(const char* name, GLint size, GLenum type, GLboo
 {
     GLint location = glGetAttribLocation(m_ProgramID, name);
     if (location == -1)
-        std::cerr << "[ERROR] (" << shaderNames.vertex << "): Uniform '" << name << "' not found in shader program."
-                  << std::endl;
+        std::cerr << "[Shader] ERROR: (" << shaderNames.vertex << "): Uniform '" << name
+                  << "' not found in shader program." << std::endl;
     else
     {
         glEnableVertexAttribArray(location);
@@ -166,8 +166,8 @@ GLint Shader::getCachedLocation(const char* name)
     GLint location = glGetUniformLocation(m_ProgramID, name);
 
     if (location == -1 && false)
-        std::cerr << "[ERROR] (" << shaderNames.fragment << "): Uniform '" << name << "' not found in shader program."
-                  << std::endl;
+        std::cerr << "[Shader] ERROR: (" << shaderNames.fragment << "): Uniform '" << name
+                  << "' not found in shader program." << std::endl;
 
     m_UniformLocationCache[name] = location;
     return location;

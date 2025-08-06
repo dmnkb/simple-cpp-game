@@ -1,10 +1,12 @@
 #pragma once
 
+#include <assimp/material.h>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <string>
 
-#include <assimp/material.h>
+namespace Engine
+{
 
 struct TextureProperties
 {
@@ -49,3 +51,5 @@ struct Texture
 
     void create();
 };
+
+} // namespace Engine

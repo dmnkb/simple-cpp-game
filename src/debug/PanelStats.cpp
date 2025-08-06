@@ -1,7 +1,11 @@
 #include "PanelStats.h"
 #include "imgui.h"
+#include "pch.h"
 #include "renderer/ClearColor.h"
 #include "renderer/RendererAPI.h"
+
+namespace Engine
+{
 
 void PanelStats::render(const float fps, const std::map<std::string, int>& drawCallsPerPass, const Scene& scene)
 {
@@ -98,3 +102,5 @@ void PanelStats::render(const float fps, const std::map<std::string, int>& drawC
 
     ImGui::End();
 }
+
+} // namespace Engine

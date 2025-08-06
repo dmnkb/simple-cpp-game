@@ -2,9 +2,10 @@
 
 #include "Camera.h"
 #include "Framebuffer.h"
-#include "SceneNode.h"
 #include "Texture.h"
-#include "pch.h"
+
+namespace Engine
+{
 
 enum ELightType
 {
@@ -93,3 +94,5 @@ class LightSceneNode
     Ref<Texture> m_shadowDebugColorTexture; // color attachment for visualizing during shadow pass
     Ref<Framebuffer> m_shadowFramebuffer;
 };
+
+} // namespace Engine

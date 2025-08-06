@@ -2,7 +2,10 @@
 
 #include "LightSceneNode.h"
 #include "Model.h"
-#include "pch.h"
+#include "core/Core.h"
+
+namespace Engine
+{
 
 using RenderQueue = std::unordered_map<Ref<Material>, std::unordered_map<Ref<Mesh>, std::vector<glm::mat4>>>;
 
@@ -32,3 +35,5 @@ class Scene
     Ref<Camera> m_DefaultCamera = nullptr;
     Ref<Camera> m_ActiveCamera = nullptr;
 };
+
+} // namespace Engine

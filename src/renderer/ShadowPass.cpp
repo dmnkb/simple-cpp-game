@@ -1,6 +1,11 @@
 #include "ShadowPass.h"
+#include "Profiler.h"
 #include "RendererAPI.h"
 #include "Scene.h"
+#include "pch.h"
+
+namespace Engine
+{
 
 ShadowPass::ShadowPass() : m_depthShader("shader/depth.vs", "shader/depth.fs") {}
 
@@ -42,7 +47,7 @@ void ShadowPass::execute(Scene& scene, int& drawCalls)
                 for (const auto& [mesh, transforms] : meshMap)
                 {
                     RendererAPI::drawInstanced(mesh, transforms);
-                    drawCalls++;
+                    Profiler::registerDrawCall("Shadow Pass");
                 }
 
                 if (!material->isDoubleSided)
@@ -56,3 +61,5 @@ void ShadowPass::execute(Scene& scene, int& drawCalls)
         }
     }
 }
+
+} // namespace Engine

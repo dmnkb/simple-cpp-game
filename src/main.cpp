@@ -2,7 +2,7 @@
 
 int main(void)
 {
-    Application* application = new Application();
+    Engine::Application* application = new Engine::Application();
 
     application->run();
 }

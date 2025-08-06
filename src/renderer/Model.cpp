@@ -1,10 +1,14 @@
 #include "Model.h"
-
-#include <glad/glad.h>
-
+#include "Mesh.h"
+#include "Texture.h"
+#include "pch.h"
+#include "renderer/MaterialManager.h"
+#include "renderer/ShaderManager.h"
+#include "renderer/TextureManager.h"
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
+#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -12,17 +16,14 @@
 #define STB_IMAGE_STATIC
 #include <stb_image.h>
 
-#include "Mesh.h"
-#include "Texture.h"
-#include "pch.h"
-#include "renderer/MaterialManager.h"
-#include "renderer/ShaderManager.h"
-#include "renderer/TextureManager.h"
+namespace Engine
+{
 
+// TODO: Should be renamed to Meshloader
 Model::Model(std::string const& path, const AssetContext& assets, const glm::vec3& position, const glm::vec3& scale)
     : m_position(position), m_scale(scale)
 {
-    std::println("Loading model: {}", path.c_str());
+    std::println("[Model]Loading model: {}", path.c_str());
     loadModel(path, assets);
 }
 
@@ -138,19 +139,21 @@ const MeshData Model::processMesh(aiMesh* mesh, const aiScene* scene, const Asse
         Ref<Shader> shader = assets.shaderManager.getShaderByHandle(materialName);
         if (!shader)
         {
+            // At the moment, all materials are treated the same – phong shading
             Ref<Shader> newShader = CreateRef<Shader>("shader/phong.vs", "shader/phong.fs");
-            assets.shaderManager.addShader(materialName, newShader);
+            assets.shaderManager.addShader("phong", newShader);
             shader = newShader;
         }
 
         // Textures (TODO: Normal maps)
         std::vector<Ref<Texture>> diffuseMaps = loadMaterialTextures(assimpMaterial, aiTextureType_DIFFUSE, assets);
         if (diffuseMaps.empty())
-            std::cerr << "Warning: Missing diffuse map (Model::processMesh)" << std::endl;
+            std::cerr << "[Model] WARNING: Missing diffuse map (Model::processMesh)" << std::endl;
         Ref<Texture> diffuseMap = diffuseMaps[0];
 
         material = CreateRef<Material>(shader);
         material->setDiffuseMap(diffuseMap);
+        material->name = materialName;
 
         // Important for shadow mapping
         if (materialName == "foliage")
@@ -187,3 +190,5 @@ std::vector<Ref<Texture>> Model::loadMaterialTextures(aiMaterial* mat, aiTexture
     }
     return textures;
 }
+
+} // namespace Engine

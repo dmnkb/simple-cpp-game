@@ -2,17 +2,17 @@
 
 #include "Material.h"
 #include "Shader.h"
-#include "pch.h"
 
+namespace Engine
+{
+
+// TODO:
 #define MAX_BONE_INFLUENCE 4
 
 struct Vertex
 {
-    // position
     glm::vec3 Position;
-    // normal
     glm::vec3 Normal;
-    // texCoords
     glm::vec2 TexCoords;
 };
 
@@ -35,3 +35,5 @@ class Mesh
 
     void setupMesh();
 };
+
+} // namespace Engine

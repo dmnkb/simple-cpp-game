@@ -1,6 +1,5 @@
 #pragma once
 
-#include "pch.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 

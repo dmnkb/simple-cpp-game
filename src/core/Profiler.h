@@ -1,14 +1,16 @@
 #pragma once
 
 #include "Timer.h"
-#include "pch.h"
+#include "core/Core.h"
 
 namespace Engine
 {
+
 struct ProfilerData
 {
     std::map<std::string, Ref<Timer>> timers = {};
     std::vector<std::string> order;
+    std::map<std::string, int> drawCallsPerPass = {};
 };
 
 class Profiler
@@ -17,8 +19,12 @@ class Profiler
     static void beginRegion(const std::string& regionName);
     static void endRegion(const std::string& regionName);
 
+    static void registerDrawCall(const std::string& passName);
+    static void resetStats();
+
     static std::vector<std::pair<std::string, double>> getAll();
 
   private:
 };
+
 } // namespace Engine

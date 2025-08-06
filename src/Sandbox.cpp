@@ -7,6 +7,9 @@
 #include "Texture.h"
 #include "pch.h"
 
+namespace Engine
+{
+
 void Sandbox::init(Scene& scene)
 {
     m_movingLight =
@@ -57,3 +60,5 @@ void Sandbox::update(double deltaTime)
     m_movingLight->setPosition(newPosition);
     m_movingLight->setLookAt({0, 0, 0});
 }
+
+} // namespace Engine

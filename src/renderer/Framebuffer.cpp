@@ -1,6 +1,10 @@
 #include "Framebuffer.h"
 #include "Window.h"
+#include "pch.h"
 #include <iostream>
+
+namespace Engine
+{
 
 Framebuffer::Framebuffer()
 {
@@ -76,3 +80,5 @@ void Framebuffer::attachTexture(const Ref<Texture>& attachment)
 
     unbind();
 }
+
+} // namespace Engine

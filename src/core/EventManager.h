@@ -1,7 +1,10 @@
 #pragma once
 
 #include "Event.h"
-#include "pch.h"
+#include "core/Core.h"
+
+namespace Engine
+{
 
 using EventCallback = std::function<void(const Ref<Event>)>;
 struct EventData
@@ -20,3 +23,5 @@ class EventManager
   private:
     static void dispatchEvent(const Ref<Event> event);
 };
+
+} // namespace Engine

@@ -4,7 +4,9 @@
 #include "Scene.h"
 #include "Shader.h"
 #include "Texture.h"
-#include "pch.h"
+
+namespace Engine
+{
 
 class PostProcessingPass
 {
@@ -21,3 +23,5 @@ class PostProcessingPass
     unsigned int m_quadVAO = 0;
     unsigned int m_quadVBO = 0;
 };
+
+} // namespace Engine

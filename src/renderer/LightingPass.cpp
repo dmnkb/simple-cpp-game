@@ -1,10 +1,15 @@
 #include "LightingPass.h"
 #include "Framebuffer.h"
+#include "Profiler.h"
 #include "RendererAPI.h"
 #include "Scene.h"
 #include "Window.h"
+#include "pch.h"
 #include <fmt/core.h>
 #include <glad/glad.h>
+
+namespace Engine
+{
 
 LightingPass::LightingPass()
 {
@@ -79,7 +84,7 @@ void LightingPass::execute(Scene& scene, int& drawCalls)
         for (const auto& [mesh, transforms] : meshMap)
         {
             RendererAPI::drawInstanced(mesh, transforms);
-            drawCalls++;
+            Profiler::registerDrawCall("Lighting Pass");
         }
 
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -138,3 +143,5 @@ void LightingPass::updateUniforms(Scene& scene, const Ref<Material>& material)
         glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(m_lightBuffer), m_lightBuffer);
     }
 }
+
+} // namespace Engine

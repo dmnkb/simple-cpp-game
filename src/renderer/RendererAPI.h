@@ -1,6 +1,9 @@
 #include "ClearColor.h"
 #include "Mesh.h"
-#include "pch.h"
+#include "core/Core.h"
+
+namespace Engine
+{
 
 struct RendererAPIData
 {
@@ -30,3 +33,5 @@ class RendererAPI
 
   private:
 };
+
+} // namespace Engine

@@ -1,7 +1,10 @@
 #pragma once
 
 #include "Shader.h"
-#include "pch.h"
+#include "core/Core.h"
+
+namespace Engine
+{
 
 class ShaderManager
 {
@@ -11,20 +14,21 @@ class ShaderManager
         auto it = m_shaderMap.find(handle);
         if (it != m_shaderMap.end())
         {
-            std::println("Shader cache hit for: {}", handle);
+            std::println("[Shader Manager] Shader cache hit for: {}", handle);
             return it->second;
         }
 
-        std::cerr << "[ShaderManager] Warning: Shader '" << handle << "' not found.\n";
-        return nullptr; // Or return a fallback shader if defined
+        return nullptr;
     }
 
     void addShader(const std::string& handle, Ref<Shader> shader)
     {
         m_shaderMap[handle] = std::move(shader);
-        std::println("Added shader: {}", handle);
+        std::println("[Shader Manager] Added shader: {}", handle);
     }
 
   private:
     std::unordered_map<std::string, Ref<Shader>> m_shaderMap;
 };
+
+} // namespace Engine

@@ -14,10 +14,13 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 
+namespace Engine
+{
+
 Application::Application() : m_Player()
 {
     // Window
-    WindowProps windowProps = {
+    Window::WindowProps windowProps = {
         .initialWidth = 640,
         .initialHeight = 480,
         .title = "Game",
@@ -52,7 +55,6 @@ void Application::run()
 
     while (Window::open)
     {
-        // Calculate delta time
         static double lastTime = glfwGetTime();
         double currentTime = glfwGetTime();
         m_DeltaTime = float(currentTime - lastTime);
@@ -64,6 +66,8 @@ void Application::run()
             m_FPSUpdateTime = currentTime;
             m_FrameCount = 0;
         }
+
+        Profiler::resetStats();
 
         m_Player.update(m_Scene, m_DeltaTime);
 
@@ -78,7 +82,7 @@ void Application::run()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        const std::array<int, RenderPassCount> drawCallMap = m_renderer->getDrawCallCounts();
+        const auto drawCallMap = m_renderer->getDrawCallCounts();
         static const std::map<std::string, int> drawCallsPerPass = {
             {"Shadow Pass", drawCallMap[static_cast<size_t>(ERenderPass::Shadow)]},
             {"Lighting Pass", drawCallMap[static_cast<size_t>(ERenderPass::Lighting)]}};
@@ -198,3 +202,5 @@ void Application::initImGui()
     ImGui_ImplGlfw_InitForOpenGL(Window::glfwWindow, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 }
+
+} // namespace Engine

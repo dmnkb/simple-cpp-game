@@ -1,6 +1,11 @@
 #include "PostProcessingPass.h"
+#include "Profiler.h"
 #include "Scene.h"
 #include "Window.h"
+#include "pch.h"
+
+namespace Engine
+{
 
 PostProcessingPass::PostProcessingPass() : m_postProcessShader("shader/postProcessing.vs", "shader/postProcessing.fs")
 {
@@ -10,16 +15,16 @@ PostProcessingPass::PostProcessingPass() : m_postProcessShader("shader/postProce
 void PostProcessingPass::initQuad()
 {
     // clang-format off
-    float quadVertices[] = {
-        // positions   // texCoords
-        -1.0f,  1.0f,  0.0f, 1.0f,
-        -1.0f, -1.0f,  0.0f, 0.0f,
-         1.0f, -1.0f,  1.0f, 0.0f,
-
-        -1.0f,  1.0f,  0.0f, 1.0f,
-         1.0f, -1.0f,  1.0f, 0.0f,
-         1.0f,  1.0f,  1.0f, 1.0f
-    };
+        float quadVertices[] = {
+            // positions   // texCoords
+            -1.0f,  1.0f,  0.0f, 1.0f,
+            -1.0f, -1.0f,  0.0f, 0.0f,
+             1.0f, -1.0f,  1.0f, 0.0f,
+    
+            -1.0f,  1.0f,  0.0f, 1.0f,
+             1.0f, -1.0f,  1.0f, 0.0f,
+             1.0f,  1.0f,  1.0f, 1.0f
+        };
     // clang-format on
 
     glGenVertexArrays(1, &m_quadVAO);
@@ -52,7 +57,10 @@ void PostProcessingPass::execute(Scene& scene, const Ref<Texture>& renderTargetT
 
     glBindVertexArray(m_quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
+    Profiler::registerDrawCall("PostFX Pass");
     glBindVertexArray(0);
 
     m_postProcessShader.unbind();
 }
+
+} // namespace Engine

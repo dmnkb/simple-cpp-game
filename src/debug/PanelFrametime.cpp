@@ -1,9 +1,13 @@
 #include "PanelFrametime.h"
 #include "Profiler.h"
 #include "imgui.h"
+#include "pch.h"
 #include <algorithm>
 #include <string>
 #include <vector>
+
+namespace Engine
+{
 
 void PanelFrametime::render()
 {
@@ -80,3 +84,5 @@ void PanelFrametime::render()
 
     ImGui::End();
 }
+
+} // namespace Engine

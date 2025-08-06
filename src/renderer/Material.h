@@ -2,7 +2,10 @@
 
 #include "Shader.h"
 #include "Texture.h"
-#include "pch.h"
+#include "core/Core.h"
+
+namespace Engine
+{
 
 // Uniform buffer ready
 struct MaterialProps
@@ -46,3 +49,5 @@ class Material
     MaterialProps m_props;
     GLuint m_uboMaterial;
 };
+
+} // namespace Engine

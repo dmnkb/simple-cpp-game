@@ -4,7 +4,9 @@
 #include "LightSceneNode.h"
 #include "Material.h"
 #include "Scene.h"
-#include "pch.h"
+
+namespace Engine
+{
 
 class LightingPass
 {
@@ -28,3 +30,5 @@ class LightingPass
     Ref<Framebuffer> m_frameBuffer;
     Ref<Texture> m_renderTargetTexture;
 };
+
+} // namespace Engine

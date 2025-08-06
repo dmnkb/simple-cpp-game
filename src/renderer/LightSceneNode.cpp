@@ -7,6 +7,9 @@
 #include <glm/gtx/euler_angles.hpp>
 #include <glm/gtx/quaternion.hpp>
 
+namespace Engine
+{
+
 LightSceneNode::LightSceneNode(const glm::vec3& position, const glm::vec3& color, const glm::vec3& rotation,
                                const ELightType& lightType, const float& innerCone, const float& outerCone)
     : m_position(position), m_rotation(rotation), m_color(color), m_lightType(lightType), m_innerCone(innerCone),
@@ -63,3 +66,5 @@ void LightSceneNode::setLookAt(const glm::vec3& lookAt)
 
     m_shadowCam->lookAt(lookAt);
 }
+
+} // namespace Engine

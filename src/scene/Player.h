@@ -3,8 +3,11 @@
 #include "Camera.h"
 #include "EventManager.h"
 #include "Scene.h"
-#include "pch.h"
+#include "core/Core.h"
 #include <glm/glm.hpp>
+
+namespace Engine
+{
 
 class Player
 {
@@ -43,3 +46,5 @@ class Player
     // Performance
     int m_collisionPairCheckCount = 0;
 };
+
+} // namespace Engine

@@ -1,8 +1,10 @@
 #pragma once
 
 #include "Texture.h"
-#include "pch.h"
-#include <vector>
+#include "core/Core.h"
+
+namespace Engine
+{
 
 class Framebuffer
 {
@@ -20,3 +22,5 @@ class Framebuffer
     GLuint m_fbo = 0;
     std::vector<Ref<Texture>> m_attachments;
 };
+
+} // namespace Engine

@@ -1,13 +1,12 @@
-
-
+#include "Mesh.h"
+#include "Material.h"
+#include "pch.h"
 #include <glad/glad.h>
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "Material.h"
-#include "Mesh.h"
-#include "pch.h"
+namespace Engine
+{
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices)
 {
@@ -62,3 +61,5 @@ GLsizei Mesh::getIndexCount() const
 {
     return static_cast<unsigned int>(indices.size());
 }
+
+} // namespace Engine

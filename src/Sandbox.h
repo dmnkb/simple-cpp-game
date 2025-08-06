@@ -2,7 +2,10 @@
 
 #include "Model.h"
 #include "Scene.h"
-#include "pch.h"
+#include "core/Core.h"
+
+namespace Engine
+{
 
 /**
  * A demo layer to test implementations with
@@ -16,3 +19,5 @@ class Sandbox
   private:
     Ref<LightSceneNode> m_movingLight;
 };
+
+} // namespace Engine

@@ -1,4 +1,5 @@
 #include "Profiler.h"
+#include "pch.h"
 
 namespace Engine
 {
@@ -45,4 +46,15 @@ std::vector<std::pair<std::string, double>> Profiler::getAll()
 
     return regions;
 }
+
+void Profiler::registerDrawCall(const std::string& passName)
+{
+    s_profilerData.drawCallsPerPass[passName]++;
+}
+
+void Profiler::resetStats()
+{
+    s_profilerData.drawCallsPerPass.clear();
+}
+
 } // namespace Engine

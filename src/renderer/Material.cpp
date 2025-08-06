@@ -1,6 +1,10 @@
 #include "Material.h"
 #include "Window.h"
+#include "pch.h"
 #include <fmt/core.h>
+
+namespace Engine
+{
 
 Material::Material(Ref<Shader>& shader, MaterialProps props) : m_shader(shader), m_props(props)
 {
@@ -90,3 +94,5 @@ const bool Material::hasUniform(const char* name)
 {
     return m_shader->hasUniform(name);
 }
+
+} // namespace Engine

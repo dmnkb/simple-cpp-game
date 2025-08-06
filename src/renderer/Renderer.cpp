@@ -1,6 +1,10 @@
 #include "Renderer.h"
 #include "Profiler.h"
 #include "RendererAPI.h"
+#include "pch.h"
+
+namespace Engine
+{
 
 Renderer::Renderer()
 {
@@ -33,3 +37,5 @@ void Renderer::update(Scene& scene)
     m_drawCallCounts[static_cast<size_t>(ERenderPass::PostProcessing)] = drawCallCount;
     Engine::Profiler::endRegion("PostFX Pass");
 }
+
+} // namespace Engine

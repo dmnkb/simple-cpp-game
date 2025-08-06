@@ -1,12 +1,13 @@
 #include "Texture.h"
 #include "pch.h"
-
+#include <filesystem>
+#include <iostream>
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_STATIC
 #include <stb_image.h>
 
-#include <filesystem>
-#include <iostream>
+namespace Engine
+{
 
 Texture::Texture(const std::string& path)
 {
@@ -97,3 +98,5 @@ Texture::~Texture()
 {
     glDeleteTextures(1, &id);
 }
+
+} // namespace Engine

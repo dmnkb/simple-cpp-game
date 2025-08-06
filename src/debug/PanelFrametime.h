@@ -2,6 +2,9 @@
 
 #include "imgui.h"
 
+namespace Engine
+{
+
 // https://colorbrewer2.org/#type=qualitative&scheme=Set3&n=12
 static const std::array<ImColor, 12> colors = {
     IM_COL32(141, 211, 199, 255), IM_COL32(255, 255, 179, 255), IM_COL32(190, 186, 218, 255),
@@ -15,3 +18,5 @@ class PanelFrametime
   public:
     static void render();
 };
+
+} // namespace Engine

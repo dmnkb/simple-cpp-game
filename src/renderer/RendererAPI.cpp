@@ -1,4 +1,8 @@
 #include "RendererAPI.h"
+#include "pch.h"
+
+namespace Engine
+{
 
 static RendererAPIData s_Data;
 
@@ -108,3 +112,5 @@ void RendererAPI::enableOpenGLDebugOutput()
         std::cout << "OpenGL Debug Output not supported for this context." << std::endl;
     }
 }
+
+} // namespace Engine

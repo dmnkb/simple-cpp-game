@@ -3,6 +3,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+namespace Engine
+{
+
 enum ECameraType
 {
     ECT_PROJECTION,
@@ -61,3 +64,5 @@ class Camera
   private:
     CameraProps m_props;
 };
+
+} // namespace Engine

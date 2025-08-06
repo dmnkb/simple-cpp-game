@@ -5,6 +5,10 @@
 #include "Renderer.h"
 #include "Sandbox.h"
 #include "Scene.h"
+#include "core/Core.h"
+
+namespace Engine
+{
 
 class Application
 {
@@ -30,3 +34,5 @@ class Application
 
     Scope<Sandbox> m_Sandbox;
 };
+
+} // namespace Engine

@@ -3,13 +3,15 @@
 #include "Material.h"
 #include "Mesh.h"
 #include "Shader.h"
-#include "pch.h"
 #include "renderer/MaterialManager.h"
 #include "renderer/ShaderManager.h"
 #include "renderer/TextureManager.h"
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
+
+namespace Engine
+{
 
 // An atomic, stateless POD (plain old data) that contains mesh, material and transform.
 // TODO: Idea: This might only hold identifiers
@@ -56,3 +58,5 @@ class Model
     const MeshData processMesh(aiMesh* mesh, const aiScene* scene, const AssetContext& assets);
     std::vector<Ref<Texture>> loadMaterialTextures(aiMaterial* mat, aiTextureType type, const AssetContext& assets);
 };
+
+} // namespace Engine

@@ -9,6 +9,12 @@
 // clang-format on
 #include <glm/glm.hpp>
 
+namespace Engine
+{
+
+namespace Window
+{
+
 struct WindowProps
 {
     const int initialWidth;
@@ -16,8 +22,6 @@ struct WindowProps
     const char* title;
 };
 
-namespace Window
-{
 void init(const WindowProps& props);
 void update();
 void shutdown();
@@ -35,4 +39,7 @@ extern glm::vec2 dimensions;
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void mousePosCallback(GLFWwindow* window, double xpos, double ypos);
 void resizeCallback(GLFWwindow* window, int width, int height);
+
 }; // namespace Window
+
+} // namespace Engine

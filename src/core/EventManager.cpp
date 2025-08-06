@@ -1,6 +1,9 @@
 #include "EventManager.h"
 #include "pch.h"
 
+namespace Engine
+{
+
 static EventData s_eventData;
 
 // TODO: ENUM
@@ -34,3 +37,5 @@ void EventManager::dispatchEvent(Ref<Event> event)
         }
     }
 }
+
+} // namespace Engine

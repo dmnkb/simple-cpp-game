@@ -1,6 +1,7 @@
-#include "pch.h"
-
 #pragma once
+
+namespace Engine
+{
 
 class Event
 {
@@ -27,3 +28,5 @@ class MouseMoveEvent : public Event
     float speedY = 0.0f;
     bool cursorDisabled = false;
 };
+
+} // namespace Engine

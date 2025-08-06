@@ -4,6 +4,9 @@
 #include <glad/glad.h>
 #include <string>
 
+namespace Engine
+{
+
 enum class EClearColor
 {
     CharcoalGray,
@@ -35,3 +38,5 @@ static const std::array<SClearColor, ClearColorCount> clearColorValues = {
     SClearColor{0.17f, 0.24f, 0.31f, 1.0f}, SClearColor{0.44f, 0.50f, 0.56f, 1.0f},
     SClearColor{0.66f, 0.79f, 1.00f, 1.0f}, SClearColor{0.43f, 0.50f, 0.61f, 1.0f},
 };
+
+} // namespace Engine

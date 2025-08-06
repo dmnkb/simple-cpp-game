@@ -2,7 +2,9 @@
 
 #include "Scene.h"
 #include "Shader.h"
-#include "pch.h"
+
+namespace Engine
+{
 
 class ShadowPass
 {
@@ -13,3 +15,5 @@ class ShadowPass
   private:
     Shader m_depthShader;
 };
+
+} // namespace Engine

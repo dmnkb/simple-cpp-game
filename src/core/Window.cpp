@@ -1,5 +1,8 @@
 #include "Window.h"
+#include "core/Core.h"
 
+namespace Engine
+{
 namespace Window
 {
 
@@ -118,3 +121,4 @@ void resizeCallback(GLFWwindow* window, int windowWidth, int windowHeight)
 }
 
 } // namespace Window
+} // namespace Engine
