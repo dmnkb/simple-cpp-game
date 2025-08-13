@@ -26,8 +26,6 @@ set(ASSIMP_LIBRARY "${ASSIMP_DIR}/lib/libassimp.dylib")
 # Set up include + link
 target_include_directories(${PROJECT_NAME} PRIVATE 
     ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/renderer
-    ${CMAKE_SOURCE_DIR}/src/debug
     ${CMAKE_SOURCE_DIR}/include
     ${ASSIMP_INCLUDE_DIR}
 )

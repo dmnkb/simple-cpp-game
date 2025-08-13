@@ -9,7 +9,8 @@
 
 namespace Engine
 {
-
+// FIXME: rotation and direction are redundant and messed up! Break this up to multiple light classes
+// and get rid of the scene node association. Might switch to an ECS later on anyways.
 LightSceneNode::LightSceneNode(const glm::vec3& position, const glm::vec3& color, const glm::vec3& rotation,
                                const ELightType& lightType, const float& innerCone, const float& outerCone)
     : m_position(position), m_rotation(rotation), m_color(color), m_lightType(lightType), m_innerCone(innerCone),

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "LightSceneNode.h"
-#include "Model.h"
 #include "core/Core.h"
+#include "renderer/LightSceneNode.h"
+#include "renderer/Model.h"
 
 namespace Engine
 {

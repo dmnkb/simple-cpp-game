@@ -1,8 +1,8 @@
 #include "PostProcessingPass.h"
-#include "Profiler.h"
-#include "Scene.h"
-#include "Window.h"
+#include "core/Profiler.h"
+#include "core/Window.h"
 #include "pch.h"
+#include "scene/Scene.h"
 
 namespace Engine
 {

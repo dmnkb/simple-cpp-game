@@ -1,16 +1,16 @@
 #include "Application.h"
-#include "EventManager.h"
-#include "Profiler.h"
-#include "Renderer.h"
-#include "Sandbox.h"
-#include "Scene.h"
-#include "Window.h"
+#include "core/EventManager.h"
+#include "core/Profiler.h"
+#include "core/Window.h"
 #include "debug/DebugUI.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "pch.h"
 #include "renderer/ClearColor.h"
+#include "renderer/Renderer.h"
+#include "scene/Sandbox.h"
+#include "scene/Scene.h"
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 

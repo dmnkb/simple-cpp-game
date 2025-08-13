@@ -1,10 +1,10 @@
 #include "LightingPass.h"
 #include "Framebuffer.h"
-#include "Profiler.h"
 #include "RendererAPI.h"
-#include "Scene.h"
-#include "Window.h"
+#include "core/Profiler.h"
+#include "core/Window.h"
 #include "pch.h"
+#include "scene/Scene.h"
 #include <fmt/core.h>
 #include <glad/glad.h>
 

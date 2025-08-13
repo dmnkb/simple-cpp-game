@@ -1,8 +1,10 @@
 #pragma once
 
-#include "Model.h"
-#include "Scene.h"
 #include "core/Core.h"
+#include "renderer/Model.h"
+#include "scene/Scene.h"
+
+// TODO: Part of gameplay logic, will go into game/
 
 namespace Engine
 {

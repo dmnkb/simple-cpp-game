@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Framebuffer.h"
-#include "LightSceneNode.h"
-#include "Material.h"
-#include "Scene.h"
+#include "renderer/Framebuffer.h"
+#include "renderer/LightSceneNode.h"
+#include "renderer/Material.h"
+#include "scene/Scene.h"
 
 namespace Engine
 {

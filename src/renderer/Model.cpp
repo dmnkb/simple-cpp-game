@@ -20,6 +20,7 @@ namespace Engine
 {
 
 // TODO: Should be renamed to Meshloader
+// TODO: Cache loaded models (By path)
 Model::Model(std::string const& path, const AssetContext& assets, const glm::vec3& position, const glm::vec3& scale)
     : m_position(position), m_scale(scale)
 {

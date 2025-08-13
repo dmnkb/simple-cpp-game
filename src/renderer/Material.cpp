@@ -1,5 +1,5 @@
 #include "Material.h"
-#include "Window.h"
+#include "core/Window.h"
 #include "pch.h"
 #include <fmt/core.h>
 
@@ -51,6 +51,7 @@ void Material::unbind()
 
 void Material::update()
 {
+    // FIXME: dependency inversion violation. Resolve dependency to Window
     float time = Window::getElapsedTime();
     m_shader->setUniform1f("u_Time", time);
 }

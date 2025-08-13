@@ -1,11 +1,11 @@
 #pragma once
 
-#include "EventManager.h"
-#include "Player.h"
-#include "Renderer.h"
-#include "Sandbox.h"
-#include "Scene.h"
 #include "core/Core.h"
+#include "core/EventManager.h"
+#include "renderer/Renderer.h"
+#include "scene/Player.h"
+#include "scene/Sandbox.h"
+#include "scene/Scene.h"
 
 namespace Engine
 {

@@ -2,8 +2,8 @@
 
 #include "LightingPass.h"
 #include "PostProcessingPass.h"
-#include "Scene.h"
 #include "ShadowPass.h"
+#include "scene/Scene.h"
 
 namespace Engine
 {

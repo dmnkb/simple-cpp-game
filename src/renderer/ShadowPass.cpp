@@ -1,8 +1,8 @@
 #include "ShadowPass.h"
-#include "Profiler.h"
 #include "RendererAPI.h"
-#include "Scene.h"
+#include "core/Profiler.h"
 #include "pch.h"
+#include "scene/Scene.h"
 
 namespace Engine
 {

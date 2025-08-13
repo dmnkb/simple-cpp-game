@@ -1,11 +1,11 @@
 #include "Sandbox.h"
-#include "LightSceneNode.h"
-#include "Material.h"
-#include "Model.h"
-#include "Scene.h"
-#include "Shader.h"
-#include "Texture.h"
 #include "pch.h"
+#include "renderer/LightSceneNode.h"
+#include "renderer/Material.h"
+#include "renderer/Model.h"
+#include "renderer/Shader.h"
+#include "renderer/Texture.h"
+#include "scene/Scene.h"
 
 namespace Engine
 {
@@ -31,12 +31,28 @@ void Sandbox::init(Scene& scene)
     AssetContext context(materialManager, shaderManager, textureManager);
 
     scene.addModel(Model("assets/models/tree/scene.gltf", context, {10.0, 0.0, -10.0}));
-    scene.addModel(Model("assets/models/tree/scene.gltf", context, {-10.0, 0.0, 10.0}));
-    scene.addModel(Model("assets/models/tree/scene.gltf", context, {-10.0, 0.0, -10.0}));
-    scene.addModel(Model("assets/models/tree/scene.gltf", context, {10.0, 0.0, 10.0}));
 
-    scene.addModel(Model("assets/models/cube/cube.gltf", context, {0.0, 0.0, 0.0}));
-    scene.addModel(Model("assets/models/ground/ground.gltf", context, {0.0, -1, 0.0}, {4.0, 1.0, 4.0}));
+    const std::string path = "assets/models/sponza/glTF/Sponza.gltf";
+
+    int countX = 2;
+    int countZ = 2;
+    float spacing = 40.0f;
+
+    float startX = -(countX - 1) * spacing / 2.0f;
+    float startZ = -(countZ - 1) * spacing / 2.0f;
+
+    for (int zi = 0; zi < countZ; ++zi)
+    {
+        for (int xi = 0; xi < countX; ++xi)
+        {
+            float x = startX + xi * spacing;
+            float z = startZ + zi * spacing;
+            scene.addModel(Model(path, context, {x, 0.0f, z}));
+        }
+    }
+
+    scene.addModel(Model("assets/models/cube/cube.gltf", context, {0.0, 10.0, 0.0}));
+    scene.addModel(Model("assets/models/ground/ground.gltf", context, {0.0, -1, 0.0}, {10.0, 1.0, 10.0}));
 }
 
 void Sandbox::update(double deltaTime)
@@ -44,8 +60,8 @@ void Sandbox::update(double deltaTime)
     static double elapsedTime = 0.0;
     elapsedTime += deltaTime;
 
-    float radius = 30.0f;
-    float height = 25.0f;
+    float radius = 80.0f;
+    float height = 40.0f;
     float speed = 0.05f; // radians per second
 
     // Circular horizontal movement

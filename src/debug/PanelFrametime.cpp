@@ -1,5 +1,5 @@
 #include "PanelFrametime.h"
-#include "Profiler.h"
+#include "core/Profiler.h"
 #include "imgui.h"
 #include "pch.h"
 #include <algorithm>
@@ -12,9 +12,11 @@ namespace Engine
 void PanelFrametime::render()
 {
     static bool open = true;
-    ImGui::Begin("Frame Breakdown", &open, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
+    ImGui::Begin("Profiler", &open);
 
-    const auto cpuTimings = Engine::Profiler::getAll();
+    auto cpuTimings = Engine::Profiler::getAll();
+    std::sort(cpuTimings.begin(), cpuTimings.end(),
+              [](std::pair<std::string, double>& a, std::pair<std::string, double>& b) { return a.second > b.second; });
 
     double longestDuration = 0.0;
 
@@ -51,6 +53,7 @@ void PanelFrametime::render()
         cpuTotal += t;
 
     float availableWidth = std::min(ImGui::GetContentRegionAvail().x, 800.0f);
+    float availableHeight = std::min(ImGui::GetContentRegionAvail().y, 200.0f);
     const float barHeight = 22.0f;
     ImVec2 basePos = ImGui::GetCursorScreenPos();
     ImDrawList* drawList = ImGui::GetWindowDrawList();
@@ -76,9 +79,9 @@ void PanelFrametime::render()
             ImGui::SetTooltip("%s: %.2f ms", name.c_str(), time);
 
         char labelBuf[64];
-        snprintf(labelBuf, sizeof(labelBuf), "%s (%.1fms)", name.c_str(), time);
-        drawList->PushClipRect(p0, p1, true);
-        drawList->AddText(ImVec2(basePos.x + 4.0f, p0.y + 3.0f), IM_COL32(0, 0, 0, 100), labelBuf);
+        snprintf(labelBuf, sizeof(labelBuf), "%s %.1fms", name.c_str(), time);
+        drawList->PushClipRect(p0, ImVec2(availableWidth + basePos.x, availableHeight + basePos.y), true);
+        drawList->AddText(ImVec2(basePos.x + 4.0f, p0.y + 3.0f), IM_COL32(255, 255, 255, 255), labelBuf);
         drawList->PopClipRect();
     }
 

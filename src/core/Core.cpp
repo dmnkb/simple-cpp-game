@@ -4,7 +4,7 @@
 #include <iostream>
 #include <print>
 
-namespace core
+namespace Engine
 {
 
 void Assert(const char* expression, const char* file, int32_t line, const char* format, ...)
@@ -38,4 +38,4 @@ void Assert(const char* expression, const char* file, int32_t line, const char* 
 #endif
 }
 
-} // namespace core
+} // namespace Engine

@@ -1,11 +1,12 @@
 #pragma once
 
-#include "Camera.h"
-#include "EventManager.h"
-#include "Scene.h"
 #include "core/Core.h"
+#include "core/EventManager.h"
+#include "renderer/Camera.h"
+#include "scene/Scene.h"
 #include <glm/glm.hpp>
 
+// TODO: Part of gameplay logic, will go into game/
 namespace Engine
 {
 

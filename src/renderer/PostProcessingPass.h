@@ -1,9 +1,9 @@
 #pragma once
 
-#include "LightSceneNode.h"
-#include "Scene.h"
-#include "Shader.h"
-#include "Texture.h"
+#include "renderer/LightSceneNode.h"
+#include "renderer/Shader.h"
+#include "renderer/Texture.h"
+#include "scene/Scene.h"
 
 namespace Engine
 {
