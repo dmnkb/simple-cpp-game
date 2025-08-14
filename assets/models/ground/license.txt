@@ -1,0 +1,2 @@
+I got the "test.jpg" texture from: https://www.reddit.com/r/blender/comments/njktn7/hey_blender_fam_if_anyone_wants_the_og/
+It is a replica of the default color-checker map from Blender (https://www.blender.org/)

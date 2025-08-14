@@ -55,9 +55,9 @@
 	],
 	"images":[
 		{
-			"mimeType":"image/png",
-			"name":"texture_13",
-			"uri":"texture_13.png"
+			"mimeType":"image/jpg",
+			"name":"test",
+			"uri":"test.jpg"
 		}
 	],
 	"accessors":[
