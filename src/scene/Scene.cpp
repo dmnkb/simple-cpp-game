@@ -8,6 +8,7 @@ namespace Engine
 void Scene::init(const CameraProps& cameraProps)
 {
     m_DefaultCamera = CreateRef<Camera>(cameraProps);
+    m_DefaultCamera->isMainCamera();
     setActiveCamera(m_DefaultCamera);
 }
 
@@ -17,9 +18,9 @@ void Scene::addModel(const Model& model)
     m_renderablesDirty = true;
 }
 
-void Scene::addLightSceneNode(const Ref<LightSceneNode>& node)
+void Scene::addSpotLight(const Ref<SpotLight>& light)
 {
-    m_LightSceneNodes.push_back(node);
+    m_SpotLights.push_back(light);
 }
 
 // TODO: Sort transparent renderables back-to-front
@@ -70,9 +71,9 @@ RenderQueue Scene::getRenderQueue(const std::string& passName)
     return renderQueue;
 }
 
-std::vector<Ref<LightSceneNode>> Scene::getLightSceneNodes() const
+std::vector<Ref<SpotLight>> Scene::getSpotLights() const
 {
-    return m_LightSceneNodes;
+    return m_SpotLights;
 }
 
 void Scene::setActiveCamera(const Ref<Camera>& camera)

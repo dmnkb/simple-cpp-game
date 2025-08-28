@@ -18,23 +18,18 @@ Renderer::~Renderer()
 
 void Renderer::update(Scene& scene)
 {
-    static int drawCallCount = 0;
+    scene.setActiveCamera(scene.getDefaultCamera());
 
     Engine::Profiler::beginRegion("Shadow Pass");
-    m_shadowPass.execute(scene, drawCallCount);
-    m_drawCallCounts[static_cast<size_t>(ERenderPass::Shadow)] = drawCallCount;
-    drawCallCount = 0;
+    m_shadowPass.execute(scene);
     Engine::Profiler::endRegion("Shadow Pass");
 
     Engine::Profiler::beginRegion("Lighting Pass");
-    m_lightingPass.execute(scene, drawCallCount);
-    m_drawCallCounts[static_cast<size_t>(ERenderPass::Lighting)] = drawCallCount;
-    drawCallCount = 0;
+    m_lightingPass.execute(scene);
     Engine::Profiler::endRegion("Lighting Pass");
 
     Engine::Profiler::beginRegion("PostFX Pass");
-    m_postProcessingPass.execute(scene, m_lightingPass.getRenderTargetTexture());
-    m_drawCallCounts[static_cast<size_t>(ERenderPass::PostProcessing)] = drawCallCount;
+    m_postProcessingPass.execute(m_lightingPass.getRenderTargetTexture());
     Engine::Profiler::endRegion("PostFX Pass");
 }
 

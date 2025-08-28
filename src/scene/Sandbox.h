@@ -17,9 +17,6 @@ class Sandbox
   public:
     void init(Scene& scene);
     void update(double deltyaTime);
-
-  private:
-    Ref<LightSceneNode> m_movingLight;
 };
 
 } // namespace Engine

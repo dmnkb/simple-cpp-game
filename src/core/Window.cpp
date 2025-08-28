@@ -11,7 +11,7 @@ bool open = false;
 bool firstMosue = true;
 float cursorLastX = 0.0f;
 float cursorLastY = 0.0f;
-glm::vec2 dimensions = glm::vec2(640, 480);
+glm::vec2 dimensions = glm::vec2(1080, 720);
 glm::vec2 frameBufferDimensions = glm::vec2(0, 0);
 
 void init(const WindowProps& props)
@@ -36,8 +36,8 @@ void init(const WindowProps& props)
     glfwSetKeyCallback(glfwWindow, keyCallback);
     glfwSetCursorPosCallback(glfwWindow, mousePosCallback);
     glfwSetWindowCloseCallback(glfwWindow, [](GLFWwindow* window) { open = false; });
-    // TODO: Maximize
-    glfwSetWindowSizeCallback(glfwWindow, resizeCallback);
+
+    glfwSetFramebufferSizeCallback(glfwWindow, framebufferSizeCallback);
 
     glfwMakeContextCurrent(glfwWindow);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
@@ -107,17 +107,17 @@ void mousePosCallback(GLFWwindow* window, double xpos, double ypos)
     cursorLastY = ypos;
 }
 
-void resizeCallback(GLFWwindow* window, int windowWidth, int windowHeight)
+void framebufferSizeCallback(GLFWwindow* window, int fbW, int fbH)
 {
-    // Window dimensions
-    dimensions.x = windowWidth;
-    dimensions.y = windowHeight;
+    assert((fbW > 0 && fbH > 0) &&
+           "[ERROR] (framebufferSizeCallback) Framebuffer size appears to be zero after resizing.");
 
-    // Framebuffer dimensions
-    int fbWidth, fbHeight = 0;
-    glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
-    assert((fbWidth > 0 && fbHeight > 0) && "[ERROR] Framebuffer size appears to be zero after resizing.");
-    frameBufferDimensions = glm::vec2(fbWidth, fbHeight);
+    frameBufferDimensions = {float(fbW), float(fbH)};
+
+    glViewport(0, 0, fbW, fbH);
+
+    auto ev = CreateRef<WindowReziseEvent>(fbW, fbH);
+    EventManager::queueEvent(ev);
 }
 
 } // namespace Window

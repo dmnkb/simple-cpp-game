@@ -7,9 +7,9 @@
 namespace Engine
 {
 
-void DebugUI::render(float fps, const std::map<std::string, int>& drawCallsPerPass, const Scene& scene)
+void DebugUI::render(float fps, const Scene& scene)
 {
-    PanelStats::render(fps, drawCallsPerPass, scene);
+    PanelStats::render(fps, scene);
     PanelFrametime::render();
 }
 

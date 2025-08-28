@@ -1,196 +1,46 @@
 #version 330 core
 
-const int ELT_POINT = 0;
-const int ELT_DIRECTIONAL = 1;
-const int ELT_SPOT = 2;
-
-struct Light
-{
-    vec3 position;   // Offset 0, size 12
-    float padding1;  // Offset 12, size 4
-    vec3 color;      // Offset 16, size 12
-    float padding2;  // Offset 28, size 4
-    vec3 rotation;   // Offset 32, size 12
-    float padding3;  // Offset 44, size 4
-    int lightType;   // Offset 48, size 4
-    float innerCone; // Offset 52, size 4
-    float outerCone; // Offset 56, size 4
-    float padding4;  // Offset 60, size 4
-}; // Total size: 64 bytes (aligned to 16 bytes)
-
 in vec2 v_UV;
 in vec3 v_Normal;
 in vec3 FragPos;
+out vec4 FragColor;
 
 uniform vec3 viewPos;
-
 uniform sampler2D diffuseMap;
-uniform sampler2D shadowMaps[7];
-uniform mat4 lightSpaceMatrices[8];
 
-#define MAX_LIGHTS 64
+// ---- Shadow inputs (SOFTWARE PCF uses non-comparison samplers) ----
+#define MAX_SHADOW_MAPS 7
+uniform sampler2D shadowMaps[MAX_SHADOW_MAPS];
+uniform mat4 lightSpaceMatrices[MAX_SHADOW_MAPS];
+
 uniform int u_numLights;
 
-layout(std140) uniform LightsBlock
+#define MAX_SPOT_LIGHTS 16
+
+layout(std140) uniform SpotLights
 {
-    // TODO: consider struct of arrays
-    Light lights[MAX_LIGHTS];
+    vec4 positionsWS[MAX_SPOT_LIGHTS];     // xyz pos, w=1
+    vec4 directionsWS[MAX_SPOT_LIGHTS];    // xyz dir (norm), w=0
+    vec4 colorsIntensity[MAX_SPOT_LIGHTS]; // rgb color, a=intensity
+    vec4 conesRange[MAX_SPOT_LIGHTS];      // x=innerCos, y=outerCos, z=range, w=0
+    vec4 attenuations[MAX_SPOT_LIGHTS];    // x=kc, y=kl, z=kq, w=0
 };
 
 layout(std140) uniform MaterialPropsBlock
 {
-    float textureRepeat;     // Controls UV scaling
-    float shininess;         // Controls the sharpness of specular highlights
-    float specularIntensity; // Controls the visibility of specular highlights
+    float textureRepeat;     // UV tiling
+    float shininess;         // spec power
+    float specularIntensity; // spec visibility
 };
 
-out vec4 FragColor;
+// ---- bias knobs (compile-time constants) ----
+const float kMinBias = 0.00012;  // tiny constant depth bias
+const float kSlopeBias = 0.0016; // scales with (1 - N·L)
+const float kNormalBias = 1.25;  // in texels, converted to world-units per light
 
-// Function to debug shadow
-vec3 debugShadow(int lightIndex, vec4 fragPosLightSpace)
-{
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    projCoords = projCoords * 0.5 + 0.5;
-
-    if (projCoords.z > 1.0 || projCoords.x < 0.0 || projCoords.x > 1.0 || projCoords.y < 0.0 || projCoords.y > 1.0)
-    {
-        return vec3(0, 0, 0);
-    }
-
-    return texture(shadowMaps[lightIndex], projCoords.xy).rgb;
-}
-
-// Blocker Search - Finds average blocker depth
-float findBlockerDepth(int lightIndex, vec2 uv, float zReceiver, int searchSamples)
-{
-    vec2 texelSize = 1.0 / textureSize(shadowMaps[lightIndex], 0);
-    float blockerSum = 0.0;
-    int blockers = 0;
-
-    for (int x = -searchSamples; x <= searchSamples; x++)
-    {
-        for (int y = -searchSamples; y <= searchSamples; y++)
-        {
-            vec2 offset = vec2(x, y) * texelSize;
-            float depth = texture(shadowMaps[lightIndex], uv + offset).r;
-            if (depth < zReceiver)
-            {
-                blockerSum += depth;
-                blockers++;
-            }
-        }
-    }
-
-    return (blockers > 0) ? (blockerSum / blockers) : 1.0;
-}
-
-// Percentage Closer Soft Shadows (PCSS)
-float calculatePCSSShadow(int lightIndex, vec4 fragPosLightSpace)
-{
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    projCoords = projCoords * 0.5 + 0.5;
-
-    if (projCoords.z > 1.0 || projCoords.x < 0.0 || projCoords.x > 1.0 || projCoords.y < 0.0 || projCoords.y > 1.0)
-    {
-        return 1.0;
-    }
-
-    vec2 texelSize = 1.0 / textureSize(shadowMaps[lightIndex], 0);
-    float zReceiver = projCoords.z;
-
-    // Step 1: Find blocker depth
-    float avgBlockerDepth = findBlockerDepth(lightIndex, projCoords.xy, zReceiver, 3);
-    if (avgBlockerDepth == 1.0)
-        return 1.0;
-
-    // Step 2: Compute penumbra size
-    const float LIGHT_SIZE = 10;
-
-    float penumbraSize = LIGHT_SIZE * (zReceiver - avgBlockerDepth) / avgBlockerDepth * 5;
-    penumbraSize = clamp(penumbraSize, 1.0, 15.0);
-
-    // Step 3: Percentage Closer Filtering (PCF) with variable kernel size
-    float shadow = 0.0;
-    int pcfSamples = int(penumbraSize);
-    for (int x = -pcfSamples; x <= pcfSamples; x++)
-    {
-        for (int y = -pcfSamples; y <= pcfSamples; y++)
-        {
-            vec2 offset = vec2(x, y) * texelSize;
-            float closestDepth = texture(shadowMaps[lightIndex], projCoords.xy + offset).r;
-            shadow += (zReceiver > closestDepth) ? 1.0 : 0.0;
-        }
-    }
-
-    return 1.0 - (shadow / float((pcfSamples * 2 + 1) * (pcfSamples * 2 + 1)));
-}
-
-// Function to calculate the contribution of a point light
-vec3 calculatePointLight(vec3 lightPos, vec3 fragPos, vec3 viewPos, vec3 normal, vec3 color)
-{
-    vec3 lightDir = normalize(lightPos - fragPos);
-    float diff = max(dot(normal, lightDir), 0.0);
-
-    vec3 viewDir = normalize(viewPos - fragPos);
-    vec3 halfwayDir = normalize(lightDir + viewDir);
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
-
-    vec3 diffuse = color * diff;
-    vec3 specular = color * spec * specularIntensity;
-
-    return diffuse + specular;
-}
-
-// Function to calculate the contribution of a directional light
-vec3 calculateDirectionalLight(vec3 lightDir, vec3 viewPos, vec3 fragPos, vec3 normal, vec3 color, float shadow)
-{
-    lightDir = normalize(-lightDir); // Directional lights have rotation as direction
-
-    float diff = max(dot(normal, lightDir), 0.0);
-
-    vec3 viewDir = normalize(viewPos - fragPos);
-    vec3 halfwayDir = normalize(lightDir + viewDir);
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
-
-    vec3 diffuse = color * diff;
-    vec3 specular = color * spec * specularIntensity;
-
-    return (diffuse + specular) * shadow;
-}
-
-// Function to calculate the contribution of a spot light
-vec3 calculateSpotLight(vec3 lightPos, vec3 lightDir, vec3 fragPos, vec3 viewPos, vec3 normal, vec3 color,
-                        float innerCone, float outerCone, float shadow)
-{
-    vec3 resultColor = vec3(0.0);
-
-    vec3 fragToLight = normalize(lightPos - fragPos);
-    float theta = dot(fragToLight, normalize(-lightDir));
-
-    float cosInnerCone = cos(radians(innerCone));
-    float cosOuterCone = cos(radians(outerCone));
-
-    float epsilon = cosInnerCone - cosOuterCone;
-    float intensity = clamp((theta - cosOuterCone) / epsilon, 0.0, 1.0);
-
-    if (intensity > 0.0)
-    {
-        float diff = max(dot(normal, fragToLight), 0.0);
-
-        vec3 viewDir = normalize(viewPos - fragPos);
-        vec3 halfwayDir = normalize(fragToLight + viewDir);
-        float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
-
-        vec3 diffuse = color * diff;
-        vec3 specular = color * spec * specularIntensity;
-
-        resultColor = (diffuse + specular) * intensity * shadow;
-    }
-
-    return resultColor;
-}
-
-// Referencing: https://www.emutalk.net/threads/emulating-nintendo-64-3-sample-bilinear-filtering-using-shaders.54215/
+// ----------------------------------------------------
+// N64 3-point texture filter
+// ----------------------------------------------------
 vec4 N64_3Point_Filter(sampler2D tex, vec2 uv, vec2 texSize)
 {
     vec2 texelSize = 1.0 / texSize;
@@ -201,10 +51,10 @@ vec4 N64_3Point_Filter(sampler2D tex, vec2 uv, vec2 texSize)
     vec2 texelPos = floor(pixelPos);
     vec2 f = fract(pixelPos);
 
-    if (pixelPos.x < 0)
-        f.x = 1 - f.x;
-    if (pixelPos.y < 0)
-        f.y = 1 - f.y;
+    if (pixelPos.x < 0.0)
+        f.x = 1.0 - f.x;
+    if (pixelPos.y < 0.0)
+        f.y = 1.0 - f.y;
 
     vec2 uv00 = (texelPos + vec2(0.0, 0.0)) / texSize;
     vec2 uv10 = (texelPos + vec2(1.0, 0.0)) / texSize;
@@ -216,56 +66,161 @@ vec4 N64_3Point_Filter(sampler2D tex, vec2 uv, vec2 texSize)
     vec4 t01 = texture(tex, uv01);
     vec4 t11 = texture(tex, uv11);
 
-    vec4 diffuseColor = t00 + f.x * (t10 - t00) + f.y * (t01 - t00);
-    diffuseColor *= (1.0 - step(1.0, f.x + f.y));
-    diffuseColor += (t11 + (1.0 - f.x) * (t01 - t11) + (1.0 - f.y) * (t10 - t11)) * step(1.0, f.x + f.y);
+    vec4 c0 = t00 + f.x * (t10 - t00) + f.y * (t01 - t00);
+    vec4 c1 = t11 + (1.0 - f.x) * (t01 - t11) + (1.0 - f.y) * (t10 - t11);
+    return mix(c0, c1, step(1.0, f.x + f.y));
+}
 
-    return diffuseColor;
+// ----------------------------------------------------
+// Helpers to avoid dynamic sampler array indexing on macOS
+// ----------------------------------------------------
+float SampleDepth(int idx, vec2 uv)
+{
+    if (idx < 0 || idx >= MAX_SHADOW_MAPS)
+        return 1.0;
+    float d = 1.0;
+    switch (idx)
+    {
+    case 0:
+        d = texture(shadowMaps[0], uv).r;
+        break;
+    case 1:
+        d = texture(shadowMaps[1], uv).r;
+        break;
+    case 2:
+        d = texture(shadowMaps[2], uv).r;
+        break;
+    case 3:
+        d = texture(shadowMaps[3], uv).r;
+        break;
+    case 4:
+        d = texture(shadowMaps[4], uv).r;
+        break;
+    case 5:
+        d = texture(shadowMaps[5], uv).r;
+        break;
+    case 6:
+        d = texture(shadowMaps[6], uv).r;
+        break;
+    default:
+        d = 1.0;
+        break;
+    }
+    return d;
+}
+
+// ----------------------------------------------------
+// Software 2x2 PCF (bilinear of four comparisons)
+// ----------------------------------------------------
+float shadowFactor(int lightIndex, vec3 N, vec3 L, vec4 fragPosLightSpace)
+{
+    if (lightIndex >= MAX_SHADOW_MAPS)
+        return 1.0;
+
+    vec3 proj = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    proj = proj * 0.5 + 0.5;
+
+    if (proj.x < 0.0 || proj.x > 1.0 || proj.y < 0.0 || proj.y > 1.0 || proj.z > 1.0)
+        return 1.0;
+
+    // float ndotl = max(dot(N, L), 0.0);
+    // float bias = max(kMinBias, kSlopeBias * (1.0 - ndotl));
+    float bias = 0;
+    float ref = proj.z - bias;
+
+    vec2 texSize = vec2(textureSize(shadowMaps[0], 0)); // assume square maps
+
+    // Align to bilinear footprint (texel centers)
+    vec2 st = proj.xy * texSize - 0.5;
+    vec2 iuv = floor(st);
+    vec2 f = fract(st);
+    vec2 base = iuv / texSize;
+    vec2 texel = 1.0 / texSize;
+
+    // Neighboring depths
+    float d00 = SampleDepth(lightIndex, base);
+    float d10 = SampleDepth(lightIndex, base + vec2(texel.x, 0.0));
+    float d01 = SampleDepth(lightIndex, base + vec2(0.0, texel.y));
+    float d11 = SampleDepth(lightIndex, base + vec2(texel.x, texel.y));
+
+    // Compare (lit if depth >= ref)
+    float c00 = step(ref, d00);
+    float c10 = step(ref, d10);
+    float c01 = step(ref, d01);
+    float c11 = step(ref, d11);
+
+    // Bilinear weights
+    float w00 = (1.0 - f.x) * (1.0 - f.y);
+    float w10 = f.x * (1.0 - f.y);
+    float w01 = (1.0 - f.x) * f.y;
+    float w11 = f.x * f.y;
+
+    return c00 * w00 + c10 * w10 + c01 * w01 + c11 * w11;
+}
+
+// ----------------------------------------------------
+// Spot light shading (Blinn-Phong) with NORMAL-OFFSET
+// ----------------------------------------------------
+vec3 shadeSpotLight(int i, vec3 N, vec3 V)
+{
+    vec3 Lpos = positionsWS[i].xyz;
+    vec3 Ldir = normalize(directionsWS[i].xyz);
+
+    vec3 color = colorsIntensity[i].rgb;
+    float intensity = colorsIntensity[i].a;
+
+    float innerCos = conesRange[i].x;
+    float outerCos = conesRange[i].y;
+    float range = conesRange[i].z; // light range (we packed it here)
+
+    float kc = attenuations[i].x;
+    float kl = attenuations[i].y;
+    float kq = attenuations[i].z;
+
+    vec3 Lvec = Lpos - FragPos;
+    float dist = length(Lvec);
+    if (dist <= 0.0001)
+        return vec3(0.0);
+
+    vec3 L = Lvec / dist;
+    float theta = dot(L, -Ldir);
+
+    float eps = max(innerCos - outerCos, 1e-5);
+    float spot = clamp((theta - outerCos) / eps, 0.0, 1.0);
+
+    float inRange = step(dist, range);
+    float atten = 1.0 / (kc + kl * dist + kq * dist * dist);
+
+    vec4 fragPosLightSpace = lightSpaceMatrices[i] * vec4(FragPos, 1.0);
+    float shadow = shadowFactor(i, N, L, fragPosLightSpace);
+
+    float NdotL = max(dot(N, L), 0.0);
+    vec3 H = normalize(L + V);
+    float NdotH = max(dot(N, H), 0.0);
+    float spec = pow(NdotH, shininess) * specularIntensity;
+
+    vec3 radiance = color * intensity * atten * spot * inRange * shadow;
+    return radiance * (NdotL + spec);
 }
 
 void main()
 {
-    vec3 norm = normalize(v_Normal);
-    vec3 ambient = vec3(0.2f, 0.25f, 0.3f);
-    vec3 resultColor = vec3(0.0);
-
-    for (int i = 0; i < u_numLights; i++)
-    {
-        vec3 lightPos = lights[i].position;
-        vec3 lightDir = normalize(lights[i].rotation);
-        vec3 color = lights[i].color;
-
-        vec4 fragPosLightSpace = lightSpaceMatrices[i] * vec4(FragPos, 1.0);
-        float shadow = calculatePCSSShadow(i, fragPosLightSpace);
-
-        if (lights[i].lightType == ELT_POINT)
-        {
-            resultColor += calculatePointLight(lightPos, FragPos, viewPos, norm, color);
-        }
-        else if (lights[i].lightType == ELT_DIRECTIONAL)
-        {
-            resultColor += calculateDirectionalLight(lightDir, viewPos, FragPos, norm, color, shadow);
-        }
-        else if (lights[i].lightType == ELT_SPOT)
-        {
-            resultColor += calculateSpotLight(lightPos, lightDir, FragPos, viewPos, norm, color, lights[i].innerCone,
-                                              lights[i].outerCone, shadow);
-        }
-
-        // resultColor += debugShadow(i, fragPosLightSpace);
-    }
+    vec3 N = normalize(v_Normal);
+    vec3 V = normalize(viewPos - FragPos);
 
     vec2 scaledUV = v_UV * textureRepeat;
     vec2 texSize = vec2(textureSize(diffuseMap, 0));
+    vec4 albedo = N64_3Point_Filter(diffuseMap, scaledUV, texSize);
 
-    vec4 filteredColor = N64_3Point_Filter(diffuseMap, scaledUV, texSize);
-    vec4 baseColor = texture(diffuseMap, scaledUV);
+    vec3 ambient = vec3(0.5, 0.55, 0.6);
 
-    vec4 finalColor = vec4(resultColor + ambient, 1.0) * filteredColor;
-    if (finalColor.a < .5)
-    {
+    int count = clamp(u_numLights, 0, MAX_SPOT_LIGHTS);
+    vec3 lighting = vec3(0.0);
+    for (int i = 0; i < count; ++i)
+        lighting += shadeSpotLight(i, N, V);
+
+    vec4 color = vec4(ambient + lighting, 1.0) * albedo;
+    if (color.a < 0.5)
         discard;
-    }
-
-    FragColor = finalColor;
+    FragColor = color;
 }

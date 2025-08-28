@@ -1,20 +1,33 @@
 #pragma once
 
 #include "renderer/Framebuffer.h"
-#include "renderer/LightSceneNode.h"
 #include "renderer/Material.h"
+#include "renderer/SpotLight.h"
 #include "scene/Scene.h"
 
 namespace Engine
 {
 
+#define MAX_SPOT_LIGHTS 16
+
 class LightingPass
 {
   public:
+    struct alignas(16) SpotLightsUBO
+    {
+        glm::vec4 positionsWS[MAX_SPOT_LIGHTS];
+        glm::vec4 directionsWS[MAX_SPOT_LIGHTS];
+        glm::vec4 colorsIntensity[MAX_SPOT_LIGHTS];
+        glm::vec4 conesRange[MAX_SPOT_LIGHTS];
+        glm::vec4 attenuations[MAX_SPOT_LIGHTS];
+        glm::vec4 meta; // x = lightCount
+    };
+    static_assert(alignof(SpotLightsUBO) == 16, "std140 alignment");
+
     LightingPass();
     ~LightingPass();
 
-    void execute(Scene& scene, int& drawCalls);
+    void execute(Scene& scene);
     Ref<Texture> getRenderTargetTexture()
     {
         return m_renderTargetTexture;
@@ -24,8 +37,8 @@ class LightingPass
     void updateUniforms(Scene& scene, const Ref<Material>& material);
 
   private:
-    LightSceneNode::LightUBO m_lightBuffer[256];
-    GLuint m_uboLights;
+    SpotLightsUBO m_spotLightsCPU{}; // CPU staging buffer
+    GLuint m_spotLightsUBO = 0;      // GL UBO handle (binding = 0)
 
     Ref<Framebuffer> m_frameBuffer;
     Ref<Texture> m_renderTargetTexture;

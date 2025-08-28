@@ -9,6 +9,25 @@
 namespace Engine
 {
 
+static bool IsDepthFormat(GLenum internalFormat, GLenum format)
+{
+    if (format == GL_DEPTH_COMPONENT)
+        return true;
+    switch (internalFormat)
+    {
+    case GL_DEPTH_COMPONENT:
+    case GL_DEPTH_COMPONENT16:
+    case GL_DEPTH_COMPONENT24:
+    case GL_DEPTH_COMPONENT32:
+    case GL_DEPTH_COMPONENT32F:
+    case GL_DEPTH24_STENCIL8:
+    case GL_DEPTH32F_STENCIL8:
+        return true;
+    default:
+        return false;
+    }
+}
+
 Texture::Texture(const std::string& path)
 {
     if (!std::filesystem::exists(path))
@@ -25,6 +44,8 @@ Texture::Texture(const std::string& path)
         std::cerr << "[ERROR] Failed to load texture: " << path << "\n";
         return;
     }
+
+    isLoaded = true;
 
     // Determine internal and external format
     switch (channelCount)
@@ -68,18 +89,32 @@ void Texture::create()
     glGenTextures(1, &id);
     glBindTexture(properties.target, id);
 
+    // Allocate / upload
     glTexImage2D(properties.target, properties.level, properties.internalFormat, properties.width, properties.height,
                  properties.border, properties.format, properties.type, properties.pixels);
 
-    if (customProperties.mipmaps)
-        glGenerateMipmap(GL_TEXTURE_2D);
+    const bool isDepth = IsDepthFormat(properties.internalFormat, properties.format);
 
-    bool isDepth = properties.internalFormat == GL_DEPTH_COMPONENT;
+    if (isDepth)
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        const float border[4] = {1.f, 1.f, 1.f, 1.f};
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+    }
+    else
+    {
+        if (customProperties.mipmaps)
+            glGenerateMipmap(GL_TEXTURE_2D);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, isDepth ? GL_NEAREST : customProperties.minFilter);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, isDepth ? GL_NEAREST : customProperties.magFilter);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, isDepth ? GL_CLAMP_TO_BORDER : customProperties.wrapS);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, isDepth ? GL_CLAMP_TO_BORDER : customProperties.wrapT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, customProperties.minFilter);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, customProperties.magFilter);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, customProperties.wrapS);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, customProperties.wrapT);
+    }
 }
 
 void Texture::bind(uint32_t slot) const
@@ -92,6 +127,25 @@ void Texture::unbind(uint32_t slot) const
 {
     glActiveTexture(GL_TEXTURE0 + slot);
     glBindTexture(properties.target, 0);
+}
+
+void Texture::resize(int w, int h)
+{
+    if (w == properties.width && h == properties.height)
+        return;
+
+    properties.width = w;
+    properties.height = h;
+
+    bind();
+
+    glTexImage2D(properties.target, properties.level, properties.internalFormat, w, h, properties.border,
+                 properties.format, properties.type, properties.pixels);
+
+    const bool isDepth = IsDepthFormat(properties.internalFormat, properties.format);
+
+    if (!isDepth && customProperties.mipmaps)
+        glGenerateMipmap(properties.target);
 }
 
 Texture::~Texture()

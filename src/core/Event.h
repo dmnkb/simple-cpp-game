@@ -29,4 +29,12 @@ class MouseMoveEvent : public Event
     bool cursorDisabled = false;
 };
 
+class WindowReziseEvent : public Event
+{
+  public:
+    WindowReziseEvent(int windowWidth, int windowHeight) : windowWidth(windowWidth), windowHeight(windowHeight) {}
+    int windowWidth;
+    int windowHeight;
+};
+
 } // namespace Engine

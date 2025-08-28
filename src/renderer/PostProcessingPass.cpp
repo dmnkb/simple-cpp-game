@@ -42,7 +42,7 @@ void PostProcessingPass::initQuad()
     glBindVertexArray(0);
 }
 
-void PostProcessingPass::execute(Scene& scene, const Ref<Texture>& renderTargetTexture)
+void PostProcessingPass::execute(const Ref<Texture>& renderTargetTexture)
 {
     glColorMask(true, true, true, true);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

@@ -21,8 +21,8 @@ Application::Application() : m_Player()
 {
     // Window
     Window::WindowProps windowProps = {
-        .initialWidth = 640,
-        .initialHeight = 480,
+        .initialWidth = 1080,
+        .initialHeight = 720,
         .title = "Game",
     };
     Window::init(windowProps);
@@ -82,12 +82,7 @@ void Application::run()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        const auto drawCallMap = m_renderer->getDrawCallCounts();
-        static const std::map<std::string, int> drawCallsPerPass = {
-            {"Shadow Pass", drawCallMap[static_cast<size_t>(ERenderPass::Shadow)]},
-            {"Lighting Pass", drawCallMap[static_cast<size_t>(ERenderPass::Lighting)]}};
-
-        DebugUI::render(fps, drawCallsPerPass, m_Scene);
+        DebugUI::render(fps, m_Scene);
 
         // Render ImGui
         ImGui::Render();

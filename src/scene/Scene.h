@@ -1,8 +1,9 @@
 #pragma once
 
 #include "core/Core.h"
-#include "renderer/LightSceneNode.h"
+#include "renderer/Camera.h"
 #include "renderer/Model.h"
+#include "renderer/SpotLight.h"
 
 namespace Engine
 {
@@ -16,17 +17,17 @@ class Scene
     void init(const CameraProps& cameraProps);
 
     void addModel(const Model& model);
-    void addLightSceneNode(const Ref<LightSceneNode>& node);
+    void addSpotLight(const Ref<SpotLight>& light);
 
     RenderQueue getRenderQueue(const std::string& passName);
-    std::vector<Ref<LightSceneNode>> getLightSceneNodes() const;
+    std::vector<Ref<SpotLight>> getSpotLights() const;
 
     void setActiveCamera(const Ref<Camera>& camera);
     Ref<Camera> getActiveCamera() const;
     Ref<Camera> getDefaultCamera() const;
 
   private:
-    std::vector<Ref<LightSceneNode>> m_LightSceneNodes;
+    std::vector<Ref<SpotLight>> m_SpotLights;
     std::vector<Model> m_Models;
 
     RenderQueue m_cachedRenderQueue;

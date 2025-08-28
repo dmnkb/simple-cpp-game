@@ -8,10 +8,23 @@ namespace Engine
 
 Framebuffer::Framebuffer()
 {
-    glGenFramebuffers(1, &m_fbo);
+    create();
+
+    EventManager::registerListeners(typeid(WindowReziseEvent).name(),
+                                    [this](const Ref<Event> event) { this->onFramebufferReziseEvent(event); });
 }
 
 Framebuffer::~Framebuffer()
+{
+    destroy();
+}
+
+void Framebuffer::create()
+{
+    glGenFramebuffers(1, &m_fbo);
+}
+
+void Framebuffer::destroy()
 {
     glDeleteFramebuffers(1, &m_fbo);
 }
@@ -37,10 +50,13 @@ void Framebuffer::bind()
     else
         glDrawBuffer(GL_NONE); // Depth-only FBO
 
-    // Match viewport to the first attachment
+    // Match viewport to the first attachment. We assume, that all attachments have the same size.
+    m_width = m_attachments[0]->properties.width;
+    m_height = m_attachments[0]->properties.height;
+
     if (!m_attachments.empty())
     {
-        glViewport(0, 0, m_attachments[0]->properties.width, m_attachments[0]->properties.height);
+        glViewport(0, 0, m_width, m_height);
     }
 
     // Clear depth, optionally color
@@ -79,6 +95,24 @@ void Framebuffer::attachTexture(const Ref<Texture>& attachment)
     }
 
     unbind();
+}
+
+glm::vec2 Framebuffer::getDimensions() const
+{
+    return glm::vec2(m_width, m_height);
+};
+
+void Framebuffer::onFramebufferReziseEvent(const Ref<Event> event)
+{
+    if (!dynamicSize)
+        return;
+
+    auto e = std::dynamic_pointer_cast<WindowReziseEvent>(event);
+    if (!e)
+        return;
+
+    for (const auto& attachment : m_attachments)
+        attachment->resize(e->windowWidth, e->windowHeight);
 }
 
 } // namespace Engine

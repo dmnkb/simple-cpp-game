@@ -18,8 +18,18 @@ class TextureManager
         }
 
         Ref<Texture> texture = CreateRef<Texture>(path);
-        m_textureMap[path] = texture;
-        std::println("[Texture Manager] Added texture: {}", path);
+
+        if (texture->isLoaded)
+        {
+            m_textureMap[path] = texture;
+            std::println("[Texture Manager] Added texture: {}", path);
+
+            return texture;
+        }
+
+        std::println("[WARNING] [getTextureByPath] Texture {} could not be loaded.", path);
+
+        // Return anyways
         return texture;
     }
 

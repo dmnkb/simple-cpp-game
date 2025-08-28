@@ -1,4 +1,5 @@
 #include "PanelStats.h"
+#include "core/Profiler.h"
 #include "imgui.h"
 #include "pch.h"
 #include "renderer/ClearColor.h"
@@ -7,7 +8,7 @@
 namespace Engine
 {
 
-void PanelStats::render(const float fps, const std::map<std::string, int>& drawCallsPerPass, const Scene& scene)
+void PanelStats::render(const float fps, const Scene& scene)
 {
     static bool open = true;
     ImGui::Begin("Stats", &open);
@@ -35,6 +36,9 @@ void PanelStats::render(const float fps, const std::map<std::string, int>& drawC
     }
 
     // Draw Call Stats
+
+    const auto drawCallsPerPass = Profiler::getDrawCallList();
+
     if (!drawCallsPerPass.empty())
     {
         if (ImGui::CollapsingHeader("Draw Calls"))
@@ -83,12 +87,12 @@ void PanelStats::render(const float fps, const std::map<std::string, int>& drawC
         RendererAPI::setClearColor(color);
     }
 
-    // Shadow Map Previews
-    if (!scene.getLightSceneNodes().empty())
+    // Shadow Map Previews TODO: Add rest of light types
+    if (!scene.getSpotLights().empty())
     {
         if (ImGui::CollapsingHeader("Shadow Maps"))
         {
-            for (const auto& lightNode : scene.getLightSceneNodes())
+            for (const auto& lightNode : scene.getSpotLights())
             {
                 const auto& depth = lightNode->getShadowDepthTexture();
                 const auto& color = lightNode->getShadowDebugColorTexture();

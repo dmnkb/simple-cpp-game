@@ -1,6 +1,5 @@
 #pragma once
 
-#include "renderer/LightSceneNode.h"
 #include "renderer/Shader.h"
 #include "renderer/Texture.h"
 #include "scene/Scene.h"
@@ -12,7 +11,7 @@ class PostProcessingPass
 {
   public:
     PostProcessingPass();
-    void execute(Scene& scene, const Ref<Texture>& renderTargetTexture);
+    void execute(const Ref<Texture>& renderTargetTexture);
 
   private:
     void initQuad();

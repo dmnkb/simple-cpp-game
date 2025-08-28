@@ -47,18 +47,10 @@ class Renderer
 
     void update(Scene& scene);
 
-    std::array<int, RenderPassCount> getDrawCallCounts()
-    {
-        return m_drawCallCounts;
-    }
-
   private:
     ShadowPass m_shadowPass;
     LightingPass m_lightingPass;
     PostProcessingPass m_postProcessingPass;
-
-    // Debug
-    std::array<int, RenderPassCount> m_drawCallCounts;
 };
 
 } // namespace Engine

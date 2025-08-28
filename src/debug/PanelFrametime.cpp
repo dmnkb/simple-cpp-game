@@ -14,43 +14,24 @@ void PanelFrametime::render()
     static bool open = true;
     ImGui::Begin("Profiler", &open);
 
-    auto cpuTimings = Engine::Profiler::getAll();
-    std::sort(cpuTimings.begin(), cpuTimings.end(),
-              [](std::pair<std::string, double>& a, std::pair<std::string, double>& b) { return a.second > b.second; });
+    // Suppose this returns std::map<std::string, int> (per your errors)
+    const auto timingsMap = Engine::Profiler::getFrameTimeList();
 
-    double longestDuration = 0.0;
+    // Copy to a vector so we can sort
+    std::vector<std::pair<std::string, double>> cpuTimings;
+    cpuTimings.reserve(timingsMap.size());
+    for (const auto& [name, t] : timingsMap)
+        cpuTimings.emplace_back(name, static_cast<double>(t));
 
-    auto maxIt = std::max_element(cpuTimings.begin(), cpuTimings.end(),
-                                  [](const auto& a, const auto& b) { return a.second < b.second; });
+    // Sort descending by time (note: const refs in comparator)
+    std::sort(cpuTimings.begin(), cpuTimings.end(), [](const auto& a, const auto& b) { return a.second > b.second; });
 
-    if (maxIt != cpuTimings.end())
-        longestDuration = maxIt->second;
+    double longestDuration = cpuTimings.empty() ? 0.0 : cpuTimings.front().second;
 
-    // Mock data: Each pair is (Pass Name, Duration in ms)
-    // std::vector<std::pair<std::string, float>> cpuTimings = {
-    //     {"Game Logic", 1.2f},
-    //     {"Draw Submission", 1.1f},
-    //     {"AI", 0.8f},
-    //     {"Physics", 0.6f},
-    //     {"Culling", 0.5f},
-    //     {"UI", 0.5f},
-    //     {"Animations", 0.4f},
-    //     {"Input", 0.3f},
-    //     {"Occlusion Queries", 0.3f},
-    //     {"Script Execution", 0.3f},
-    //     {"Pathfinding", 0.3f},
-    //     {"Audio Processing", 0.2f},
-    //     {"Networking", 0.2f},
-    //     {"Garbage Collection", 0.2f},
-    //     {"Scene Management", 0.1f},
-    //     {"Profiling Overhead", 0.05f},
-    // };
-
-    // Calculate totals
-    float cpuTotal = 0.0f;
-
-    for (const auto& [_, t] : cpuTimings)
-        cpuTotal += t;
+    // Total
+    double cpuTotal = 0.0;
+    for (const auto& it : cpuTimings)
+        cpuTotal += it.second;
 
     float availableWidth = std::min(ImGui::GetContentRegionAvail().x, 800.0f);
     float availableHeight = std::min(ImGui::GetContentRegionAvail().y, 200.0f);
@@ -62,26 +43,32 @@ void PanelFrametime::render()
     {
         const auto& [name, time] = cpuTimings[i];
 
-        float minWidth = 5.0f;
-        float width =
-            std::max(minWidth, longestDuration > 0.0
-                                   ? (availableWidth / static_cast<float>(longestDuration)) * static_cast<float>(time)
-                                   : minWidth);
+        float minWidth = 2.0f;
+
+        const float maxFrameBudget = 16.67f;
+        // 60 FPS = 100%.
+        float widthPercentage = (100.f / maxFrameBudget) * static_cast<float>(time);
+        float calculatedWidth = availableWidth / 100.f * widthPercentage;
+        float width = std::max(minWidth, calculatedWidth);
 
         ImVec2 p0 = ImVec2(basePos.x, basePos.y + (i * barHeight));
         ImVec2 p1 = ImVec2(basePos.x + width, basePos.y + (i * barHeight) + barHeight);
 
-        ImU32 color = ImColor(colors[i % colors.size()]);
+        bool isHovering = ImGui::IsMouseHoveringRect(p0, ImVec2(p1.x + availableWidth, p1.y));
 
-        drawList->AddRectFilled(p0, p1, color);
+        float alpha = ((calculatedWidth < minWidth) && !isHovering) ? .35f : 1.0f;
+        ImVec4 c = colors[i % colors.size()];
+        c.w = alpha; // set alpha
+        ImU32 col = ImGui::GetColorU32(c);
+        drawList->AddRectFilled(p0, p1, col);
 
-        if (ImGui::IsMouseHoveringRect(p0, p1))
-            ImGui::SetTooltip("%s: %.2f ms", name.c_str(), time);
+        if (isHovering)
+            ImGui::SetTooltip("%.2f ms", static_cast<float>(time));
 
         char labelBuf[64];
-        snprintf(labelBuf, sizeof(labelBuf), "%s %.1fms", name.c_str(), time);
+        snprintf(labelBuf, sizeof(labelBuf), "%s %.1fms", name.c_str(), static_cast<float>(time));
         drawList->PushClipRect(p0, ImVec2(availableWidth + basePos.x, availableHeight + basePos.y), true);
-        drawList->AddText(ImVec2(basePos.x + 4.0f, p0.y + 3.0f), IM_COL32(255, 255, 255, 255), labelBuf);
+        drawList->AddText(ImVec2(basePos.x + 8.0f, p0.y + 3.0f), IM_COL32(255, 255, 255, 255), labelBuf);
         drawList->PopClipRect();
     }
 

@@ -18,13 +18,14 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [x] Update FrameBuffer to support multiple attachments
 - [x] Integrate Assimp mesh and material loading
 - [x] Basic post processing (Screen quad)
-- [ ] Display frametime
-- [ ] Update render stats (Frame time, CPU / GPU, wait time)
-- [ ] Profiler
-- [ ] Check Profiling coverage
-- [ ] Split into engine.cpp and game.cpp
+- [x] Profiler
+- [x] Window & Framebuffer rezising
 - [ ] Refactor lights
-- [ ] Cache render queue
+- [ ] Change debug to editor
+- [ ] ImGUI Gimbal controls
+- [ ] ECS
+- [x] Display frametime (CPU)
+- [ ] Split architecture into engine.cpp and game.cpp
 - [ ] SSAO
 - [ ] Debug view (Wireframe, per instance coloring)
 - [ ] Cascaded shadow maps 

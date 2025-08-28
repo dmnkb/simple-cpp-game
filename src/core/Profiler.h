@@ -6,11 +6,17 @@
 namespace Engine
 {
 
+using FrameTimePerRegion = std::vector<std::pair<std::string, double>>;
+using DrawCallsPerPass = std::map<std::string, int>;
+
 struct ProfilerData
 {
-    std::map<std::string, Ref<Timer>> timers = {};
-    std::vector<std::string> order;
-    std::map<std::string, int> drawCallsPerPass = {};
+    // Frametime
+    std::map<std::string, Ref<Timer>> frameTimeTimers_ = {};
+    std::vector<std::string> frameTimeOrder_;
+
+    // Draw calls
+    DrawCallsPerPass drawCallsPerPass = {};
 };
 
 class Profiler
@@ -22,7 +28,8 @@ class Profiler
     static void registerDrawCall(const std::string& passName);
     static void resetStats();
 
-    static std::vector<std::pair<std::string, double>> getAll();
+    static FrameTimePerRegion getFrameTimeList();
+    static DrawCallsPerPass getDrawCallList();
 
   private:
 };

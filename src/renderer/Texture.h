@@ -36,6 +36,7 @@ struct CustomProperties
 struct Texture
 {
     GLuint id = 0;
+    bool isLoaded = 0;
 
     Texture() = default;
     Texture(const std::string& path);
@@ -43,6 +44,7 @@ struct Texture
 
     void bind(uint32_t slot = 0) const;
     void unbind(uint32_t slot = 0) const;
+    void resize(int w, int h);
 
     ~Texture();
 
