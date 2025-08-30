@@ -8,7 +8,6 @@ out vec4 FragColor;
 uniform vec3 viewPos;
 uniform sampler2D diffuseMap;
 
-// ---- Shadow inputs (SOFTWARE PCF uses non-comparison samplers) ----
 #define MAX_SHADOW_MAPS 7
 uniform sampler2D shadowMaps[MAX_SHADOW_MAPS];
 uniform mat4 lightSpaceMatrices[MAX_SHADOW_MAPS];
@@ -33,88 +32,10 @@ layout(std140) uniform MaterialPropsBlock
     float specularIntensity; // spec visibility
 };
 
-// ---- bias knobs (compile-time constants) ----
-const float kMinBias = 0.00012;  // tiny constant depth bias
-const float kSlopeBias = 0.0016; // scales with (1 - N·L)
-const float kNormalBias = 1.25;  // in texels, converted to world-units per light
-
-// ----------------------------------------------------
-// N64 3-point texture filter
-// ----------------------------------------------------
-vec4 N64_3Point_Filter(sampler2D tex, vec2 uv, vec2 texSize)
-{
-    vec2 texelSize = 1.0 / texSize;
-    vec2 half_tex = texelSize * 0.5;
-    vec2 UVCentered = uv - half_tex;
-
-    vec2 pixelPos = UVCentered * texSize;
-    vec2 texelPos = floor(pixelPos);
-    vec2 f = fract(pixelPos);
-
-    if (pixelPos.x < 0.0)
-        f.x = 1.0 - f.x;
-    if (pixelPos.y < 0.0)
-        f.y = 1.0 - f.y;
-
-    vec2 uv00 = (texelPos + vec2(0.0, 0.0)) / texSize;
-    vec2 uv10 = (texelPos + vec2(1.0, 0.0)) / texSize;
-    vec2 uv01 = (texelPos + vec2(0.0, 1.0)) / texSize;
-    vec2 uv11 = (texelPos + vec2(1.0, 1.0)) / texSize;
-
-    vec4 t00 = texture(tex, uv00);
-    vec4 t10 = texture(tex, uv10);
-    vec4 t01 = texture(tex, uv01);
-    vec4 t11 = texture(tex, uv11);
-
-    vec4 c0 = t00 + f.x * (t10 - t00) + f.y * (t01 - t00);
-    vec4 c1 = t11 + (1.0 - f.x) * (t01 - t11) + (1.0 - f.y) * (t10 - t11);
-    return mix(c0, c1, step(1.0, f.x + f.y));
-}
-
-// ----------------------------------------------------
-// Helpers to avoid dynamic sampler array indexing on macOS
-// ----------------------------------------------------
-float SampleDepth(int idx, vec2 uv)
-{
-    if (idx < 0 || idx >= MAX_SHADOW_MAPS)
-        return 1.0;
-    float d = 1.0;
-    switch (idx)
-    {
-    case 0:
-        d = texture(shadowMaps[0], uv).r;
-        break;
-    case 1:
-        d = texture(shadowMaps[1], uv).r;
-        break;
-    case 2:
-        d = texture(shadowMaps[2], uv).r;
-        break;
-    case 3:
-        d = texture(shadowMaps[3], uv).r;
-        break;
-    case 4:
-        d = texture(shadowMaps[4], uv).r;
-        break;
-    case 5:
-        d = texture(shadowMaps[5], uv).r;
-        break;
-    case 6:
-        d = texture(shadowMaps[6], uv).r;
-        break;
-    default:
-        d = 1.0;
-        break;
-    }
-    return d;
-}
-
-// ----------------------------------------------------
-// Software 2x2 PCF (bilinear of four comparisons)
-// ----------------------------------------------------
+// MARK: Shadow factor
 float shadowFactor(int lightIndex, vec3 N, vec3 L, vec4 fragPosLightSpace)
 {
-    if (lightIndex >= MAX_SHADOW_MAPS)
+    if (lightIndex < 0 || lightIndex >= MAX_SHADOW_MAPS)
         return 1.0;
 
     vec3 proj = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -123,8 +44,7 @@ float shadowFactor(int lightIndex, vec3 N, vec3 L, vec4 fragPosLightSpace)
     if (proj.x < 0.0 || proj.x > 1.0 || proj.y < 0.0 || proj.y > 1.0 || proj.z > 1.0)
         return 1.0;
 
-    // float ndotl = max(dot(N, L), 0.0);
-    // float bias = max(kMinBias, kSlopeBias * (1.0 - ndotl));
+    // Value to play with
     float bias = 0;
     float ref = proj.z - bias;
 
@@ -138,10 +58,10 @@ float shadowFactor(int lightIndex, vec3 N, vec3 L, vec4 fragPosLightSpace)
     vec2 texel = 1.0 / texSize;
 
     // Neighboring depths
-    float d00 = SampleDepth(lightIndex, base);
-    float d10 = SampleDepth(lightIndex, base + vec2(texel.x, 0.0));
-    float d01 = SampleDepth(lightIndex, base + vec2(0.0, texel.y));
-    float d11 = SampleDepth(lightIndex, base + vec2(texel.x, texel.y));
+    float d00 = texture(shadowMaps[lightIndex], base).r;
+    float d10 = texture(shadowMaps[lightIndex], base + vec2(texel.x, 0.0)).r;
+    float d01 = texture(shadowMaps[lightIndex], base + vec2(0.0, texel.y)).r;
+    float d11 = texture(shadowMaps[lightIndex], base + vec2(texel.x, texel.y)).r;
 
     // Compare (lit if depth >= ref)
     float c00 = step(ref, d00);
@@ -158,9 +78,7 @@ float shadowFactor(int lightIndex, vec3 N, vec3 L, vec4 fragPosLightSpace)
     return c00 * w00 + c10 * w10 + c01 * w01 + c11 * w11;
 }
 
-// ----------------------------------------------------
-// Spot light shading (Blinn-Phong) with NORMAL-OFFSET
-// ----------------------------------------------------
+// MARK: Spot light shading
 vec3 shadeSpotLight(int i, vec3 N, vec3 V)
 {
     vec3 Lpos = positionsWS[i].xyz;
@@ -203,14 +121,14 @@ vec3 shadeSpotLight(int i, vec3 N, vec3 V)
     return radiance * (NdotL + spec);
 }
 
+// MARK: Main
 void main()
 {
     vec3 N = normalize(v_Normal);
     vec3 V = normalize(viewPos - FragPos);
 
     vec2 scaledUV = v_UV * textureRepeat;
-    vec2 texSize = vec2(textureSize(diffuseMap, 0));
-    vec4 albedo = N64_3Point_Filter(diffuseMap, scaledUV, texSize);
+    vec4 albedo = texture(diffuseMap, scaledUV);
 
     vec3 ambient = vec3(0.5, 0.55, 0.6);
 

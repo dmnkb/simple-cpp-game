@@ -2,11 +2,11 @@
 
 #include "core/Core.h"
 #include "core/EventManager.h"
+#include "helpers/SmoothDamp.h"
 #include "renderer/Camera.h"
 #include "scene/Scene.h"
 #include <glm/glm.hpp>
 
-// TODO: Part of gameplay logic, will go into game/
 namespace Engine
 {
 
@@ -32,15 +32,17 @@ class Player
   private:
     // Core player attributes
     glm::vec3 m_Position = glm::vec3({-50, 30, -50});
-    glm::vec2 m_Rotation = glm::vec2({45, -15});
+    glm::vec2 m_Rotation = glm::vec2({45, -15}); // yaw (x), pitch (y)
     glm::vec3 m_Direction = glm::vec3(0.f);
     float m_verticalVelocity = 0;
+
+    glm::vec3 m_TargetPosition = m_Position; // where gameplay wants us to be
+    glm::vec3 m_PositionVel = glm::vec3(0);  // SmoothDamp velocity accumulator
 
     // Camera
     glm::vec2 m_camChange = glm::vec2(0, 0);
     glm::vec2 m_cursorPositionOld;
 
-    // TODO: Hashset
     // Input handling
     std::vector<unsigned int> m_PressedKeys;
 

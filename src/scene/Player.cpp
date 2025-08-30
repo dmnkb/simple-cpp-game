@@ -1,6 +1,7 @@
 #include "Player.h"
 #include "pch.h"
 #include <GLFW/glfw3.h>
+#include <algorithm> // clamp
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -14,6 +15,9 @@ Player::Player()
                                     [this](const Ref<Event> event) { this->onKeyEvent(event); });
     EventManager::registerListeners(typeid(MouseMoveEvent).name(),
                                     [this](const Ref<Event> event) { this->onMouseMoveEvent(event); });
+
+    // Ensure target starts at current
+    m_TargetPosition = m_Position;
 }
 
 void Player::onKeyEvent(const Ref<Event> event)
@@ -25,17 +29,13 @@ void Player::onKeyEvent(const Ref<Event> event)
     if (keyEvent->action > GLFW_RELEASE)
     {
         if (std::find(m_PressedKeys.begin(), m_PressedKeys.end(), keyEvent->key) == m_PressedKeys.end())
-        {
             m_PressedKeys.push_back(keyEvent->key);
-        }
     }
     else
     {
         auto it = std::find(m_PressedKeys.begin(), m_PressedKeys.end(), keyEvent->key);
         if (it != m_PressedKeys.end())
-        {
             m_PressedKeys.erase(it);
-        }
     }
 }
 
@@ -56,8 +56,8 @@ void Player::update(const Scene& scene, double deltaTime)
     // Rotation
     float mouseSpeed = 0.3f;
 
-    m_Rotation.x += m_camChange.x * mouseSpeed;
-    m_Rotation.y += m_camChange.y * mouseSpeed;
+    m_Rotation.x += m_camChange.x * mouseSpeed; // yaw
+    m_Rotation.y += m_camChange.y * mouseSpeed; // pitch
     m_Rotation.y = std::clamp(m_Rotation.y, -89.0f, 89.0f);
     m_camChange = glm::vec2(0.0f);
 
@@ -70,34 +70,39 @@ void Player::update(const Scene& scene, double deltaTime)
     m_Direction = glm::normalize(m_Direction);
 
     const float speed = 20.0f;
-    const float jumpForce = 8.0f;
     const float gravity = -9.8f;
 
-    auto movementVector = glm::vec3(0.0f);
+    glm::vec3 movementVector(0.0f);
 
     if (isKeyPressed(GLFW_KEY_W))
-    {
         movementVector += speed * m_Direction;
-    }
     if (isKeyPressed(GLFW_KEY_S))
-    {
         movementVector -= speed * m_Direction;
-    }
     if (isKeyPressed(GLFW_KEY_A))
     {
-        glm::vec3 leftDirection = glm::normalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), m_Direction));
-        movementVector += speed * leftDirection;
+        glm::vec3 left = glm::normalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), m_Direction));
+        movementVector += speed * left;
     }
     if (isKeyPressed(GLFW_KEY_D))
     {
-        glm::vec3 rightDirection = glm::normalize(glm::cross(m_Direction, glm::vec3(0.0f, 1.0f, 0.0f)));
-        movementVector += speed * rightDirection;
+        glm::vec3 right = glm::normalize(glm::cross(m_Direction, glm::vec3(0.0f, 1.0f, 0.0f)));
+        movementVector += speed * right;
     }
 
-    // Final Position Update
-    movementVector *= deltaTime;
-    m_Position += movementVector;
-    m_Position.y += m_verticalVelocity * deltaTime;
+    // Integrate target using deltaTime (gameplay space)
+    m_TargetPosition += movementVector * static_cast<float>(deltaTime);
+
+    // Vertical integration (keep your existing logic)
+    m_TargetPosition.y += m_verticalVelocity * static_cast<float>(deltaTime);
+
+    // SmoothDamp position toward the
+    m_Position = SmoothDamp(m_Position,                   // current
+                            m_TargetPosition,             // target
+                            m_PositionVel,                // velocity accumulator (kept across frames)
+                            0.1f,                         // smooth time (s)
+                            static_cast<float>(deltaTime) // DT
+
+    );
 
     // Camera Update
     scene.getActiveCamera()->setPosition(m_Position);
@@ -106,7 +111,6 @@ void Player::update(const Scene& scene, double deltaTime)
 
 bool Player::isKeyPressed(unsigned int key)
 {
-    // TODO: Hashmap instead of find(ing) inside a vector
     auto it = std::find(m_PressedKeys.begin(), m_PressedKeys.end(), key);
     return it != m_PressedKeys.end();
 }
