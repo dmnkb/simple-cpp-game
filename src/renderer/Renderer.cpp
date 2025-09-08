@@ -21,11 +21,17 @@ void Renderer::update(Scene& scene)
     scene.setActiveCamera(scene.getDefaultCamera());
 
     Engine::Profiler::beginRegion("Shadow Pass");
-    m_shadowPass.execute(scene);
+    auto shadows = m_shadowPass.execute(scene);
     Engine::Profiler::endRegion("Shadow Pass");
 
+    // Lighting pass inputs
+    LightingInputs litIn{};
+    litIn.shadows.spotShadowArray = shadows.spotShadowArray; // may be nullptr if no lights
+    litIn.shadows.layers = shadows.layers;
+    litIn.shadows.resolution = shadows.resolution;
+
     Engine::Profiler::beginRegion("Lighting Pass");
-    m_lightingPass.execute(scene);
+    m_lightingPass.execute(scene, litIn);
     Engine::Profiler::endRegion("Lighting Pass");
 
     Engine::Profiler::beginRegion("PostFX Pass");

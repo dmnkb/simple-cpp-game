@@ -1,8 +1,9 @@
 #pragma once
 
-#include "renderer/Framebuffer.h"
-#include "renderer/Material.h"
-#include "renderer/SpotLight.h"
+#include "Framebuffer.h"
+#include "Material.h"
+#include "PassIO.h"
+#include "SpotLight.h"
 #include "scene/Scene.h"
 
 namespace Engine
@@ -27,14 +28,14 @@ class LightingPass
     LightingPass();
     ~LightingPass();
 
-    void execute(Scene& scene);
+    void execute(Scene& scene, const LightingInputs& litIn);
     Ref<Texture> getRenderTargetTexture()
     {
         return m_renderTargetTexture;
     }
 
   private:
-    void updateUniforms(Scene& scene, const Ref<Material>& material);
+    void updateUniforms(Scene& scene, const Ref<Material>& material, const LightingInputs& litIn);
 
   private:
     SpotLightsUBO m_spotLightsCPU{}; // CPU staging buffer

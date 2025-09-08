@@ -4,6 +4,8 @@
 
 namespace Engine
 {
+// TODO: Could this live in a MeshLoader class?
+// -> Loading meshes would take care of caching assets that way.
 
 class TextureManager
 {

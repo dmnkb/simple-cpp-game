@@ -88,21 +88,22 @@ void PanelStats::render(const float fps, const Scene& scene)
     }
 
     // Shadow Map Previews TODO: Add rest of light types
-    if (!scene.getSpotLights().empty())
-    {
-        if (ImGui::CollapsingHeader("Shadow Maps"))
-        {
-            for (const auto& lightNode : scene.getSpotLights())
-            {
-                const auto& depth = lightNode->getShadowDepthTexture();
-                const auto& color = lightNode->getShadowDebugColorTexture();
+    // TODO: Since shadow maps are arrays now, find a new way to render them
+    // if (!scene.getSpotLights().empty())
+    // {
+    //     if (ImGui::CollapsingHeader("Shadow Maps"))
+    //     {
+    //         for (const auto& lightNode : scene.getSpotLights())
+    //         {
+    //             const auto& depth = Profiler::getSpotShadowArrayHandler();
+    //             const auto& color = Profiler::getSpotShadowArrayHandlerDebug();
 
-                ImGui::Image((void*)(intptr_t)depth->id, ImVec2(128, 96), ImVec2(1, 1), ImVec2(0, 0));
-                ImGui::SameLine();
-                ImGui::Image((void*)(intptr_t)color->id, ImVec2(128, 96), ImVec2(1, 1), ImVec2(0, 0));
-            }
-        }
-    }
+    //             ImGui::Image((void*)(intptr_t)depth, ImVec2(128, 96), ImVec2(1, 1), ImVec2(0, 0));
+    //             ImGui::SameLine();
+    //             ImGui::Image((void*)(intptr_t)color, ImVec2(128, 96), ImVec2(1, 1), ImVec2(0, 0));
+    //         }
+    //     }
+    // }
 
     ImGui::End();
 }

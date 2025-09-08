@@ -26,6 +26,7 @@ struct CameraProps
 
     glm::vec3 position{0.0f, 0.0f, 0.0f};
     glm::vec3 target{0.0f, 0.0f, -1.0f}; // looking down -Z by default
+    glm::vec3 up{0.0f, 1.0f, 0.0f};      // NEW: configurable up vector
 
     ECameraType type = ECT_PROJECTION;
 
@@ -60,9 +61,21 @@ class Camera
         m_props.position = position;
     }
 
+    // Existing lookAt: keeps default up=(0,1,0)
     void lookAt(const glm::vec3& target)
     {
         m_props.target = target;
+    }
+
+    // NEW: lookAt with explicit up
+    void lookAt(const glm::vec3& target, const glm::vec3& up)
+    {
+        m_props.target = target;
+        glm::vec3 u = up;
+        float len2 = glm::dot(u, u);
+        if (len2 < 1e-12f)
+            u = glm::vec3(0.0f, 1.0f, 0.0f);
+        m_props.up = u * glm::inversesqrt(glm::max(len2, 1e-12f));
     }
 
     void setDirection(const glm::vec3& dir)
@@ -79,7 +92,6 @@ class Camera
     void setPerspective(float fovYRadians, float aspect, float nearPlane, float farPlane)
     {
         m_props.type = ECT_PROJECTION;
-        // clamp/sanitize
         m_props.fov = std::max(0.001f, std::min(fovYRadians, glm::radians(179.0f)));
         m_props.aspect = std::max(1e-6f, aspect);
         m_props.near = std::max(1e-6f, nearPlane);
@@ -109,7 +121,12 @@ class Camera
 
     glm::mat4 getViewMatrix() const
     {
-        const glm::vec3 up(0.0f, 1.0f, 0.0f);
+        glm::vec3 up = m_props.up;
+        float len2 = glm::dot(up, up);
+        if (len2 < 1e-12f)
+            up = glm::vec3(0.0f, 1.0f, 0.0f);
+        else
+            up = up * glm::inversesqrt(len2);
         return glm::lookAt(m_props.position, m_props.target, up);
     }
 

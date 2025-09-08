@@ -12,32 +12,32 @@ namespace Engine
 
 void Sandbox::init(Scene& scene)
 {
+    // ---- Spotlights (x = -55 .. 45, step 10) ----
+    {
+        const float y = 5.0f, z = 5.0f;
+        const glm::vec3 dir(-1.0f, -1.0f, -1.0f);
+        for (int x = -55; x <= 45; x += 10)
+        {
+            SpotLight::SpotLightProperties p{};
+            p.position = {(float)x, y, z};
+            p.direction = dir;
+            scene.addSpotLight(CreateRef<SpotLight>(p));
+        }
+    }
 
-    scene.addSpotLight(CreateRef<SpotLight>(SpotLight::SpotLightProperties{.position = {5.0f, 5.0f, 5.0f},
-                                                                           .direction = {
-                                                                               -1,
-                                                                               -1,
-                                                                               -1,
-                                                                           }}));
-    scene.addSpotLight(CreateRef<SpotLight>(SpotLight::SpotLightProperties{.position = {15.0f, 5.0f, 5.0f},
-                                                                           .direction = {
-                                                                               -1,
-                                                                               -1,
-                                                                               -1,
-                                                                           }}));
-
-    // Models
-
+    // ---- Managers / asset context ----
     MaterialManager materialManager;
     ShaderManager shaderManager;
     TextureManager textureManager;
-
     AssetContext context(materialManager, shaderManager, textureManager);
 
-    scene.addModel(Model("assets/models/tree/scene.gltf", context, {10.0, 0.0, -10.0}));
-    scene.addModel(Model("assets/models/cube/cube.gltf", context, {0.0, 0.0, 0.0}));
-    scene.addModel(Model("assets/models/cube/cube.gltf", context, {10.0, 0.0, 0.0}));
-    scene.addModel(Model("assets/models/ground/ground.gltf", context, {0.0, -1, 0.0}, {10.0, 1.0, 10.0}));
+    // ---- Ground & tree ----
+    scene.addModel(Model("assets/models/ground/ground.gltf", context, {0.0f, -1.0f, 0.0f}, {10.0f, 1.0f, 10.0f}));
+    scene.addModel(Model("assets/models/tree/scene.gltf", context, {10.0f, 0.0f, -10.0f}));
+
+    // ---- Cubes (x = -60 .. 40, step 10) ----
+    for (int x = -60; x <= 40; x += 10)
+        scene.addModel(Model("assets/models/cube/cube.gltf", context, {(float)x, 0.0f, 0.0f}));
 }
 
 void Sandbox::update(double deltaTime)
@@ -45,21 +45,23 @@ void Sandbox::update(double deltaTime)
     static double elapsedTime = 0.0;
     elapsedTime += deltaTime;
 
-    float radius = 80.0f;
-    float height = 40.0f;
-    float speed = 0.05f; // radians per second
+    const float radius = 80.0f;
+    const float height = 40.0f;
+    const float speed = 0.05f; // radians per second
 
-    // Circular horizontal movement
-    float x = radius * cos(elapsedTime * speed);
-    float z = radius * sin(elapsedTime * speed);
-    float y = height + sin(elapsedTime * 0.8f) * 5.0f; // gentle vertical bobbing
+    // Circular horizontal movement + gentle vertical bob
+    const float x = radius * std::cos((float)elapsedTime * speed);
+    const float z = radius * std::sin((float)elapsedTime * speed);
+    const float y = height + std::sin((float)elapsedTime * 0.8f) * 5.0f;
 
-    glm::vec3 newPosition = glm::vec3(x, y, z);
-    glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f); // point light looks at
-    glm::vec3 direction = glm::normalize(target - newPosition);
+    const glm::vec3 newPosition(x, y, z);
+    const glm::vec3 target(0.0f, 0.0f, 0.0f);
+    const glm::vec3 direction = glm::normalize(target - newPosition);
 
+    // Example (kept commented like your original):
     // m_movingLight->setPosition(newPosition);
-    // m_movingLight->setLookAt({0, 0, 0});
+    // m_movingLight->setTarget(target);
+    // m_movingLight->setDirection(direction);
 }
 
 } // namespace Engine

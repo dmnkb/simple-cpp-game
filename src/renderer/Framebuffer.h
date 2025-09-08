@@ -10,8 +10,7 @@ namespace Engine
 class Framebuffer
 {
   public:
-    // Interim solution to rezise framebuffers dynamically on window rezise.
-    // TODO: Perhaps it's more elegant to create the framebuffer textures on the fly internally.
+    // Interim solution to resize framebuffers dynamically on window resize.
     bool dynamicSize = false;
 
     Framebuffer();
@@ -22,7 +21,12 @@ class Framebuffer
 
     void bind();
     void unbind();
+
+    // Attach a texture (2D or array/3D). Uses Texture::properties.level and CustomProperties::attachLayer.
     void attachTexture(const Ref<Texture>& attachment);
+
+    // Re-attach all array/3D attachments to a specific slice (per-layer rendering).
+    void reattachLayerForAll(GLint layer);
 
     glm::vec2 getDimensions() const;
 

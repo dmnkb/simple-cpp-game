@@ -46,8 +46,9 @@ Texture::Texture(const std::string& path)
     }
 
     isLoaded = true;
+    properties.target = GL_TEXTURE_2D;
+    properties.layers = 1;
 
-    // Determine internal and external format
     switch (channelCount)
     {
     case 1:
@@ -81,6 +82,8 @@ Texture::Texture(const std::string& path)
 Texture::Texture(TextureProperties props, CustomProperties customProps)
     : properties(std::move(props)), customProperties(std::move(customProps))
 {
+    if (properties.layers <= 0)
+        properties.layers = 1;
     create();
 }
 
@@ -89,31 +92,43 @@ void Texture::create()
     glGenTextures(1, &id);
     glBindTexture(properties.target, id);
 
-    // Allocate / upload
-    glTexImage2D(properties.target, properties.level, properties.internalFormat, properties.width, properties.height,
-                 properties.border, properties.format, properties.type, properties.pixels);
-
     const bool isDepth = IsDepthFormat(properties.internalFormat, properties.format);
+
+    if (properties.target == GL_TEXTURE_2D_ARRAY)
+    {
+        // allocate array (pixels only valid for level 0 single layer uploads; here we allocate empty)
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, properties.level, properties.internalFormat, properties.width,
+                     properties.height, properties.layers, properties.border, properties.format, properties.type,
+                     properties.pixels);
+    }
+    else
+    { // GL_TEXTURE_2D, etc.
+        glTexImage2D(properties.target, properties.level, properties.internalFormat, properties.width,
+                     properties.height, properties.border, properties.format, properties.type, properties.pixels);
+    }
 
     if (isDepth)
     {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexParameteri(properties.target, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+        glTexParameteri(properties.target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(properties.target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(properties.target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(properties.target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        if (properties.target == GL_TEXTURE_2D_ARRAY)
+            glTexParameteri(properties.target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
         const float border[4] = {1.f, 1.f, 1.f, 1.f};
-        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+        glTexParameterfv(properties.target, GL_TEXTURE_BORDER_COLOR, border);
     }
     else
     {
         if (customProperties.mipmaps)
-            glGenerateMipmap(GL_TEXTURE_2D);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, customProperties.minFilter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, customProperties.magFilter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, customProperties.wrapS);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, customProperties.wrapT);
+            glGenerateMipmap(properties.target);
+        glTexParameteri(properties.target, GL_TEXTURE_MIN_FILTER, customProperties.minFilter);
+        glTexParameteri(properties.target, GL_TEXTURE_MAG_FILTER, customProperties.magFilter);
+        glTexParameteri(properties.target, GL_TEXTURE_WRAP_S, customProperties.wrapS);
+        glTexParameteri(properties.target, GL_TEXTURE_WRAP_T, customProperties.wrapT);
+        if (properties.target == GL_TEXTURE_2D_ARRAY)
+            glTexParameteri(properties.target, GL_TEXTURE_WRAP_R, customProperties.wrapR);
     }
 }
 
@@ -133,17 +148,21 @@ void Texture::resize(int w, int h)
 {
     if (w == properties.width && h == properties.height)
         return;
-
     properties.width = w;
     properties.height = h;
 
     bind();
-
-    glTexImage2D(properties.target, properties.level, properties.internalFormat, w, h, properties.border,
-                 properties.format, properties.type, properties.pixels);
-
+    if (properties.target == GL_TEXTURE_2D_ARRAY)
+    {
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, properties.level, properties.internalFormat, w, h, properties.layers,
+                     properties.border, properties.format, properties.type, properties.pixels);
+    }
+    else
+    {
+        glTexImage2D(properties.target, properties.level, properties.internalFormat, w, h, properties.border,
+                     properties.format, properties.type, properties.pixels);
+    }
     const bool isDepth = IsDepthFormat(properties.internalFormat, properties.format);
-
     if (!isDepth && customProperties.mipmaps)
         glGenerateMipmap(properties.target);
 }

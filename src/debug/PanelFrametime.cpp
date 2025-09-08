@@ -9,6 +9,7 @@
 namespace Engine
 {
 
+// TODO: Add a "total" and check The Cherno's Sponsa with Shadows; ~8 ms as a benchmark
 void PanelFrametime::render()
 {
     static bool open = true;

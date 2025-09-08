@@ -8,15 +8,10 @@ namespace Engine
 
 Material::Material(Ref<Shader>& shader, MaterialProps props) : m_shader(shader), m_props(props)
 {
-    // Create and bind the Uniform Buffer Object
     glGenBuffers(1, &m_uboMaterial);
     glBindBuffer(GL_UNIFORM_BUFFER, m_uboMaterial);
-
-    // Allocate memory for the UBO (empty for now)
     glBufferData(GL_UNIFORM_BUFFER, sizeof(MaterialProps), nullptr, GL_DYNAMIC_DRAW);
-
-    // Bind the UBO to the binding point
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uboMaterial); // Binding point 0
+    glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_uboMaterial); // binding = 1 for MaterialPropsBlock
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
@@ -24,17 +19,19 @@ void Material::bind()
 {
     m_shader->bind();
 
-    // Bind the diffuse map sampler
-    // 0 = Default color layer across all fragment shaders
-    m_diffuseMap->bind(0);
-    m_shader->setUniform1i("diffuseMap", 0);
+    if (m_diffuseMap)
+    {
+        m_diffuseMap->bind(0);
+        m_shader->setUniform1i("diffuseMap", 0);
+    }
 
-    // Bind the material's properties
-    GLuint uboBindingPoint = 1; // 0 = LightsBlock, 1 = MaterialPropsBlock
-    GLuint blockIndex = glGetUniformBlockIndex(m_shader->getProgramID(), "MaterialPropsBlock");
+    // Bind & upload material UBO to binding point 1
+    GLuint uboBindingPoint = 1;
+    GLuint prog = m_shader->getProgramID();
+    GLuint blockIndex = glGetUniformBlockIndex(prog, "MaterialPropsBlock");
     if (blockIndex != GL_INVALID_INDEX)
     {
-        glUniformBlockBinding(m_shader->getProgramID(), blockIndex, uboBindingPoint);
+        glUniformBlockBinding(prog, blockIndex, uboBindingPoint);
         glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, m_uboMaterial);
 
         glBindBuffer(GL_UNIFORM_BUFFER, m_uboMaterial);
@@ -46,12 +43,12 @@ void Material::bind()
 void Material::unbind()
 {
     m_shader->unbind();
-    m_diffuseMap->unbind();
+    if (m_diffuseMap)
+        m_diffuseMap->unbind(0);
 }
 
 void Material::update()
 {
-    // FIXME: dependency inversion violation. Resolve dependency to Window
     float time = Window::getElapsedTime();
     m_shader->setUniform1f("u_Time", time);
 }
@@ -86,6 +83,16 @@ void Material::setUniform1i(const char* name, GLint value)
     m_shader->setUniform1i(name, value);
 }
 
+void Material::setUniform1f(const char* name, float value)
+{
+    m_shader->setUniform1f(name, value);
+}
+
+void Material::setIntArray(const char* name, GLint* values, GLsizei count)
+{
+    m_shader->setIntArray(name, values, count);
+}
+
 Ref<Shader> Material::getShader() const
 {
     return m_shader;
@@ -93,7 +100,8 @@ Ref<Shader> Material::getShader() const
 
 const bool Material::hasUniform(const char* name)
 {
-    return m_shader->hasUniform(name);
+    // True only if the uniform exists (location >= 0)
+    return m_shader->getCachedLocation(name) >= 0;
 }
 
 } // namespace Engine

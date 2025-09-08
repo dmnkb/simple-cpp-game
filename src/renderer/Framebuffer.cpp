@@ -34,13 +34,17 @@ void Framebuffer::bind()
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
     // Collect all color attachments for glDrawBuffers
+    bool hasDrawBuffers = false;
     std::vector<GLenum> drawBuffers;
+    drawBuffers.reserve(m_attachments.size());
+
     for (const auto& attachment : m_attachments)
     {
         if (attachment->customProperties.attachmentType >= GL_COLOR_ATTACHMENT0 &&
             attachment->customProperties.attachmentType <= GL_COLOR_ATTACHMENT31)
         {
             drawBuffers.push_back(attachment->customProperties.attachmentType);
+            hasDrawBuffers = true;
         }
     }
 
@@ -50,26 +54,21 @@ void Framebuffer::bind()
     else
         glDrawBuffer(GL_NONE); // Depth-only FBO
 
-    // Match viewport to the first attachment. We assume, that all attachments have the same size.
-    m_width = m_attachments[0]->properties.width;
-    m_height = m_attachments[0]->properties.height;
+    // For depth-only FBOs, avoid accidental reads
+    if (!hasDrawBuffers)
+        glReadBuffer(GL_NONE);
 
-    if (!m_attachments.empty())
-    {
-        glViewport(0, 0, m_width, m_height);
-    }
+    // Match viewport to the first attachment (respect mip level)
+    const auto& a0 = m_attachments[0];
+    const int lvl = a0->properties.level;
+    m_width = a0->widthAtLevel(lvl);
+    m_height = a0->heightAtLevel(lvl);
+    glViewport(0, 0, m_width, m_height);
 
     // Clear depth, optionally color
     GLbitfield clearMask = GL_DEPTH_BUFFER_BIT;
-    for (const auto& attachment : m_attachments)
-    {
-        if (attachment->customProperties.attachmentType >= GL_COLOR_ATTACHMENT0 &&
-            attachment->customProperties.attachmentType <= GL_COLOR_ATTACHMENT31)
-        {
-            clearMask |= GL_COLOR_BUFFER_BIT;
-            break;
-        }
-    }
+    if (hasDrawBuffers)
+        clearMask |= GL_COLOR_BUFFER_BIT;
 
     glClear(clearMask);
 }
@@ -83,18 +82,53 @@ void Framebuffer::attachTexture(const Ref<Texture>& attachment)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     attachment->bind();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, attachment->customProperties.attachmentType, GL_TEXTURE_2D, attachment->id,
-                           0);
+
+    const GLenum att = attachment->customProperties.attachmentType;
+
+    if (attachment->properties.target == GL_TEXTURE_2D_ARRAY)
+    {
+        // attach all layers at level 0; we’ll override the layer each draw via glFramebufferTextureLayer
+        glFramebufferTexture(GL_FRAMEBUFFER, att, attachment->id, 0);
+    }
+    else
+    {
+        glFramebufferTexture2D(GL_FRAMEBUFFER, att, GL_TEXTURE_2D, attachment->id, 0);
+    }
 
     m_attachments.push_back(attachment);
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE)
-    {
         std::cerr << "[Framebuffer] Incomplete! Status = 0x" << std::hex << status << std::dec << std::endl;
-    }
 
     unbind();
+}
+
+void Framebuffer::reattachLayerForAll(GLint layer)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+
+    for (const auto& a : m_attachments)
+    {
+        const GLenum attPoint = a->customProperties.attachmentType;
+        const GLint level = a->properties.level;
+
+        switch (a->properties.target)
+        {
+        case GL_TEXTURE_2D_ARRAY:
+        case GL_TEXTURE_3D:
+        case GL_TEXTURE_2D_MULTISAMPLE_ARRAY:
+        case GL_TEXTURE_CUBE_MAP_ARRAY:
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, attPoint, a->id, level, std::max(0, layer));
+            break;
+
+        default:
+            // Non-array targets unchanged
+            break;
+        }
+    }
+
+    // NOTE: Do NOT unbind here. The caller may immediately query FBO status or render.
 }
 
 glm::vec2 Framebuffer::getDimensions() const

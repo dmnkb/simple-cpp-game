@@ -81,18 +81,6 @@ class SpotLight
     {
         return m_shadowCam;
     }
-    Ref<Framebuffer> getShadowFrameBuffer() const
-    {
-        return m_shadowFramebuffer;
-    }
-    Ref<Texture> getShadowDepthTexture() const
-    {
-        return m_shadowDepthTexture;
-    }
-    Ref<Texture> getShadowDebugColorTexture() const
-    {
-        return m_shadowDebugColorTexture;
-    }
 
   private:
     // Solve for distance where intensity falls to `cutoff` fraction due to attenuation:
@@ -156,9 +144,6 @@ class SpotLight
     SpotLightProperties m_properties;
 
     Ref<Camera> m_shadowCam;
-    Ref<Texture> m_shadowDepthTexture;
-    Ref<Texture> m_shadowDebugColorTexture;
-    Ref<Framebuffer> m_shadowFramebuffer;
 };
 
 } // namespace Engine

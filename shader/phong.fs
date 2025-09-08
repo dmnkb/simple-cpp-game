@@ -8,18 +8,25 @@ out vec4 FragColor;
 uniform vec3 viewPos;
 uniform sampler2D diffuseMap;
 
-#define MAX_SHADOW_MAPS 7
-uniform sampler2D shadowMaps[MAX_SHADOW_MAPS];
-uniform mat4 lightSpaceMatrices[MAX_SHADOW_MAPS];
-
-uniform int u_numLights;
-
 #define MAX_SPOT_LIGHTS 16
 
+// Shadow atlas: sampler2DArrayShadow (compare mode must be GL_COMPARE_REF_TO_TEXTURE)
+uniform sampler2DArrayShadow uShadowMapArray;
+
+// Map each light i -> its layer in the array (uploaded from [0])
+uniform int uSpotShadowLayer[MAX_SPOT_LIGHTS];
+
+// Light-space transforms per light (proj * view). Uploaded from [0].
+uniform mat4 lightSpaceMatrices[MAX_SPOT_LIGHTS];
+
+// Number of active spot lights
+uniform int u_numLights;
+
+// ---------------- UBOs ----------------
 layout(std140) uniform SpotLights
 {
     vec4 positionsWS[MAX_SPOT_LIGHTS];     // xyz pos, w=1
-    vec4 directionsWS[MAX_SPOT_LIGHTS];    // xyz dir (norm), w=0
+    vec4 directionsWS[MAX_SPOT_LIGHTS];    // xyz dir (***OUTWARD*** from the light), w=0
     vec4 colorsIntensity[MAX_SPOT_LIGHTS]; // rgb color, a=intensity
     vec4 conesRange[MAX_SPOT_LIGHTS];      // x=innerCos, y=outerCos, z=range, w=0
     vec4 attenuations[MAX_SPOT_LIGHTS];    // x=kc, y=kl, z=kq, w=0
@@ -28,117 +35,125 @@ layout(std140) uniform SpotLights
 layout(std140) uniform MaterialPropsBlock
 {
     float textureRepeat;     // UV tiling
-    float shininess;         // spec power
-    float specularIntensity; // spec visibility
+    float shininess;         // specular power (optional)
+    float specularIntensity; // specular intensity (optional)
 };
 
-// MARK: Shadow factor
-float shadowFactor(int lightIndex, vec3 N, vec3 L, vec4 fragPosLightSpace)
+// ---------------- Tunables ----------------
+const vec3 AMBIENT_COLOR = vec3(0.5, 0.55, 0.6); // basic ambient; tweak to taste
+const float ALPHA_CUTOFF = 0.5;                  // alpha test threshold for cutouts
+
+// ---------------- Shadow PCF toggle ----------------
+// 0 = single tap (LINEAR gives 2×2 HW PCF), 1 = manual 3×3 PCF
+#ifndef SHADOW_USE_3x3_PCF
+#define SHADOW_USE_3x3_PCF 0
+#endif
+
+// ---------------- Helpers ----------------
+float spotMask(int i, vec3 L, vec3 LdirOut)
 {
-    if (lightIndex < 0 || lightIndex >= MAX_SHADOW_MAPS)
-        return 1.0;
-
-    vec3 proj = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    proj = proj * 0.5 + 0.5;
-
-    if (proj.x < 0.0 || proj.x > 1.0 || proj.y < 0.0 || proj.y > 1.0 || proj.z > 1.0)
-        return 1.0;
-
-    // Value to play with
-    float bias = 0;
-    float ref = proj.z - bias;
-
-    vec2 texSize = vec2(textureSize(shadowMaps[0], 0)); // assume square maps
-
-    // Align to bilinear footprint (texel centers)
-    vec2 st = proj.xy * texSize - 0.5;
-    vec2 iuv = floor(st);
-    vec2 f = fract(st);
-    vec2 base = iuv / texSize;
-    vec2 texel = 1.0 / texSize;
-
-    // Neighboring depths
-    float d00 = texture(shadowMaps[lightIndex], base).r;
-    float d10 = texture(shadowMaps[lightIndex], base + vec2(texel.x, 0.0)).r;
-    float d01 = texture(shadowMaps[lightIndex], base + vec2(0.0, texel.y)).r;
-    float d11 = texture(shadowMaps[lightIndex], base + vec2(texel.x, texel.y)).r;
-
-    // Compare (lit if depth >= ref)
-    float c00 = step(ref, d00);
-    float c10 = step(ref, d10);
-    float c01 = step(ref, d01);
-    float c11 = step(ref, d11);
-
-    // Bilinear weights
-    float w00 = (1.0 - f.x) * (1.0 - f.y);
-    float w10 = f.x * (1.0 - f.y);
-    float w01 = (1.0 - f.x) * f.y;
-    float w11 = f.x * f.y;
-
-    return c00 * w00 + c10 * w10 + c01 * w01 + c11 * w11;
-}
-
-// MARK: Spot light shading
-vec3 shadeSpotLight(int i, vec3 N, vec3 V)
-{
-    vec3 Lpos = positionsWS[i].xyz;
-    vec3 Ldir = normalize(directionsWS[i].xyz);
-
-    vec3 color = colorsIntensity[i].rgb;
-    float intensity = colorsIntensity[i].a;
-
+    // UBO stores ***OUTWARD*** direction; for the cone use -LdirOut (into the cone)
     float innerCos = conesRange[i].x;
     float outerCos = conesRange[i].y;
-    float range = conesRange[i].z; // light range (we packed it here)
+    float theta = dot(L, -normalize(LdirOut));
+    float eps = max(innerCos - outerCos, 1e-5);
+    return clamp((theta - outerCos) / eps, 0.0, 1.0);
+}
 
+float attenuation(int i, float dist)
+{
     float kc = attenuations[i].x;
     float kl = attenuations[i].y;
     float kq = attenuations[i].z;
-
-    vec3 Lvec = Lpos - FragPos;
-    float dist = length(Lvec);
-    if (dist <= 0.0001)
-        return vec3(0.0);
-
-    vec3 L = Lvec / dist;
-    float theta = dot(L, -Ldir);
-
-    float eps = max(innerCos - outerCos, 1e-5);
-    float spot = clamp((theta - outerCos) / eps, 0.0, 1.0);
-
-    float inRange = step(dist, range);
-    float atten = 1.0 / (kc + kl * dist + kq * dist * dist);
-
-    vec4 fragPosLightSpace = lightSpaceMatrices[i] * vec4(FragPos, 1.0);
-    float shadow = shadowFactor(i, N, L, fragPosLightSpace);
-
-    float NdotL = max(dot(N, L), 0.0);
-    vec3 H = normalize(L + V);
-    float NdotH = max(dot(N, H), 0.0);
-    float spec = pow(NdotH, shininess) * specularIntensity;
-
-    vec3 radiance = color * intensity * atten * spot * inRange * shadow;
-    return radiance * (NdotL + spec);
+    return 1.0 / (kc + kl * dist + kq * dist * dist);
 }
 
-// MARK: Main
+float shadowFactor(int i, vec3 worldPos, vec3 N, vec3 L)
+{
+    vec4 clip = lightSpaceMatrices[i] * vec4(worldPos, 1.0);
+    if (clip.w <= 0.0)
+        return 1.0; // behind light camera => lit
+
+    vec3 ndc = clip.xyz / clip.w; // [-1,1]
+    if (ndc.x < -1.0 || ndc.x > 1.0 || ndc.y < -1.0 || ndc.y > 1.0 || ndc.z < 0.0 || ndc.z > 1.0)
+        return 1.0;
+
+    vec2 uv = ndc.xy * 0.5 + 0.5;
+    float ref = ndc.z * 0.5 + 0.5;
+
+    float slope = 1.0 - max(dot(N, L), 0.0);
+    float bias = max(0.001 * slope, 0.0005);
+
+    int layer = uSpotShadowLayer[i];
+
+#if SHADOW_USE_3x3_PCF
+    vec2 texel = 1.0 / vec2(textureSize(uShadowMapArray, 0));
+    float sum = 0.0;
+    for (int dy = -1; dy <= 1; ++dy)
+        for (int dx = -1; dx <= 1; ++dx)
+        {
+            vec2 offs = vec2(dx, dy) * texel;
+            sum += texture(uShadowMapArray, vec4(uv + offs, float(layer), ref - bias));
+        }
+    return sum / 9.0;
+#else
+    return texture(uShadowMapArray, vec4(uv, float(layer), ref - bias)); // HW compare
+#endif
+}
+
+// ---------------- Main ----------------
 void main()
 {
     vec3 N = normalize(v_Normal);
+    vec2 uv = v_UV * textureRepeat;
+
+    // Sample with alpha and do cutout test
+    vec4 tex = texture(diffuseMap, uv);
+    if (tex.a < ALPHA_CUTOFF)
+        discard;
+
+    vec3 albedo = tex.rgb;
+
     vec3 V = normalize(viewPos - FragPos);
 
-    vec2 scaledUV = v_UV * textureRepeat;
-    vec4 albedo = texture(diffuseMap, scaledUV);
+    // Global ambient (not shadowed)
+    vec3 lighting = AMBIENT_COLOR;
 
-    vec3 ambient = vec3(0.5, 0.55, 0.6);
+    for (int i = 0; i < u_numLights; ++i)
+    {
+        vec3 Lvec = positionsWS[i].xyz - FragPos;
+        float dist2 = dot(Lvec, Lvec);
+        float dist = sqrt(dist2);
+        vec3 L = Lvec / max(dist, 1e-6);
 
-    int count = clamp(u_numLights, 0, MAX_SPOT_LIGHTS);
-    vec3 lighting = vec3(0.0);
-    for (int i = 0; i < count; ++i)
-        lighting += shadeSpotLight(i, N, V);
+        // cone (NOTE: directionsWS is ***OUTWARD***)
+        vec3 LdirOut = directionsWS[i].xyz;
+        float spot = spotMask(i, L, LdirOut);
+        if (spot <= 0.0001)
+            continue;
 
-    vec4 color = vec4(ambient + lighting, 1.0) * albedo;
-    if (color.a < 0.5)
-        discard;
-    FragColor = color;
+        float atten = attenuation(i, dist);
+        float NdotL = max(dot(N, L), 0.0);
+
+        // Shadow factor (applies to BOTH diffuse & spec)
+        float s = shadowFactor(i, FragPos, N, L);
+
+        // Simple Blinn spec
+        vec3 H = normalize(L + V);
+        float NdotH = max(dot(N, H), 0.0);
+        float spec = pow(NdotH, max(shininess, 1.0)) * specularIntensity;
+
+        vec3 lightRGB = colorsIntensity[i].rgb * colorsIntensity[i].a;
+
+        // Diffuse and spec both shadowed
+        float litTerm = (NdotL + spec) * s;
+
+        // Accumulate (light color scales the term; albedo applied later)
+        lighting += lightRGB * litTerm * atten * spot;
+    }
+
+    // Apply albedo to the lighting result (keeps your original behavior where spec was tinted by albedo)
+    vec3 finalRGB = albedo * lighting;
+
+    FragColor = vec4(finalRGB, tex.a);
 }

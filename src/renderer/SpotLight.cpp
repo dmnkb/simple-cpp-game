@@ -18,7 +18,7 @@ SpotLight::SpotLight() : SpotLight(SpotLightProperties{}) // delegate to the mai
 
 SpotLight::SpotLight(const SpotLightProperties& props) : m_properties(props)
 {
-    // ---- Sanitize inputs ----
+    // Sanitize inputs
     if (glm::length2(m_properties.direction) < 1e-12f)
         m_properties.direction = glm::vec3(0, 0, -1);
     else
@@ -58,58 +58,23 @@ SpotLight::SpotLight(const SpotLightProperties& props) : m_properties(props)
     };
 
     const float intensity = m_properties.colorIntensity.w;
-    const float range = glm::max(computeEffectiveRange(intensity, m_properties.attenuation, 0.01f), 1.0f);
+    float range = computeEffectiveRange(intensity, m_properties.attenuation, 0.01f);
+    range = glm::max(range, 1.0f);
 
-    // ---- Shadow camera ----
+    // Shadow camera
     m_shadowCam = CreateRef<Camera>();
     const float fovY = glm::radians(m_properties.coneOuter * 2.0f); // spotlight cone ≈ outer*2
     const float aspect = 1.0f;                                      // square shadow maps
     const float nearP = 0.05f;
-    const float farP = range;
+    const float farP = glm::max(range, nearP + 0.01f);
 
     m_shadowCam->setPerspective(fovY, aspect, nearP, farP);
     m_shadowCam->setPosition(m_properties.position);
-    // Look towards position + direction (don't normalize the target!)
-    m_shadowCam->lookAt(m_properties.position + m_properties.direction);
 
-    // ---- Shadow framebuffer + textures ----
-    const int SHADOW_RES = 1024;
-
-    m_shadowFramebuffer = CreateRef<Framebuffer>();
-
-    // Depth texture (shadow map)
-    m_shadowDepthTexture = CreateRef<Texture>(
-        TextureProperties{
-            .internalFormat = GL_DEPTH_COMPONENT, // or GL_DEPTH_COMPONENT24/32F if supported by your wrapper
-            .width = SHADOW_RES,
-            .height = SHADOW_RES,
-            .format = GL_DEPTH_COMPONENT,
-            .type = GL_FLOAT,
-        },
-        CustomProperties{
-            .attachmentType = GL_DEPTH_ATTACHMENT,
-            // Optionally set compare mode in your Texture wrapper if available:
-            // .compareMode = GL_COMPARE_REF_TO_TEXTURE, .compareFunc = GL_LEQUAL
-        });
-    m_shadowFramebuffer->attachTexture(m_shadowDepthTexture);
-
-    // Optional: debug color target to visualize depth → color
-    m_shadowDebugColorTexture = CreateRef<Texture>(
-        TextureProperties{
-            .internalFormat = GL_RGB, // GL_RGB8 if your wrapper exposes sized internal formats
-            .width = SHADOW_RES,
-            .height = SHADOW_RES,
-            .format = GL_RGB,
-            .type = GL_UNSIGNED_BYTE,
-        },
-        CustomProperties{
-            .attachmentType = GL_COLOR_ATTACHMENT0,
-        });
-    m_shadowFramebuffer->attachTexture(m_shadowDebugColorTexture);
-
-    // If your Framebuffer API requires, you can set draw/read buffers here.
-    // For a pure depth pass, you might skip the color attachment and set:
-    // m_shadowFramebuffer->setDrawBuffers({}); m_shadowFramebuffer->setReadBuffer(GL_NONE);
+    // Robust lookAt: pick a stable up vector even when aiming near ±Y
+    glm::vec3 forward = glm::normalize(m_properties.direction);
+    glm::vec3 up = (std::abs(forward.y) > 0.99f) ? glm::vec3(0, 0, 1) : glm::vec3(0, 1, 0);
+    m_shadowCam->lookAt(m_properties.position + forward, up);
 }
 
 } // namespace Engine

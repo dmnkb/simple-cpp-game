@@ -43,6 +43,7 @@ class Shader
     void setUniform1iv(const char* name, GLint samplerIDs[16]);
     void setIntArray(const char* name, GLint* values, GLsizei count);
 
+    GLint getCachedLocation(const char* name);
     const bool hasUniform(const char* name);
 
   private:
@@ -50,7 +51,6 @@ class Shader
     GLuint m_VertexShaderID;
     GLuint m_FragmentShaderID;
 
-    GLint getCachedLocation(const char* name);
     void checkShaderCompilation(GLuint shader);
     void checkProgramLinking(GLuint shader);
 

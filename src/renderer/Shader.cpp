@@ -38,27 +38,21 @@ Shader::~Shader()
 
 std::optional<ShaderSource> Shader::readShaderFiles(const char* vertexShaderPath, const char* fragmentShaderPath)
 {
-    // 1. retrieve the vertex/fragment source code from filePath
     std::string vertexCode;
     std::string fragmentCode;
     std::ifstream vShaderFile;
     std::ifstream fShaderFile;
-    // ensure ifstream objects can throw exceptions:
     vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     try
     {
-        // open files
         vShaderFile.open(vertexShaderPath);
         fShaderFile.open(fragmentShaderPath);
         std::stringstream vShaderStream, fShaderStream;
-        // read file's buffer contents into streams
         vShaderStream << vShaderFile.rdbuf();
         fShaderStream << fShaderFile.rdbuf();
-        // close file handlers
         vShaderFile.close();
         fShaderFile.close();
-        // convert stream into string
         vertexCode = vShaderStream.str();
         fragmentCode = fShaderStream.str();
 
@@ -77,7 +71,6 @@ void Shader::bind()
 {
     glUseProgram(m_ProgramID);
 }
-
 void Shader::unbind()
 {
     glUseProgram(0);
@@ -88,7 +81,7 @@ void Shader::setVertexAttribute(const char* name, GLint size, GLenum type, GLboo
 {
     GLint location = glGetAttribLocation(m_ProgramID, name);
     if (location == -1)
-        std::cerr << "[Shader] ERROR: (" << shaderNames.vertex << "): Uniform '" << name
+        std::cerr << "[Shader] ERROR: (" << shaderNames.vertex << "): Attribute '" << name
                   << "' not found in shader program." << std::endl;
     else
     {
@@ -100,75 +93,67 @@ void Shader::setVertexAttribute(const char* name, GLint size, GLenum type, GLboo
 void Shader::setUniformFloat(const char* name, const float value)
 {
     auto location = getCachedLocation(name);
-    if (location != -1)
+    if (location >= 0)
         glUniform1f(location, value);
 }
 
 void Shader::setUniformMatrix4fv(const char* name, const glm::mat4 value)
 {
     auto location = getCachedLocation(name);
-    if (location != -1)
+    if (location >= 0)
         glUniformMatrix4fv(location, 1, GL_FALSE, (const GLfloat*)&value);
 }
 
 void Shader::setUniformMatrix3fv(const char* name, const glm::mat3 value)
 {
     auto location = getCachedLocation(name);
-    if (location != -1)
-        glUniformMatrix4fv(location, 1, GL_FALSE, (const GLfloat*)&value);
+    if (location >= 0)
+        glUniformMatrix3fv(location, 1, GL_FALSE, (const GLfloat*)&value);
 }
 
 void Shader::setUniform3fv(const char* name, const glm::vec3 value)
 {
     auto location = getCachedLocation(name);
-    if (location != -1)
+    if (location >= 0)
         glUniform3fv(location, 1, (const GLfloat*)&value);
 }
 
 void Shader::setUniform1i(const char* name, GLint value)
 {
     auto location = getCachedLocation(name);
-    if (location != -1)
+    if (location >= 0)
         glUniform1i(location, value);
 }
 
 void Shader::setUniform1f(const char* name, float value)
 {
     auto location = getCachedLocation(name);
-    if (location != -1)
+    if (location >= 0)
         glUniform1f(location, value);
 }
 
 void Shader::setUniform1iv(const char* name, GLint samplerIDs[16])
 {
     auto location = getCachedLocation(name);
-    if (location != -1)
+    if (location >= 0)
         glUniform1iv(location, 16, samplerIDs);
 }
 
 void Shader::setIntArray(const char* name, GLint* values, GLsizei count)
 {
     GLint location = getCachedLocation(name);
-    if (location != -1)
-    {
-        glUniform1iv(location, count, values);
-    }
+    if (location >= 0)
+        glUniform1iv(location, count, values); // allows writing uSpotShadowLayer[0]..[count-1]
 }
 
 GLint Shader::getCachedLocation(const char* name)
 {
-    // FIXME: The cache doesn't work with EXACT matches and returns always the first.
-    // This breaks array uniforms!
-
-    // if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
-    //     return m_UniformLocationCache[name];
+    auto it = m_UniformLocationCache.find(name);
+    if (it != m_UniformLocationCache.end())
+        return it->second;
 
     GLint location = glGetUniformLocation(m_ProgramID, name);
-
-    if (location == -1 && false)
-        std::cerr << "[Shader] ERROR: (" << shaderNames.fragment << "): Uniform '" << name
-                  << "' not found in shader program." << std::endl;
-
+    // Cache exact name; for arrays, callers must pass "name[index]" or "name[0]"
     m_UniformLocationCache[name] = location;
     return location;
 }
@@ -199,5 +184,5 @@ void Shader::checkProgramLinking(GLuint program)
 
 const bool Shader::hasUniform(const char* name)
 {
-    return !!getCachedLocation(name);
+    return getCachedLocation(name) >= 0;
 }
