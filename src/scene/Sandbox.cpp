@@ -1,4 +1,5 @@
 #include "Sandbox.h"
+#include "glm/gtx/string_cast.hpp"
 #include "pch.h"
 #include "renderer/Material.h"
 #include "renderer/Model.h"
@@ -20,7 +21,12 @@ void Sandbox::init(Scene& scene)
         {
             SpotLight::SpotLightProperties p{};
             p.position = {(float)x, y, z};
-            p.direction = dir;
+            const float rx = (((double)rand() / (RAND_MAX)) - .5f);
+            const float ry = (((double)rand() / (RAND_MAX)) - .5f);
+            const float rz = (((double)rand() / (RAND_MAX)) - .5f);
+            const glm::vec3 randRir(rx, ry, rz);
+            std::println("{}", glm::to_string(dir + randRir));
+            p.direction = dir + randRir;
             scene.addSpotLight(CreateRef<SpotLight>(p));
         }
     }

@@ -3,6 +3,7 @@
 #include "RendererAPI.h"
 #include "core/Profiler.h"
 #include "core/Window.h"
+#include "glm/gtx/string_cast.hpp"
 #include "pch.h"
 #include "scene/Scene.h"
 #include <algorithm>
@@ -91,7 +92,7 @@ void LightingPass::execute(Scene& scene, const LightingInputs& litIn)
     {
         material->bind();
         material->update();
-        updateUniforms(scene, material, litIn);
+        uploadUniforms(scene, material, litIn);
 
         if (material->isDoubleSided)
         {
@@ -116,7 +117,7 @@ void LightingPass::execute(Scene& scene, const LightingInputs& litIn)
     m_frameBuffer->unbind();
 }
 
-void LightingPass::updateUniforms(Scene& scene, const Ref<Material>& material, const LightingInputs& litIn)
+void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, const LightingInputs& litIn)
 {
     // Camera
     const auto cam = scene.getActiveCamera();
@@ -128,100 +129,55 @@ void LightingPass::updateUniforms(Scene& scene, const Ref<Material>& material, c
     material->setUniformMatrix4fv("u_ViewProjection", vp);
     material->setUniform3fv("viewPos", camPos);
 
-    // Collect spot lights from the scene
+    // Lights
     const std::vector<Ref<SpotLight>> lights = scene.getSpotLights();
-
-    // Clamp to UBO capacity
     const int count = std::min<int>((int)lights.size(), MAX_SPOT_LIGHTS);
 
-    // -------- Spot light UBO (positions, directions, colors, cones, attenuations) --------
+    // Spot light UBO
     for (int i = 0; i < count; ++i)
     {
         const auto& light = lights[i];
         const auto props = light->getSpotLightProperties();
 
-        const glm::vec3 pos = props.position;
-        const glm::vec3 dirIn =
-            (glm::length2(props.direction) < 1e-12f) ? glm::vec3(0, 0, -1) : glm::normalize(props.direction);
+        const float innerCos = std::cos(glm::radians(props.coneInner));
+        const float outerCos = std::cos(glm::radians(props.coneOuter));
+        const float range = light->getRange();
 
-        m_spotLightsCPU.positionsWS[i] = glm::vec4(pos, 1.0f);
-        // Store INward direction in UBO (toward where the light looks)
-        m_spotLightsCPU.directionsWS[i] = glm::vec4(dirIn, 0.0f);
-        m_spotLightsCPU.colorsIntensity[i] = props.colorIntensity; // rgb + intensity
-
-        const float innerDeg = glm::clamp(props.coneInner, 0.0f, 89.0f);
-        const float outerDeg = glm::clamp(std::max(props.coneOuter, innerDeg), 0.0f, 89.0f);
-        const float innerCos = std::cos(glm::radians(innerDeg));
-        const float outerCos = std::cos(glm::radians(outerDeg));
-
-        const float range = std::max(ComputeEffectiveRange(props.colorIntensity.w, props.attenuation, 0.01f), 1.0f);
-
+        m_spotLightsCPU.positionsWS[i] = glm::vec4(props.position, 1.0f);
+        m_spotLightsCPU.directionsWS[i] = glm::vec4(props.direction, 0.0f);
+        m_spotLightsCPU.colorsIntensity[i] = props.colorIntensity;
         m_spotLightsCPU.conesRange[i] = glm::vec4(innerCos, outerCos, range, 0.0f);
         m_spotLightsCPU.attenuations[i] = glm::vec4(props.attenuation, 0.0f);
-
-        // Configure shadow camera to look INTO the cone
-        auto shadowCam = light->getShadowCam();
-        shadowCam->setPosition(pos);
-
-        // *** IMPORTANT: look along +dirIn (into the cone), matching the demo ***
-        shadowCam->lookAt(pos + dirIn);
-
-        // Match shadow camera FOV to outer cone
-        shadowCam->setPerspective(glm::radians(outerDeg * 2.0f), 1.0f, 0.1f, std::max(range, 1.0f));
     }
-    for (int i = count; i < MAX_SPOT_LIGHTS; ++i)
+
+    GLuint uboBindingPoint = 0; // must match GLSL binding=0
+    GLuint prog = material->getShader()->getProgramID();
+    GLuint blockIndex = glGetUniformBlockIndex(prog, "SpotLights");
+    if (blockIndex != GL_INVALID_INDEX)
     {
-        m_spotLightsCPU.positionsWS[i] = glm::vec4(0.0f);
-        m_spotLightsCPU.directionsWS[i] = glm::vec4(0.0f);
-        m_spotLightsCPU.colorsIntensity[i] = glm::vec4(0.0f);
-        m_spotLightsCPU.conesRange[i] = glm::vec4(0.0f);
-        m_spotLightsCPU.attenuations[i] = glm::vec4(0.0f);
-    }
-    m_spotLightsCPU.meta = glm::vec4((float)count, 0.0f, 0.0f, 0.0f);
-
-    // Upload UBO
-    {
-        GLuint uboBindingPoint = 0; // must match GLSL binding=0
-        GLuint prog = material->getShader()->getProgramID();
-        GLuint blockIndex = glGetUniformBlockIndex(prog, "SpotLights");
-        if (blockIndex != GL_INVALID_INDEX)
-        {
-            glUniformBlockBinding(prog, blockIndex, uboBindingPoint);
-            glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, m_spotLightsUBO);
-            glBindBuffer(GL_UNIFORM_BUFFER, m_spotLightsUBO);
-            glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SpotLightsUBO), &m_spotLightsCPU);
-        }
+        glUniformBlockBinding(prog, blockIndex, uboBindingPoint);
+        glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, m_spotLightsUBO);
+        glBindBuffer(GL_UNIFORM_BUFFER, m_spotLightsUBO);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SpotLightsUBO), &m_spotLightsCPU);
     }
 
-    // -------- Shadow array bindings & per-light matrices/layers --------
-    constexpr GLint SHADOW_TU = 5; // choose a free unit
+    // Shadows array bindings & per-light matrices/layers
+    constexpr GLint SHADOW_TU = 5; // Shadow Texture Unit is arbitrary. Needs to be a free one
     if (litIn.shadows.spotShadowArray)
     {
         // Bind shadow array to the chosen unit
         litIn.shadows.spotShadowArray->bind(SHADOW_TU);
 
-        // Ensure compare + linear filtering are set (parity with demo)
+        // Ensure linear filtering
         glActiveTexture(GL_TEXTURE0 + SHADOW_TU);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        // Demo uses EDGE; BORDER also works. Use EDGE for parity.
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
         if (material->hasUniform("uShadowMapArray"))
             material->setUniform1i("uShadowMapArray", SHADOW_TU);
-
-        if (material->hasUniform("uShadowLayerCount"))
-            material->setUniform1i("uShadowLayerCount", litIn.shadows.layers);
-
-        if (material->hasUniform("uShadowMapResolution"))
-            material->setUniform1f("uShadowMapResolution", (float)litIn.shadows.resolution);
     }
 
-    // -------- Upload light-space matrix array in one call (critical) --------
+    // Upload light-space matrix array in one call
     {
         glm::mat4 lightVP[MAX_SPOT_LIGHTS];
         for (int i = 0; i < count; ++i)
@@ -229,22 +185,7 @@ void LightingPass::updateUniforms(Scene& scene, const Ref<Material>& material, c
             const auto& light = lights[i];
             lightVP[i] = light->getShadowCam()->getProjectionMatrix() * light->getShadowCam()->getViewMatrix();
         }
-        GLuint prog = material->getShader()->getProgramID();
-        GLint loc0 = glGetUniformLocation(prog, "lightSpaceMatrices[0]");
-        if (loc0 >= 0)
-            glUniformMatrix4fv(loc0, count, GL_FALSE, glm::value_ptr(lightVP[0]));
-    }
-
-    // -------- Upload layer indices as an array from [0] --------
-    {
-        GLint layerIdx[MAX_SPOT_LIGHTS] = {};
-        for (int i = 0; i < count; ++i)
-            layerIdx[i] = i;
-
-        GLuint prog = material->getShader()->getProgramID();
-        GLint loc0 = glGetUniformLocation(prog, "uSpotShadowLayer[0]");
-        if (loc0 >= 0)
-            glUniform1iv(loc0, count, layerIdx);
+        material->getShader()->setUniformMatrix4fvArray("lightSpaceMatrices[0]", count, glm::value_ptr(lightVP[0]));
     }
 
     if (material->hasUniform("u_numLights"))

@@ -77,6 +77,11 @@ class SpotLight
         return m_properties;
     }
 
+    float getRange() const
+    {
+        return m_range;
+    }
+
     Ref<Camera> getShadowCam() const
     {
         return m_shadowCam;
@@ -142,8 +147,8 @@ class SpotLight
 
   private:
     SpotLightProperties m_properties;
-
     Ref<Camera> m_shadowCam;
+    float m_range = 0.0f;
 };
 
 } // namespace Engine

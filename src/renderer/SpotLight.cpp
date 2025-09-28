@@ -58,15 +58,15 @@ SpotLight::SpotLight(const SpotLightProperties& props) : m_properties(props)
     };
 
     const float intensity = m_properties.colorIntensity.w;
-    float range = computeEffectiveRange(intensity, m_properties.attenuation, 0.01f);
-    range = glm::max(range, 1.0f);
+    m_range = computeEffectiveRange(intensity, m_properties.attenuation, 0.01f);
+    m_range = glm::max(m_range, 1.0f);
 
     // Shadow camera
     m_shadowCam = CreateRef<Camera>();
     const float fovY = glm::radians(m_properties.coneOuter * 2.0f); // spotlight cone ≈ outer*2
     const float aspect = 1.0f;                                      // square shadow maps
     const float nearP = 0.05f;
-    const float farP = glm::max(range, nearP + 0.01f);
+    const float farP = glm::max(m_range, nearP + 0.01f);
 
     m_shadowCam->setPerspective(fovY, aspect, nearP, farP);
     m_shadowCam->setPosition(m_properties.position);

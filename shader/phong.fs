@@ -10,16 +10,8 @@ uniform sampler2D diffuseMap;
 
 #define MAX_SPOT_LIGHTS 16
 
-// Shadow atlas: sampler2DArrayShadow (compare mode must be GL_COMPARE_REF_TO_TEXTURE)
 uniform sampler2DArrayShadow uShadowMapArray;
-
-// Map each light i -> its layer in the array (uploaded from [0])
-uniform int uSpotShadowLayer[MAX_SPOT_LIGHTS];
-
-// Light-space transforms per light (proj * view). Uploaded from [0].
 uniform mat4 lightSpaceMatrices[MAX_SPOT_LIGHTS];
-
-// Number of active spot lights
 uniform int u_numLights;
 
 // ---------------- UBOs ----------------
@@ -40,13 +32,17 @@ layout(std140) uniform MaterialPropsBlock
 };
 
 // ---------------- Tunables ----------------
-const vec3 AMBIENT_COLOR = vec3(0.5, 0.55, 0.6); // basic ambient; tweak to taste
-const float ALPHA_CUTOFF = 0.5;                  // alpha test threshold for cutouts
+const vec3 AMBIENT_COLOR = vec3(0.5, 0.55, 0.6);
+const float ALPHA_CUTOFF = 0.5;
 
-// ---------------- Shadow PCF toggle ----------------
-// 0 = single tap (LINEAR gives 2×2 HW PCF), 1 = manual 3×3 PCF
-#ifndef SHADOW_USE_3x3_PCF
-#define SHADOW_USE_3x3_PCF 0
+// ---------------- PCF controls ----------------
+// 1 = enable PCF; 0 = single tap (still uses HW compare)
+#ifndef SHADOW_PCF_ENABLED
+#define SHADOW_PCF_ENABLED 3
+#endif
+// PCF radius in texels: 1 => 3x3, 2 => 5x5
+#ifndef SHADOW_PCF_RADIUS
+#define SHADOW_PCF_RADIUS 3
 #endif
 
 // ---------------- Helpers ----------------
@@ -68,6 +64,27 @@ float attenuation(int i, float dist)
     return 1.0 / (kc + kl * dist + kq * dist * dist);
 }
 
+float shadowPCF(int layer, vec2 uv, float ref, float bias)
+{
+#if SHADOW_PCF_ENABLED
+    // Uniform-weight box PCF
+    vec2 texel = 1.0 / vec2(textureSize(uShadowMapArray, 0));
+    float sum = 0.0;
+    int r = SHADOW_PCF_RADIUS;
+    int taps = 0;
+    for (int dy = -r; dy <= r; ++dy)
+        for (int dx = -r; dx <= r; ++dx)
+        {
+            vec2 offs = vec2(dx, dy) * texel;
+            sum += texture(uShadowMapArray, vec4(uv + offs, float(layer), ref - bias));
+            ++taps;
+        }
+    return sum / float(taps);
+#else
+    return texture(uShadowMapArray, vec4(uv, float(layer), ref - bias));
+#endif
+}
+
 float shadowFactor(int i, vec3 worldPos, vec3 N, vec3 L)
 {
     vec4 clip = lightSpaceMatrices[i] * vec4(worldPos, 1.0);
@@ -81,24 +98,11 @@ float shadowFactor(int i, vec3 worldPos, vec3 N, vec3 L)
     vec2 uv = ndc.xy * 0.5 + 0.5;
     float ref = ndc.z * 0.5 + 0.5;
 
+    // Slope-scaled bias
     float slope = 1.0 - max(dot(N, L), 0.0);
     float bias = max(0.001 * slope, 0.0005);
 
-    int layer = uSpotShadowLayer[i];
-
-#if SHADOW_USE_3x3_PCF
-    vec2 texel = 1.0 / vec2(textureSize(uShadowMapArray, 0));
-    float sum = 0.0;
-    for (int dy = -1; dy <= 1; ++dy)
-        for (int dx = -1; dx <= 1; ++dx)
-        {
-            vec2 offs = vec2(dx, dy) * texel;
-            sum += texture(uShadowMapArray, vec4(uv + offs, float(layer), ref - bias));
-        }
-    return sum / 9.0;
-#else
-    return texture(uShadowMapArray, vec4(uv, float(layer), ref - bias)); // HW compare
-#endif
+    return shadowPCF(i, uv, ref, bias);
 }
 
 // ---------------- Main ----------------
@@ -113,7 +117,6 @@ void main()
         discard;
 
     vec3 albedo = tex.rgb;
-
     vec3 V = normalize(viewPos - FragPos);
 
     // Global ambient (not shadowed)
@@ -152,8 +155,7 @@ void main()
         lighting += lightRGB * litTerm * atten * spot;
     }
 
-    // Apply albedo to the lighting result (keeps your original behavior where spec was tinted by albedo)
+    // Apply albedo to the lighting result
     vec3 finalRGB = albedo * lighting;
-
     FragColor = vec4(finalRGB, tex.a);
 }

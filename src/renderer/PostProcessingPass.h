@@ -15,7 +15,7 @@ class PostProcessingPass
 
   private:
     void initQuad();
-    void updateUniforms(Scene& scene, const Ref<Material>& material);
+    void uploadUniforms(Scene& scene, const Ref<Material>& material);
 
     Shader m_postProcessShader;
 

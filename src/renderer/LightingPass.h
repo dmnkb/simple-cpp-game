@@ -21,7 +21,6 @@ class LightingPass
         glm::vec4 colorsIntensity[MAX_SPOT_LIGHTS];
         glm::vec4 conesRange[MAX_SPOT_LIGHTS];
         glm::vec4 attenuations[MAX_SPOT_LIGHTS];
-        glm::vec4 meta; // x = lightCount
     };
     static_assert(alignof(SpotLightsUBO) == 16, "std140 alignment");
 
@@ -35,7 +34,7 @@ class LightingPass
     }
 
   private:
-    void updateUniforms(Scene& scene, const Ref<Material>& material, const LightingInputs& litIn);
+    void uploadUniforms(Scene& scene, const Ref<Material>& material, const LightingInputs& litIn);
 
   private:
     SpotLightsUBO m_spotLightsCPU{}; // CPU staging buffer

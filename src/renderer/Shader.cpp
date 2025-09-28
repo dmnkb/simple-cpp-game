@@ -104,6 +104,13 @@ void Shader::setUniformMatrix4fv(const char* name, const glm::mat4 value)
         glUniformMatrix4fv(location, 1, GL_FALSE, (const GLfloat*)&value);
 }
 
+void Shader::setUniformMatrix4fvArray(const char* name, const int count, glm::f32* pointer)
+{
+    auto location = getCachedLocation(name);
+    if (location >= 0)
+        glUniformMatrix4fv(location, count, GL_FALSE, pointer);
+}
+
 void Shader::setUniformMatrix3fv(const char* name, const glm::mat3 value)
 {
     auto location = getCachedLocation(name);
@@ -143,7 +150,7 @@ void Shader::setIntArray(const char* name, GLint* values, GLsizei count)
 {
     GLint location = getCachedLocation(name);
     if (location >= 0)
-        glUniform1iv(location, count, values); // allows writing uSpotShadowLayer[0]..[count-1]
+        glUniform1iv(location, count, values);
 }
 
 GLint Shader::getCachedLocation(const char* name)
