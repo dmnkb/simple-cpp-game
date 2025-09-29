@@ -10,13 +10,12 @@ namespace Engine
 
 ShadowPass::ShadowPass() : m_depthShader("shader/depth.vs", "shader/depth.fs")
 {
-    // Create an empty FBO; textures will be created on first execute based on light count
     m_shadowFramebuffer = CreateRef<Framebuffer>();
 }
 
 ShadowOutputs ShadowPass::execute(Scene& scene)
 {
-    ShadowOutputs out{}; // default empty
+    ShadowOutputs out{};
 
     // Gather spot lights that cast shadows
     const auto spotLights = scene.getSpotLights();
@@ -24,7 +23,7 @@ ShadowOutputs ShadowPass::execute(Scene& scene)
     if (numSpots <= 0)
         return out; // nothing to render, return empty
 
-    // Ensure our FBO/array textures are sized for current light count
+    // Ensure FBO/array textures are sized for current light count
     ensureFBOForSpotCount(numSpots);
 
     glEnable(GL_DEPTH_TEST);
@@ -36,15 +35,9 @@ ShadowOutputs ShadowPass::execute(Scene& scene)
 
     m_depthShader.bind();
 
-    const bool hasLightSpaceMatrix = m_depthShader.hasUniform("lightSpaceMatrix");
     const bool hasDiffuseMap = m_depthShader.hasUniform("diffuseMap");
 
-    // If we render depth-only (no debug MRT), disable color writes & set draw/read buffers
-    const bool depthOnly = !m_withDebug || !m_debugColorArray;
-    if (depthOnly)
-    {
-        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    }
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
     int lightIndex = 0;
     for (const auto& light : spotLights)
@@ -56,21 +49,13 @@ ShadowOutputs ShadowPass::execute(Scene& scene)
             std::cerr << "FBO not complete for layer " << lightIndex << "\n";
         m_shadowFramebuffer->bind();
 
-        if (depthOnly)
-        {
-            glDrawBuffer(GL_NONE);
-            glReadBuffer(GL_NONE);
-        }
-
-        // Clear depth (color is either disabled or a debug MRT)
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
         glClear(GL_DEPTH_BUFFER_BIT);
 
-        // Build light-space matrix for this spotlight
         const auto& shadowCam = light->getShadowCam();
         const glm::mat4 lightSpaceMatrix = shadowCam->getProjectionMatrix() * shadowCam->getViewMatrix();
-
-        if (hasLightSpaceMatrix)
-            m_depthShader.setUniformMatrix4fv("lightSpaceMatrix", lightSpaceMatrix);
+        m_depthShader.setUniformMatrix4fv("lightSpaceMatrix", lightSpaceMatrix);
 
         // Render all shadow casters for this light
         const std::string rqName = "Shadow Pass (Light " + std::to_string(lightIndex) + ")";
@@ -78,8 +63,9 @@ ShadowOutputs ShadowPass::execute(Scene& scene)
         {
             if (!material->isDoubleSided)
             {
-                // glEnable(GL_CULL_FACE);
-                // glCullFace(GL_FRONT); // reduce peter-panning
+                // reduce peter-panning
+                glEnable(GL_CULL_FACE);
+                glCullFace(GL_FRONT);
             }
 
             if (hasDiffuseMap)
@@ -99,9 +85,7 @@ ShadowOutputs ShadowPass::execute(Scene& scene)
 
             if (!material->isDoubleSided)
             {
-                // glCullFace(GL_BACK);
-                // (leave CULL_FACE enabled for subsequent iterations if your engine expects that;
-                // otherwise disable here)
+                glCullFace(GL_BACK);
             }
         }
 
@@ -109,31 +93,23 @@ ShadowOutputs ShadowPass::execute(Scene& scene)
         ++lightIndex;
     }
 
-    if (depthOnly)
-    {
-        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    }
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
     // Restore previous viewport
     glViewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3]);
 
     m_depthShader.unbind();
 
-    // --- Build and return outputs (refs to textures you just rendered into) ---
-    out.spotShadowArray = m_depthArray;           // GL_TEXTURE_2D_ARRAY (depth)
-    out.spotShadowArrayDebug = m_debugColorArray; // optional GL_TEXTURE_2D_ARRAY (color) or nullptr
-    out.layers = m_allocLayers;                   // number of active slices
-    out.resolution = m_shadowRes;                 // per-slice resolution
+    out.spotShadowArray = m_depthArray;
+    out.layers = m_allocLayers;
+    out.resolution = m_shadowRes;
 
     return out;
 }
 
-// TODO: Check if this ns neccesarry (As the layout count should match the count of lights)
 void ShadowPass::ensureFBOForSpotCount(int spotCount)
 {
-    // Clamp to our maximum
     const int layers = std::min(spotCount, MAX_SPOTLIGHT_SHADOW_COUNT);
-
     // If first run or layer count changed, recreate
     if (m_allocLayers != layers || !m_depthArray)
     {
@@ -142,14 +118,14 @@ void ShadowPass::ensureFBOForSpotCount(int spotCount)
     }
 }
 
+// FIXME: Upon rezising the view port, the framerate almost halfes. Sometimes the app crashes
+
 void ShadowPass::recreateFBO(int layers, int width, int height, bool withDebug)
 {
-    m_withDebug = withDebug;
-
     // Recreate FBO object and attachments
     m_shadowFramebuffer = CreateRef<Framebuffer>();
 
-    // --- Depth array texture (GL_TEXTURE_2D_ARRAY) ---
+    // Spot light depth array texture (GL_TEXTURE_2D_ARRAY)
     {
         TextureProperties props{};
         props.target = GL_TEXTURE_2D_ARRAY;
@@ -163,7 +139,7 @@ void ShadowPass::recreateFBO(int layers, int width, int height, bool withDebug)
         props.pixels = nullptr; // allocate only
 
         CustomProperties cprops{};
-        cprops.mipmaps = false; // no mips for shadow map typically
+        cprops.mipmaps = false;
         cprops.minFilter = GL_LINEAR;
         cprops.magFilter = GL_LINEAR;
         cprops.wrapS = GL_CLAMP_TO_BORDER;
@@ -182,50 +158,11 @@ void ShadowPass::recreateFBO(int layers, int width, int height, bool withDebug)
         glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, border);
         m_depthArray->unbind(0);
 
-        // Attach to FBO (slice 0 initially). We’ll switch slices via reattachLayerForAll()
         m_shadowFramebuffer->attachTexture(m_depthArray);
     }
 
-    // GLint w, h, d;
-    // glGetTextureLevelParameteriv(m_depthArray->id, 0, GL_TEXTURE_WIDTH, &w);
-    // glGetTextureLevelParameteriv(m_depthArray->id, 0, GL_TEXTURE_HEIGHT, &h);
-    // glGetTextureLevelParameteriv(m_depthArray->id, 0, GL_TEXTURE_DEPTH, &d);
-    // std::cout << "Shadow array: " << w << "x" << h << " layers=" << d << "\n";
-
     std::cout << "Shadow array: " << m_depthArray->properties.width << "x" << m_depthArray->properties.height
               << " layers=" << m_depthArray->properties.layers << "\n";
-
-    // --- Optional: debug color array (same layer count) ---
-    if (withDebug)
-    {
-        TextureProperties props{};
-        props.target = GL_TEXTURE_2D_ARRAY;
-        props.level = 0;
-        props.width = width;
-        props.height = height;
-        props.layers = layers;
-        props.internalFormat = GL_RGBA8;
-        props.format = GL_RGBA;
-        props.type = GL_UNSIGNED_BYTE;
-        props.pixels = nullptr;
-
-        CustomProperties cprops{};
-        cprops.mipmaps = false;
-        cprops.minFilter = GL_NEAREST;
-        cprops.magFilter = GL_NEAREST;
-        cprops.wrapS = GL_CLAMP_TO_EDGE;
-        cprops.wrapT = GL_CLAMP_TO_EDGE;
-        cprops.wrapR = GL_CLAMP_TO_EDGE;
-        cprops.attachmentType = GL_COLOR_ATTACHMENT0;
-        cprops.attachLayer = 0;
-
-        m_debugColorArray = CreateRef<Texture>(props, cprops);
-        m_shadowFramebuffer->attachTexture(m_debugColorArray);
-    }
-    else
-    {
-        m_debugColorArray.reset();
-    }
 }
 
 } // namespace Engine

@@ -15,8 +15,7 @@ class ShadowPass
   public:
     ShadowPass();
 
-    // Renders/updates shadow maps for all spot lights and returns handles to the textures.
-    ShadowOutputs execute(Scene& scene); // <-- return by value
+    ShadowOutputs execute(Scene& scene);
 
   private:
     void ensureFBOForSpotCount(int spotCount);
@@ -25,15 +24,11 @@ class ShadowPass
   private:
     Shader m_depthShader;
     Ref<Framebuffer> m_shadowFramebuffer;
-
-    // Owned GPU resources (stable lifetime across frames)
-    Ref<Texture> m_depthArray;      // GL_TEXTURE_2D_ARRAY, depth
-    Ref<Texture> m_debugColorArray; // optional GL_TEXTURE_2D_ARRAY, rgba
+    Ref<Texture> m_depthArray;
 
     // State tracking
     int m_shadowRes = 1024;
     int m_allocLayers = 0;
-    bool m_withDebug = false;
 };
 
 } // namespace Engine

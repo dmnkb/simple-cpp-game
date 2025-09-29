@@ -1,13 +1,12 @@
 #pragma once
+#include "Camera.h"
+#include "Framebuffer.h"
+#include "Texture.h"
 #include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/norm.hpp>
-
-#include "Camera.h"
-#include "Framebuffer.h"
-#include "Texture.h"
 
 namespace Engine
 {
@@ -26,17 +25,28 @@ class SpotLight
     };
 
   public:
-    explicit SpotLight(const SpotLightProperties& props);
+    explicit SpotLight(const SpotLightProperties& props) : m_properties(props)
+    {
+        if (glm::length2(m_properties.direction) < 1e-12f)
+            m_properties.direction = glm::vec3(0, 0, -1);
+        else
+            m_properties.direction = glm::normalize(m_properties.direction);
 
-    SpotLight(); // NEW: default ctor
+        m_properties.coneInner = glm::clamp(m_properties.coneInner, 0.0f, 89.0f);
+        m_properties.coneOuter = glm::clamp(glm::max(m_properties.coneOuter, m_properties.coneInner), 0.0f, 89.0f);
+
+        // Shadow camera
+        syncShadowCamera_();
+    }
+
     void setPosition(const glm::vec3& position = {0.f, 0.f, 0.f})
     {
         m_properties.position = position;
         if (m_shadowCam)
             m_shadowCam->setPosition(position);
+        syncShadowCamera_();
     }
 
-    // Point the light at a world-space target
     void setTarget(const glm::vec3& target = {0.f, 0.f, 0.f})
     {
         glm::vec3 dir = target - m_properties.position;
@@ -48,7 +58,6 @@ class SpotLight
         syncShadowCamera_();
     }
 
-    // Set direction explicitly (normalized internally)
     void setDirection(const glm::vec3& dir)
     {
         glm::vec3 d = (glm::length2(dir) < 1e-12f) ? glm::vec3(0, 0, -1) : glm::normalize(dir);
@@ -120,21 +129,11 @@ class SpotLight
         return d > 0.0 ? float(d) : 0.0f;
     }
 
-    void sanitizeProps_()
-    {
-        if (glm::length2(m_properties.direction) < 1e-12f)
-            m_properties.direction = glm::vec3(0, 0, -1);
-        else
-            m_properties.direction = glm::normalize(m_properties.direction);
-
-        m_properties.coneInner = glm::clamp(m_properties.coneInner, 0.0f, 89.0f);
-        m_properties.coneOuter = glm::clamp(glm::max(m_properties.coneOuter, m_properties.coneInner), 0.0f, 89.0f);
-    }
-
     void syncShadowCamera_()
     {
         if (!m_shadowCam)
-            return;
+            m_shadowCam = CreateRef<Camera>();
+
         // Spotlight perspective: FOV ≈ outerCone*2, aspect = 1 for square shadow maps
         const float fovY = glm::radians(glm::clamp(m_properties.coneOuter * 2.0f, 1.0f, 178.0f));
         const float nearP = 0.05f;

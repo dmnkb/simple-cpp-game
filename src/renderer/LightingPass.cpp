@@ -14,6 +14,7 @@
 namespace Engine
 {
 
+// MARK: ComputeEffectiveRange()
 // Helper: compute effective range from intensity & attenuation
 static float ComputeEffectiveRange(float intensity, const glm::vec3& att, float cutoff = 0.01f)
 {
@@ -36,6 +37,7 @@ static float ComputeEffectiveRange(float intensity, const glm::vec3& att, float 
     return d > 0.0 ? float(d) : 0.0f;
 }
 
+// MARK: LightingPass()
 LightingPass::LightingPass()
 {
     // --- Create the SpotLights UBO (binding = 0, matches GLSL) ---
@@ -84,6 +86,7 @@ LightingPass::~LightingPass()
     glDeleteBuffers(1, &m_spotLightsUBO);
 }
 
+// MARK: execute()
 void LightingPass::execute(Scene& scene, const LightingInputs& litIn)
 {
     m_frameBuffer->bind();
@@ -117,6 +120,7 @@ void LightingPass::execute(Scene& scene, const LightingInputs& litIn)
     m_frameBuffer->unbind();
 }
 
+// MARK: uploadUniforms()
 void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, const LightingInputs& litIn)
 {
     // Camera
@@ -129,7 +133,7 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
     material->setUniformMatrix4fv("u_ViewProjection", vp);
     material->setUniform3fv("viewPos", camPos);
 
-    // Lights
+    // MARK: • Spot lights
     const std::vector<Ref<SpotLight>> lights = scene.getSpotLights();
     const int count = std::min<int>((int)lights.size(), MAX_SPOT_LIGHTS);
 
@@ -173,8 +177,8 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        if (material->hasUniform("uShadowMapArray"))
-            material->setUniform1i("uShadowMapArray", SHADOW_TU);
+        if (material->hasUniform("uSpotLightShadowMapArray"))
+            material->setUniform1i("uSpotLightShadowMapArray", SHADOW_TU);
     }
 
     // Upload light-space matrix array in one call
@@ -185,11 +189,12 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
             const auto& light = lights[i];
             lightVP[i] = light->getShadowCam()->getProjectionMatrix() * light->getShadowCam()->getViewMatrix();
         }
-        material->getShader()->setUniformMatrix4fvArray("lightSpaceMatrices[0]", count, glm::value_ptr(lightVP[0]));
+        material->getShader()->setUniformMatrix4fvArray("uSpotLightSpaceMatrices[0]", count,
+                                                        glm::value_ptr(lightVP[0]));
     }
 
-    if (material->hasUniform("u_numLights"))
-        material->setUniform1i("u_numLights", count);
+    if (material->hasUniform("uSpotLightCount"))
+        material->setUniform1i("uSpotLightCount", count);
 }
 
 } // namespace Engine

@@ -127,8 +127,6 @@ void Framebuffer::reattachLayerForAll(GLint layer)
             break;
         }
     }
-
-    // NOTE: Do NOT unbind here. The caller may immediately query FBO status or render.
 }
 
 glm::vec2 Framebuffer::getDimensions() const

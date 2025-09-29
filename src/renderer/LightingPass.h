@@ -10,6 +10,7 @@ namespace Engine
 {
 
 #define MAX_SPOT_LIGHTS 16
+#define MAX_POINT_LIGHTS 16
 
 class LightingPass
 {
@@ -23,6 +24,15 @@ class LightingPass
         glm::vec4 attenuations[MAX_SPOT_LIGHTS];
     };
     static_assert(alignof(SpotLightsUBO) == 16, "std140 alignment");
+
+    struct alignas(16) PointLightsUBO
+    {
+        glm::vec4 positionsWS[MAX_POINT_LIGHTS];
+        glm::vec4 colorsIntensity[MAX_POINT_LIGHTS];
+        glm::vec4 ranges[MAX_POINT_LIGHTS];
+        glm::vec4 attenuations[MAX_POINT_LIGHTS];
+    };
+    static_assert(alignof(PointLightsUBO) == 16, "std140 alignment");
 
     LightingPass();
     ~LightingPass();

@@ -10,11 +10,11 @@ uniform sampler2D diffuseMap;
 
 #define MAX_SPOT_LIGHTS 16
 
-uniform sampler2DArrayShadow uShadowMapArray;
-uniform mat4 lightSpaceMatrices[MAX_SPOT_LIGHTS];
-uniform int u_numLights;
+uniform sampler2DArrayShadow uSpotLightShadowMapArray;
+uniform mat4 uSpotLightSpaceMatrices[MAX_SPOT_LIGHTS];
+uniform int uSpotLightCount;
 
-// ---------------- UBOs ----------------
+// UBOs
 layout(std140) uniform SpotLights
 {
     vec4 positionsWS[MAX_SPOT_LIGHTS];     // xyz pos, w=1
@@ -31,12 +31,12 @@ layout(std140) uniform MaterialPropsBlock
     float specularIntensity; // specular intensity (optional)
 };
 
-// ---------------- Tunables ----------------
+// MARK: Tunables
 const vec3 AMBIENT_COLOR = vec3(0.5, 0.55, 0.6);
 const float ALPHA_CUTOFF = 0.5;
 
-// ---------------- PCF controls ----------------
-// 1 = enable PCF; 0 = single tap (still uses HW compare)
+// MARK: PCF controls
+// 1 = enable PCF; 0 = single tap (uses HW compare)
 #ifndef SHADOW_PCF_ENABLED
 #define SHADOW_PCF_ENABLED 3
 #endif
@@ -45,10 +45,8 @@ const float ALPHA_CUTOFF = 0.5;
 #define SHADOW_PCF_RADIUS 3
 #endif
 
-// ---------------- Helpers ----------------
 float spotMask(int i, vec3 L, vec3 LdirOut)
 {
-    // UBO stores ***OUTWARD*** direction; for the cone use -LdirOut (into the cone)
     float innerCos = conesRange[i].x;
     float outerCos = conesRange[i].y;
     float theta = dot(L, -normalize(LdirOut));
@@ -68,7 +66,7 @@ float shadowPCF(int layer, vec2 uv, float ref, float bias)
 {
 #if SHADOW_PCF_ENABLED
     // Uniform-weight box PCF
-    vec2 texel = 1.0 / vec2(textureSize(uShadowMapArray, 0));
+    vec2 texel = 1.0 / vec2(textureSize(uSpotLightShadowMapArray, 0));
     float sum = 0.0;
     int r = SHADOW_PCF_RADIUS;
     int taps = 0;
@@ -76,18 +74,18 @@ float shadowPCF(int layer, vec2 uv, float ref, float bias)
         for (int dx = -r; dx <= r; ++dx)
         {
             vec2 offs = vec2(dx, dy) * texel;
-            sum += texture(uShadowMapArray, vec4(uv + offs, float(layer), ref - bias));
+            sum += texture(uSpotLightShadowMapArray, vec4(uv + offs, float(layer), ref - bias));
             ++taps;
         }
     return sum / float(taps);
 #else
-    return texture(uShadowMapArray, vec4(uv, float(layer), ref - bias));
+    return texture(uSpotLightShadowMapArray, vec4(uv, float(layer), ref - bias));
 #endif
 }
 
 float shadowFactor(int i, vec3 worldPos, vec3 N, vec3 L)
 {
-    vec4 clip = lightSpaceMatrices[i] * vec4(worldPos, 1.0);
+    vec4 clip = uSpotLightSpaceMatrices[i] * vec4(worldPos, 1.0);
     if (clip.w <= 0.0)
         return 1.0; // behind light camera => lit
 
@@ -99,13 +97,12 @@ float shadowFactor(int i, vec3 worldPos, vec3 N, vec3 L)
     float ref = ndc.z * 0.5 + 0.5;
 
     // Slope-scaled bias
-    float slope = 1.0 - max(dot(N, L), 0.0);
-    float bias = max(0.001 * slope, 0.0005);
+    // float slope = 1.0 - max(dot(N, L), 0.0);
+    // float bias = max(0.001 * slope, 0.0005);
 
-    return shadowPCF(i, uv, ref, bias);
+    return shadowPCF(i, uv, ref, 0);
 }
 
-// ---------------- Main ----------------
 void main()
 {
     vec3 N = normalize(v_Normal);
@@ -119,17 +116,15 @@ void main()
     vec3 albedo = tex.rgb;
     vec3 V = normalize(viewPos - FragPos);
 
-    // Global ambient (not shadowed)
     vec3 lighting = AMBIENT_COLOR;
 
-    for (int i = 0; i < u_numLights; ++i)
+    for (int i = 0; i < uSpotLightCount; ++i)
     {
         vec3 Lvec = positionsWS[i].xyz - FragPos;
         float dist2 = dot(Lvec, Lvec);
         float dist = sqrt(dist2);
         vec3 L = Lvec / max(dist, 1e-6);
 
-        // cone (NOTE: directionsWS is ***OUTWARD***)
         vec3 LdirOut = directionsWS[i].xyz;
         float spot = spotMask(i, L, LdirOut);
         if (spot <= 0.0001)
@@ -138,24 +133,19 @@ void main()
         float atten = attenuation(i, dist);
         float NdotL = max(dot(N, L), 0.0);
 
-        // Shadow factor (applies to BOTH diffuse & spec)
         float s = shadowFactor(i, FragPos, N, L);
 
-        // Simple Blinn spec
         vec3 H = normalize(L + V);
         float NdotH = max(dot(N, H), 0.0);
         float spec = pow(NdotH, max(shininess, 1.0)) * specularIntensity;
 
         vec3 lightRGB = colorsIntensity[i].rgb * colorsIntensity[i].a;
 
-        // Diffuse and spec both shadowed
         float litTerm = (NdotL + spec) * s;
 
-        // Accumulate (light color scales the term; albedo applied later)
         lighting += lightRGB * litTerm * atten * spot;
     }
 
-    // Apply albedo to the lighting result
     vec3 finalRGB = albedo * lighting;
     FragColor = vec4(finalRGB, tex.a);
 }
