@@ -1,5 +1,6 @@
 #include "PanelStats.h"
 #include "core/Profiler.h"
+#include "helpers/MemoryUsage.h"
 #include "imgui.h"
 #include "pch.h"
 #include "renderer/ClearColor.h"
@@ -13,12 +14,31 @@ void PanelStats::render(const float fps, const Scene& scene)
     static bool open = true;
     ImGui::Begin("Stats", &open);
 
-    std::string headerTitle = "FPS: " + std::to_string(fps);
+    // Memory Usage
+    const auto memUsageMB = static_cast<double>(GetProcessMemoryUsage()) / (1024.0 * 1024.0);
+    std::string memHeaderTitle = std::format("RAM: {:.2f} MB###RAM", memUsageMB);
+    if (ImGui::CollapsingHeader(memHeaderTitle.c_str()), ImGuiTreeNodeFlags_DefaultOpen)
+    {
+        static constexpr int historySize = 10000;
+        static float memHistory[historySize] = {};
+        static int historyOffset = 0;
+
+        memHistory[historyOffset] = memUsageMB;
+        historyOffset = (historyOffset + 1) % historySize;
+
+        ImGui::PushStyleColor(ImGuiCol_PlotLines, IM_COL32(200, 200, 200, 255));
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(35, 35, 35, 255));
+
+        ImGui::PlotLines("##MemPlot", memHistory, historySize, historyOffset, nullptr, 0.0f, 1000,
+                         ImVec2(ImGui::GetContentRegionAvail().x, 60.0f));
+
+        ImGui::PopStyleColor(2);
+    }
 
     // FPS
-    if (ImGui::CollapsingHeader(headerTitle.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+    std::string fpsHeaderTitle = std::format("FPS: {:.2f}###FPS", fps);
+    if (ImGui::CollapsingHeader(fpsHeaderTitle.c_str()), ImGuiTreeNodeFlags_DefaultOpen)
     {
-        // Static circular buffer to store FPS history
         static constexpr int historySize = 10000;
         static float fpsHistory[historySize] = {};
         static int historyOffset = 0;
@@ -30,13 +50,12 @@ void PanelStats::render(const float fps, const Scene& scene)
         ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(35, 35, 35, 255));
 
         ImGui::PlotLines("##FPSPlot", fpsHistory, historySize, historyOffset, nullptr, 0.0f, 1000,
-                         ImVec2(ImGui::GetContentRegionAvail().x, 60.0f)); // width = auto, height = 60px
+                         ImVec2(ImGui::GetContentRegionAvail().x, 60.0f));
 
         ImGui::PopStyleColor(2);
     }
 
     // Draw Call Stats
-
     const auto drawCallsPerPass = Profiler::getDrawCallList();
 
     if (!drawCallsPerPass.empty())
@@ -86,24 +105,6 @@ void PanelStats::render(const float fps, const Scene& scene)
         const SClearColor& color = clearColorValues[selected];
         RendererAPI::setClearColor(color);
     }
-
-    // Shadow Map Previews TODO: Add rest of light types
-    // TODO: Since shadow maps are arrays now, find a new way to render them
-    // if (!scene.getSpotLights().empty())
-    // {
-    //     if (ImGui::CollapsingHeader("Shadow Maps"))
-    //     {
-    //         for (const auto& lightNode : scene.getSpotLights())
-    //         {
-    //             const auto& depth = Profiler::getSpotShadowArrayHandler();
-    //             const auto& color = Profiler::getSpotShadowArrayHandlerDebug();
-
-    //             ImGui::Image((void*)(intptr_t)depth, ImVec2(128, 96), ImVec2(1, 1), ImVec2(0, 0));
-    //             ImGui::SameLine();
-    //             ImGui::Image((void*)(intptr_t)color, ImVec2(128, 96), ImVec2(1, 1), ImVec2(0, 0));
-    //         }
-    //     }
-    // }
 
     ImGui::End();
 }

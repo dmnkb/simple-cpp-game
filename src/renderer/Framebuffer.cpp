@@ -59,10 +59,10 @@ void Framebuffer::bind()
         glReadBuffer(GL_NONE);
 
     // Match viewport to the first attachment (respect mip level)
-    const auto& a0 = m_attachments[0];
-    const int lvl = a0->properties.level;
-    m_width = a0->widthAtLevel(lvl);
-    m_height = a0->heightAtLevel(lvl);
+    const auto& firstAttachment = m_attachments[0];
+    const int firstLevel = firstAttachment->properties.level;
+    m_width = firstAttachment->widthAtLevel(firstLevel);
+    m_height = firstAttachment->heightAtLevel(firstLevel);
     glViewport(0, 0, m_width, m_height);
 
     // Clear depth, optionally color
