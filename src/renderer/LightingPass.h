@@ -37,7 +37,7 @@ class LightingPass
     LightingPass();
     ~LightingPass();
 
-    void execute(Scene& scene, const LightingInputs& litIn);
+    LightingOutputs execute(Scene& scene, const LightingInputs& litIn);
     Ref<Texture> getRenderTargetTexture()
     {
         return m_renderTargetTexture;

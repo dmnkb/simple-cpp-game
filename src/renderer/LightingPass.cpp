@@ -14,8 +14,8 @@
 namespace Engine
 {
 
-// MARK: ComputeEffectiveRange()
 // Helper: compute effective range from intensity & attenuation
+// TODO: To be used here, instead of per light, when lights become PODs
 static float ComputeEffectiveRange(float intensity, const glm::vec3& att, float cutoff = 0.01f)
 {
     cutoff = glm::max(cutoff, 1e-6f);
@@ -37,44 +37,50 @@ static float ComputeEffectiveRange(float intensity, const glm::vec3& att, float 
     return d > 0.0 ? float(d) : 0.0f;
 }
 
-// MARK: LightingPass()
 LightingPass::LightingPass()
 {
-    // --- Create the SpotLights UBO (binding = 0, matches GLSL) ---
+    // MARK: UBO (binding = 0, matches GLSL)
     glGenBuffers(1, &m_spotLightsUBO);
     glBindBuffer(GL_UNIFORM_BUFFER, m_spotLightsUBO);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(SpotLightsUBO), nullptr, GL_DYNAMIC_DRAW);
     glBindBufferBase(GL_UNIFORM_BUFFER, /*binding*/ 0, m_spotLightsUBO);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
+    // MARK: Color FB
     m_frameBuffer = CreateRef<Framebuffer>();
 
-    m_renderTargetTexture = CreateRef<Texture>(
-        TextureProperties{
-            .internalFormat = GL_RGBA16F,
-            .width = (int)Window::frameBufferDimensions.x,
-            .height = (int)Window::frameBufferDimensions.y,
-            .format = GL_RGBA,
-            .type = GL_FLOAT,
-        },
-        CustomProperties{.attachmentType = GL_COLOR_ATTACHMENT0, .path = "Lighting Pass Buffer"});
+    TextureProperties props{};
+    props.internalFormat = GL_RGBA16F;
+    props.width = (int)Window::frameBufferDimensions.x;
+    props.height = (int)Window::frameBufferDimensions.y;
+    props.format = GL_RGBA;
+    props.type = GL_FLOAT;
+
+    CustomProperties customProps{};
+    customProps.attachmentType = GL_COLOR_ATTACHMENT0;
+    customProps.path = "Lighting Pass Buffer";
+
+    m_renderTargetTexture = CreateRef<Texture>(props, customProps);
+
+    // MARK: Depth FB
+    TextureProperties depthProps{};
+    depthProps.internalFormat = GL_DEPTH_COMPONENT24;
+    depthProps.width = (int)Window::frameBufferDimensions.x;
+    depthProps.height = (int)Window::frameBufferDimensions.y;
+    depthProps.format = GL_DEPTH_COMPONENT;
+    depthProps.type = GL_FLOAT;
+
+    CustomProperties depthCustomProps{};
+    depthCustomProps.attachmentType = GL_DEPTH_ATTACHMENT;
+    depthCustomProps.minFilter = GL_NEAREST;
+    depthCustomProps.magFilter = GL_NEAREST;
+    depthCustomProps.wrapS = GL_CLAMP_TO_EDGE;
+    depthCustomProps.wrapT = GL_CLAMP_TO_EDGE;
+    depthCustomProps.mipmaps = false;
+
+    Ref<Texture> depthTexture = CreateRef<Texture>(depthProps, depthCustomProps);
+
     m_frameBuffer->attachTexture(m_renderTargetTexture);
-
-    auto depthTexture = CreateRef<Texture>(
-        TextureProperties{
-            .internalFormat = GL_DEPTH_COMPONENT24,
-            .width = (int)Window::frameBufferDimensions.x,
-            .height = (int)Window::frameBufferDimensions.y,
-            .format = GL_DEPTH_COMPONENT,
-            .type = GL_FLOAT,
-        },
-        CustomProperties{.attachmentType = GL_DEPTH_ATTACHMENT,
-                         .minFilter = GL_NEAREST,
-                         .magFilter = GL_NEAREST,
-                         .wrapS = GL_CLAMP_TO_EDGE,
-                         .wrapT = GL_CLAMP_TO_EDGE,
-                         .mipmaps = false});
-
     m_frameBuffer->attachTexture(depthTexture);
     m_frameBuffer->dynamicSize = true;
 }
@@ -84,16 +90,18 @@ LightingPass::~LightingPass()
     glDeleteBuffers(1, &m_spotLightsUBO);
 }
 
-// MARK: execute()
-void LightingPass::execute(Scene& scene, const LightingInputs& litIn)
+LightingOutputs LightingPass::execute(Scene& scene, const LightingInputs& lightInputs)
 {
+    LightingOutputs out{};
+
+    // MARK: Bind FB
     m_frameBuffer->bind();
 
     for (const auto& [material, meshMap] : scene.getRenderQueue("Lighting Pass"))
     {
         material->bind();
         material->update();
-        uploadUniforms(scene, material, litIn);
+        uploadUniforms(scene, material, lightInputs);
 
         if (material->isDoubleSided)
         {
@@ -108,6 +116,7 @@ void LightingPass::execute(Scene& scene, const LightingInputs& litIn)
         for (const auto& [mesh, transforms] : meshMap)
         {
             RendererAPI::drawInstanced(mesh, transforms);
+            // MARK: > Draw
             Profiler::registerDrawCall("Lighting Pass");
         }
 
@@ -115,13 +124,16 @@ void LightingPass::execute(Scene& scene, const LightingInputs& litIn)
         material->unbind();
     }
 
+    // MARK: Unbind FB
     m_frameBuffer->unbind();
+
+    out.renderTargetTexture = m_renderTargetTexture;
+    return out;
 }
 
-// MARK: uploadUniforms()
-void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, const LightingInputs& litIn)
+void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, const LightingInputs& lightInputs)
 {
-    // Camera
+    // MARK: [CAM UNIFORMS]
     const auto cam = scene.getActiveCamera();
     const auto view = cam->getViewMatrix();
     const auto proj = cam->getProjectionMatrix();
@@ -131,7 +143,7 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
     material->setUniformMatrix4fv("u_ViewProjection", vp);
     material->setUniform3fv("viewPos", camPos);
 
-    // MARK: • Spot lights
+    // MARK: [SPOT L UNIFORMS]
     const std::vector<Ref<SpotLight>> lights = scene.getSpotLights();
     const int count = std::min<int>((int)lights.size(), MAX_SPOT_LIGHTS);
 
@@ -165,21 +177,23 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
 
     // Shadows array bindings & per-light matrices/layers
     constexpr GLint SHADOW_TU = 5; // Shadow Texture Unit is arbitrary. Needs to be a free one
-    if (litIn.shadows.spotShadowArray)
+    if (lightInputs.spotShadowArray)
     {
         // Bind shadow array to the chosen unit
-        litIn.shadows.spotShadowArray->bind(SHADOW_TU);
+        lightInputs.spotShadowArray->bind(SHADOW_TU);
 
         // Ensure linear filtering
+        // TODO: Check, why this needs to be activated "again" (Should be during creation)
         glActiveTexture(GL_TEXTURE0 + SHADOW_TU);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+        // MARK: SL sampler
         if (material->hasUniform("uSpotLightShadowMapArray"))
             material->setUniform1i("uSpotLightShadowMapArray", SHADOW_TU);
     }
 
-    // Upload light-space matrix array in one call
+    // MARK: SL matrices
     {
         glm::mat4 lightVP[MAX_SPOT_LIGHTS];
         for (int i = 0; i < count; ++i)
@@ -191,6 +205,7 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
                                                         glm::value_ptr(lightVP[0]));
     }
 
+    // MARK: SL count
     if (material->hasUniform("uSpotLightCount"))
         material->setUniform1i("uSpotLightCount", count);
 }

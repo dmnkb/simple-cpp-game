@@ -1,4 +1,5 @@
 #include "Renderer.h"
+#include "PassIO.h"
 #include "RendererAPI.h"
 #include "core/Profiler.h"
 #include "pch.h"
@@ -21,21 +22,15 @@ void Renderer::update(Scene& scene)
     scene.setActiveCamera(scene.getDefaultCamera());
 
     Engine::Profiler::beginRegion("Shadow Pass");
-    auto shadows = m_shadowPass.execute(scene);
+    ShadowOutputs shadowOutputs = m_shadowPass.execute(scene);
     Engine::Profiler::endRegion("Shadow Pass");
 
-    // Lighting pass inputs
-    LightingInputs litIn{};
-    litIn.shadows.spotShadowArray = shadows.spotShadowArray; // may be nullptr if no lights
-    litIn.shadows.layers = shadows.layers;
-    litIn.shadows.resolution = shadows.resolution;
-
     Engine::Profiler::beginRegion("Lighting Pass");
-    m_lightingPass.execute(scene, litIn);
+    LightingOutputs lightingOutputs = m_lightingPass.execute(scene, shadowOutputs);
     Engine::Profiler::endRegion("Lighting Pass");
 
     Engine::Profiler::beginRegion("PostFX Pass");
-    m_postProcessingPass.execute(m_lightingPass.getRenderTargetTexture());
+    m_postProcessingPass.execute(lightingOutputs);
     Engine::Profiler::endRegion("PostFX Pass");
 }
 

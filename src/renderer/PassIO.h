@@ -2,23 +2,24 @@
 #pragma once
 
 #include "Texture.h"
+#include "core/Core.h"
 
 namespace Engine
 {
 
 struct ShadowOutputs
 {
-    Ref<Texture> spotShadowArray;      // GL_TEXTURE_2D_ARRAY (depth)
-    Ref<Texture> spotShadowArrayDebug; // optional
-    int layers = 0;
-    int resolution = 0;
-    // TODO: per-layer light VP matrices if needed
+    Ref<Texture> spotShadowArray;
+    // TODO: per-layer light VP matrices, when lights become PODs without cameras
 };
 
-struct LightingInputs
+using LightingInputs = ShadowOutputs;
+
+struct LightingOutputs
 {
-    ShadowOutputs shadows;
-    // add other inputs: gbuffer, skybox, IBL, etc.
+    Ref<Texture> renderTargetTexture;
 };
+
+using PostProcessingInputs = LightingOutputs;
 
 } // namespace Engine

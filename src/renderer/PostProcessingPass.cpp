@@ -42,7 +42,7 @@ void PostProcessingPass::initQuad()
     glBindVertexArray(0);
 }
 
-void PostProcessingPass::execute(const Ref<Texture>& renderTargetTexture)
+void PostProcessingPass::execute(const PostProcessingInputs& postProcessingInputs)
 {
     glColorMask(true, true, true, true);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -52,7 +52,7 @@ void PostProcessingPass::execute(const Ref<Texture>& renderTargetTexture)
 
     m_postProcessShader.bind();
 
-    renderTargetTexture->bind(0);
+    postProcessingInputs.renderTargetTexture->bind(0);
     m_postProcessShader.setUniform1i("renderTargetTexture", 0);
 
     glBindVertexArray(m_quadVAO);

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "renderer/Shader.h"
-#include "renderer/Texture.h"
+#include "PassIO.h"
+#include "Shader.h"
+#include "Texture.h"
 #include "scene/Scene.h"
 
 namespace Engine
@@ -11,7 +12,7 @@ class PostProcessingPass
 {
   public:
     PostProcessingPass();
-    void execute(const Ref<Texture>& renderTargetTexture);
+    void execute(const PostProcessingInputs& postProcessingInputs);
 
   private:
     void initQuad();

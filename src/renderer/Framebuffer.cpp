@@ -111,6 +111,7 @@ void Framebuffer::attachTexture(const Ref<Texture>& attachment)
 
 void Framebuffer::reattachLayerForAll(GLint layer)
 {
+    // TODO: Check why this needs to be bound here, when the caller already does
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
     for (const auto& a : m_attachments)
