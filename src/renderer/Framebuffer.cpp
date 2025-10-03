@@ -10,12 +10,17 @@ Framebuffer::Framebuffer()
 {
     create();
 
-    EventManager::registerListeners(typeid(WindowReziseEvent).name(),
-                                    [this](const Ref<Event> event) { this->onFramebufferReziseEvent(event); });
+    m_resizeHandle = EventManager::registerListeners(typeid(WindowReziseEvent).name(), [this](const Ref<Event> event)
+                                                     { this->onFramebufferReziseEvent(event); });
 }
 
 Framebuffer::~Framebuffer()
 {
+    // Stop receiving resize events before destroying GL resources.
+    // This prevents callbacks from firing on a partially/destructed object (use-after-free).
+    EventManager::unregister(m_resizeHandle);
+    m_resizeHandle = {};
+
     destroy();
 }
 

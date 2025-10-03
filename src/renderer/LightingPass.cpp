@@ -52,21 +52,19 @@ LightingPass::LightingPass()
     m_renderTargetTexture = CreateRef<Texture>(
         TextureProperties{
             .internalFormat = GL_RGBA16F,
-            .width = (int)Window::dimensions.x,
-            .height = (int)Window::dimensions.y,
+            .width = (int)Window::frameBufferDimensions.x,
+            .height = (int)Window::frameBufferDimensions.y,
             .format = GL_RGBA,
             .type = GL_FLOAT,
         },
-        CustomProperties{
-            .attachmentType = GL_COLOR_ATTACHMENT0,
-        });
+        CustomProperties{.attachmentType = GL_COLOR_ATTACHMENT0, .path = "Lighting Pass Buffer"});
     m_frameBuffer->attachTexture(m_renderTargetTexture);
 
     auto depthTexture = CreateRef<Texture>(
         TextureProperties{
             .internalFormat = GL_DEPTH_COMPONENT24,
-            .width = (int)Window::dimensions.x,
-            .height = (int)Window::dimensions.y,
+            .width = (int)Window::frameBufferDimensions.x,
+            .height = (int)Window::frameBufferDimensions.y,
             .format = GL_DEPTH_COMPONENT,
             .type = GL_FLOAT,
         },

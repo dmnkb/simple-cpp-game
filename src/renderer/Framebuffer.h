@@ -3,6 +3,7 @@
 #include "Texture.h"
 #include "core/Core.h"
 #include "core/Event.h"
+#include "core/EventManager.h"
 
 namespace Engine
 {
@@ -32,6 +33,7 @@ class Framebuffer
 
   private:
     void onFramebufferReziseEvent(const Ref<Event> event);
+    EventHandle m_resizeHandle{};
 
     GLuint m_fbo = 0;
     std::vector<Ref<Texture>> m_attachments;

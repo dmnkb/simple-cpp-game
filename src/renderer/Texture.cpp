@@ -146,25 +146,51 @@ void Texture::unbind(uint32_t slot) const
 
 void Texture::resize(int w, int h)
 {
+    if (w <= 0 || h <= 0)
+        return;
+
     if (w == properties.width && h == properties.height)
         return;
+
     properties.width = w;
     properties.height = h;
 
     bind();
+
+    const bool isDepth = IsDepthFormat(properties.internalFormat, properties.format);
+
+    const GLint level = 0;
+    const GLint border = 0;
+
     if (properties.target == GL_TEXTURE_2D_ARRAY)
     {
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, properties.level, properties.internalFormat, w, h, properties.layers,
-                     properties.border, properties.format, properties.type, properties.pixels);
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, level, properties.internalFormat, w, h, properties.layers, border,
+                     properties.format, properties.type, nullptr);
+    }
+    else if (properties.target == GL_TEXTURE_CUBE_MAP)
+    {
+        for (int face = 0; face < 6; ++face)
+        {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, level, properties.internalFormat, w, h, border,
+                         properties.format, properties.type, nullptr);
+        }
     }
     else
     {
-        glTexImage2D(properties.target, properties.level, properties.internalFormat, w, h, properties.border,
-                     properties.format, properties.type, properties.pixels);
+        glTexImage2D(properties.target, level, properties.internalFormat, w, h, border, properties.format,
+                     properties.type, nullptr);
     }
-    const bool isDepth = IsDepthFormat(properties.internalFormat, properties.format);
+
     if (!isDepth && customProperties.mipmaps)
-        glGenerateMipmap(properties.target);
+    {
+        GLint minFilter = 0;
+        glGetTexParameteriv(properties.target, GL_TEXTURE_MIN_FILTER, &minFilter);
+        if (minFilter == GL_NEAREST_MIPMAP_NEAREST || minFilter == GL_NEAREST_MIPMAP_LINEAR ||
+            minFilter == GL_LINEAR_MIPMAP_NEAREST || minFilter == GL_LINEAR_MIPMAP_LINEAR)
+        {
+            glGenerateMipmap(properties.target);
+        }
+    }
 }
 
 Texture::~Texture()

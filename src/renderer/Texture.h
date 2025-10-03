@@ -1,10 +1,8 @@
 #pragma once
 
-#include <algorithm> // for std::max
 #include <assimp/material.h>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
-#include <string>
 
 namespace Engine
 {
@@ -26,10 +24,10 @@ struct TextureProperties
 
     // Upload/format
     GLint internalFormat = GL_RGB8;
-    GLint border = 0; // must be 0
+    GLint border = 0;
     GLenum format = GL_RGB;
     GLenum type = GL_UNSIGNED_BYTE;
-    unsigned char* pixels = nullptr; // Usually nullptr for render targets
+    unsigned char* pixels = nullptr;
 };
 
 struct CustomProperties
@@ -37,11 +35,11 @@ struct CustomProperties
     bool mipmaps = true;
     GLenum wrapS = GL_REPEAT;
     GLenum wrapT = GL_REPEAT;
-    GLenum wrapR = GL_REPEAT; // good practice for array/3D
+    GLenum wrapR = GL_REPEAT;
 
     GLenum minFilter = GL_LINEAR;
     GLenum magFilter = GL_LINEAR;
-    std::string path;
+    std::string path = "";
 
     // FBO attachment point (GL_COLOR_ATTACHMENTi, GL_DEPTH_ATTACHMENT, ...)
     GLenum attachmentType = GL_COLOR_ATTACHMENT0;
