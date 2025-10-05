@@ -89,6 +89,30 @@ class Camera
         m_props.target = m_props.position + d;
     }
 
+    void setDirection(const glm::vec3& dir, const glm::vec3& upHint)
+    {
+        // normalize dir (fallback to -Z)
+        glm::vec3 d = dir;
+        float d2 = glm::dot(d, d);
+        d = (d2 > 1e-12f) ? d * glm::inversesqrt(d2) : glm::vec3(0.0f, 0.0f, -1.0f);
+
+        // normalize up (fallback to world-up)
+        glm::vec3 up = upHint;
+        float u2 = glm::dot(up, up);
+        up = (u2 > 1e-12f) ? up * glm::inversesqrt(u2) : glm::vec3(0.0f, 1.0f, 0.0f);
+
+        // avoid parallel up
+        if (glm::abs(glm::dot(d, up)) > 0.999f)
+            up = (glm::abs(d.y) < 0.999f) ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::vec3(1.0f, 0.0f, 0.0f);
+
+        // re-orthonormalize
+        const glm::vec3 right = glm::normalize(glm::cross(d, up));
+        up = glm::normalize(glm::cross(right, d));
+
+        m_props.target = m_props.position + d;
+        m_props.up = up;
+    }
+
     void setPerspective(float fovYRadians, float aspect, float nearPlane, float farPlane)
     {
         m_props.type = ECT_PROJECTION;

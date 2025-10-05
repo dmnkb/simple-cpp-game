@@ -3,6 +3,7 @@
 #include "core/Core.h"
 #include "renderer/Camera.h"
 #include "renderer/Model.h"
+#include "renderer/PointLight.h"
 #include "renderer/SpotLight.h"
 
 namespace Engine
@@ -18,9 +19,11 @@ class Scene
 
     void addModel(const Model& model);
     void addSpotLight(const Ref<SpotLight>& light);
+    void addPointLight(const Ref<PointLight>& light);
 
     RenderQueue getRenderQueue(const std::string& passName);
     std::vector<Ref<SpotLight>> getSpotLights() const;
+    std::vector<Ref<PointLight>> getPointLights() const;
 
     void setActiveCamera(const Ref<Camera>& camera);
     Ref<Camera> getActiveCamera() const;
@@ -28,6 +31,7 @@ class Scene
 
   private:
     std::vector<Ref<SpotLight>> m_SpotLights;
+    std::vector<Ref<PointLight>> m_PointLights;
     std::vector<Model> m_Models;
 
     RenderQueue m_cachedRenderQueue;

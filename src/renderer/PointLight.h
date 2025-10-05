@@ -27,16 +27,13 @@ class PointLight
     explicit PointLight(const PointLightProperties& props) : m_properties(props)
     {
         m_properties.colorIntensity.w = glm::max(m_properties.colorIntensity.w, 0.0f);
-
         syncShadowCameras_();
     }
 
     void setPosition(const glm::vec3& position = {0.f, 0.f, 0.f})
     {
         m_properties.position = position;
-        for (auto& cam : m_shadowCams)
-            if (cam)
-                cam->setPosition(position);
+        syncShadowCameras_();
     }
 
     void setIntensity(float I)

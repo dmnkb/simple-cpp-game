@@ -10,7 +10,143 @@ namespace Engine
 
 ShadowPass::ShadowPass() : m_depthShader("shader/depth.vs", "shader/depth.fs")
 {
-    m_shadowFramebuffer = CreateRef<Framebuffer>();
+    setupSpotLightRessources();
+    setupPointLightRessources();
+}
+
+ShadowOutputs ShadowPass::execute(Scene& scene)
+{
+    ShadowOutputs out{};
+
+    m_depthShader.bind();
+
+    glEnable(GL_DEPTH_TEST);
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+    renderSpotLights(scene, scene.getSpotLights());
+    renderPointLights(scene, scene.getPointLights());
+
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+    m_depthShader.unbind();
+
+    out.spotShadowArray = m_spotLightDepthArray;
+    return out;
+}
+
+// MARK: Render spot lights
+void ShadowPass::renderSpotLights(Scene& scene, const std::vector<Ref<SpotLight>>& spotLights)
+{
+    const int count = static_cast<int>(spotLights.size());
+
+    if (count <= 0)
+        return;
+
+    for (int lightIndex = 0; lightIndex < count; ++lightIndex)
+    {
+        const auto& light = spotLights[lightIndex];
+
+        m_spotLightShadowFramebuffer->reattachLayerForAll(lightIndex);
+        m_spotLightShadowFramebuffer->bind();
+
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        const auto& cam = light->getShadowCam();
+        const glm::mat4 matrix = cam->getProjectionMatrix() * cam->getViewMatrix();
+        m_depthShader.setUniformMatrix4fv("lightSpaceMatrix", matrix);
+
+        const std::string rqName = "Shadow Pass (Spot light " + std::to_string(lightIndex) + ")";
+        for (const auto& [material, meshMap] : scene.getRenderQueue(rqName))
+        {
+            if (!material->isDoubleSided)
+            {
+                glEnable(GL_CULL_FACE);
+                glCullFace(GL_FRONT);
+            }
+
+            if (auto diffuse = material->getDiffuseMap())
+            {
+                diffuse->bind(0);
+                m_depthShader.setUniform1i("diffuseMap", 0);
+            }
+
+            for (const auto& [mesh, transforms] : meshMap)
+            {
+                RendererAPI::drawInstanced(mesh, transforms);
+                Profiler::registerDrawCall("Shadow Pass");
+            }
+
+            if (!material->isDoubleSided)
+                glCullFace(GL_BACK);
+        }
+
+        m_spotLightShadowFramebuffer->unbind();
+    }
+}
+
+// MARK: Render point lights
+void ShadowPass::renderPointLights(Scene& scene, const std::vector<Ref<PointLight>>& pointLights)
+{
+    const int count = static_cast<int>(pointLights.size());
+    if (count <= 0)
+        return;
+
+    m_pointLightShadowFramebuffer->bind();
+
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+
+    for (int li = 0; li < count; ++li)
+    {
+        const auto& light = pointLights[li];
+        const auto& shadowCams = light->getShadowCams(); // +X,-X,+Y,-Y,+Z,-Z
+        const int baseLayer = li * 6;
+
+        for (int face = 0; face < 6; ++face)
+        {
+            m_pointLightShadowFramebuffer->reattachLayerForAll(baseLayer + face);
+            glClear(GL_DEPTH_BUFFER_BIT);
+
+            const auto& cam = shadowCams[face];
+            const glm::mat4 lightSpaceMatrix = cam->getProjectionMatrix() * cam->getViewMatrix();
+            m_depthShader.setUniformMatrix4fv("lightSpaceMatrix", lightSpaceMatrix);
+
+            const std::string rqName = "Shadow Pass (Point light " + std::to_string(li) + ")";
+            for (const auto& [material, meshMap] : scene.getRenderQueue(rqName))
+            {
+                if (!material->isDoubleSided)
+                {
+                    glEnable(GL_CULL_FACE);
+                    glCullFace(GL_FRONT);
+                }
+
+                if (auto diffuse = material->getDiffuseMap())
+                {
+                    diffuse->bind(0);
+                    m_depthShader.setUniform1i("diffuseMap", 0);
+                }
+
+                for (const auto& [mesh, transforms] : meshMap)
+                {
+                    RendererAPI::drawInstanced(mesh, transforms);
+                    Profiler::registerDrawCall("Shadow Pass");
+                }
+
+                if (!material->isDoubleSided)
+                    glCullFace(GL_BACK);
+            }
+        }
+    }
+
+    m_pointLightShadowFramebuffer->unbind();
+}
+
+// MARK: Setup spot ressources
+void ShadowPass::setupSpotLightRessources()
+{
+    m_spotLightShadowFramebuffer = CreateRef<Framebuffer>();
 
     TextureProperties props{};
     props.target = GL_TEXTURE_2D_ARRAY;
@@ -33,93 +169,62 @@ ShadowPass::ShadowPass() : m_depthShader("shader/depth.vs", "shader/depth.fs")
     customProps.attachmentType = GL_DEPTH_ATTACHMENT;
     customProps.attachLayer = 0;
 
-    m_depthArray = CreateRef<Texture>(props, customProps);
+    m_spotLightDepthArray = CreateRef<Texture>(props, customProps);
 
     // Needed for hardware compare
-    m_depthArray->bind(0);
+    m_spotLightDepthArray->bind(0);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-    m_depthArray->unbind(0);
+    m_spotLightDepthArray->unbind(0);
 
-    m_shadowFramebuffer->attachTexture(m_depthArray);
+    m_spotLightShadowFramebuffer->attachTexture(m_spotLightDepthArray);
 
-    std::cout << "Shadow array: " << m_depthArray->properties.width << "x" << m_depthArray->properties.height
-              << " layers=" << m_depthArray->properties.layers << "\n";
+    std::cout << "Spot light shadow array: " << m_spotLightDepthArray->properties.width << "x"
+              << m_spotLightDepthArray->properties.height << " layers=" << m_spotLightDepthArray->properties.layers
+              << "\n";
 }
 
-ShadowOutputs ShadowPass::execute(Scene& scene)
+// MARK: Setup point ressources
+void ShadowPass::setupPointLightRessources()
 {
-    ShadowOutputs out{};
+    m_pointLightShadowFramebuffer = CreateRef<Framebuffer>();
 
-    // MARK: Get spot lights
-    const auto spotLights = scene.getSpotLights();
-    const int spotLightCount = static_cast<int>(spotLights.size());
+    TextureProperties props{};
+    props.target = GL_TEXTURE_CUBE_MAP_ARRAY;
+    props.level = 0;
+    props.width = m_pointShadowRes;
+    props.height = m_pointShadowRes;
+    props.layers = MAX_POINTLIGHT_SHADOW_COUNT * 6;
+    props.internalFormat = GL_DEPTH_COMPONENT24;
+    props.format = GL_DEPTH_COMPONENT;
+    props.type = GL_FLOAT;
+    props.pixels = nullptr;
 
-    if (spotLightCount <= 0)
-        return out;
+    CustomProperties custom{};
+    custom.mipmaps = false;
+    custom.minFilter = GL_LINEAR;
+    custom.magFilter = GL_LINEAR;
+    custom.wrapS = GL_CLAMP_TO_EDGE;
+    custom.wrapT = GL_CLAMP_TO_EDGE;
+    custom.wrapR = GL_CLAMP_TO_EDGE;
+    custom.attachmentType = GL_DEPTH_ATTACHMENT;
+    custom.attachLayer = 0;
 
-    glEnable(GL_DEPTH_TEST);
+    m_pointLightDepthCubeArray = CreateRef<Texture>(props, custom);
 
-    m_depthShader.bind();
+    // samplerCubeArrayShadow settings
+    m_pointLightDepthCubeArray->bind(0);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    m_pointLightDepthCubeArray->unbind(0);
 
-    const bool hasDiffuseMap = m_depthShader.hasUniform("diffuseMap");
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    // default attach to layer 0; reattach per face with glFramebufferTextureLayer during rendering
+    m_pointLightShadowFramebuffer->attachTexture(m_pointLightDepthCubeArray);
 
-    // MARK: [FOR EACH: SPOT L]
-    for (int lightIndex = 0; lightIndex < spotLightCount; ++lightIndex)
-    {
-        const auto& light = spotLights[lightIndex];
-
-        // MARK: > Bind FB
-        m_shadowFramebuffer->reattachLayerForAll(lightIndex);
-        m_shadowFramebuffer->bind();
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
-        glClear(GL_DEPTH_BUFFER_BIT);
-
-        const auto& shadowCam = light->getShadowCam();
-        const glm::mat4 lightSpaceMatrix = shadowCam->getProjectionMatrix() * shadowCam->getViewMatrix();
-        m_depthShader.setUniformMatrix4fv("lightSpaceMatrix", lightSpaceMatrix);
-
-        const std::string rqName = "Shadow Pass (Light " + std::to_string(lightIndex) + ")";
-        for (const auto& [material, meshMap] : scene.getRenderQueue(rqName))
-        {
-            if (!material->isDoubleSided)
-            {
-                glEnable(GL_CULL_FACE);
-                glCullFace(GL_FRONT);
-            }
-
-            if (hasDiffuseMap)
-            {
-                if (auto diffuse = material->getDiffuseMap())
-                {
-                    diffuse->bind(0);
-                    m_depthShader.setUniform1i("diffuseMap", 0);
-                }
-            }
-
-            for (const auto& [mesh, transforms] : meshMap)
-            {
-                RendererAPI::drawInstanced(mesh, transforms);
-                // MARK: > Draw
-                Profiler::registerDrawCall("Shadow Pass");
-            }
-
-            if (!material->isDoubleSided)
-                glCullFace(GL_BACK);
-        }
-
-        // MARK: > Unbind FB
-        m_shadowFramebuffer->unbind();
-    }
-
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-    m_depthShader.unbind();
-
-    out.spotShadowArray = m_depthArray;
-    return out;
+    std::cout << "Point light shadow cube array: " << m_pointLightDepthCubeArray->properties.width << "x"
+              << m_pointLightDepthCubeArray->properties.height << " cubes=" << MAX_POINTLIGHT_SHADOW_COUNT
+              << " layers=" << m_pointLightDepthCubeArray->properties.layers << "\n";
 }
 
 } // namespace Engine

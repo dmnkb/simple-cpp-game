@@ -34,15 +34,12 @@ class SpotLight
 
         m_properties.coneInner = glm::clamp(m_properties.coneInner, 0.0f, 89.0f);
         m_properties.coneOuter = glm::clamp(glm::max(m_properties.coneOuter, m_properties.coneInner), 0.0f, 89.0f);
-
         syncShadowCamera_();
     }
 
     void setPosition(const glm::vec3& position = {0.f, 0.f, 0.f})
     {
         m_properties.position = position;
-        if (m_shadowCam)
-            m_shadowCam->setPosition(position);
         syncShadowCamera_();
     }
 
@@ -52,17 +49,12 @@ class SpotLight
         if (glm::length2(dir) < 1e-12f)
             dir = glm::vec3(0, 0, -1);
         m_properties.direction = glm::normalize(dir);
-        if (m_shadowCam)
-            m_shadowCam->setDirection(m_properties.direction);
         syncShadowCamera_();
     }
 
     void setDirection(const glm::vec3& dir)
     {
-        glm::vec3 d = (glm::length2(dir) < 1e-12f) ? glm::vec3(0, 0, -1) : glm::normalize(dir);
-        m_properties.direction = d;
-        if (m_shadowCam)
-            m_shadowCam->setDirection(d);
+        m_properties.direction = (glm::length2(dir) < 1e-12f) ? glm::vec3(0, 0, -1) : glm::normalize(dir);
         syncShadowCamera_();
     }
 

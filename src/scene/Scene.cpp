@@ -23,6 +23,11 @@ void Scene::addSpotLight(const Ref<SpotLight>& light)
     m_SpotLights.push_back(light);
 }
 
+void Scene::addPointLight(const Ref<PointLight>& light)
+{
+    m_PointLights.push_back(light);
+}
+
 // TODO: Sort transparent renderables back-to-front
 RenderQueue Scene::getRenderQueue(const std::string& passName)
 {
@@ -74,6 +79,11 @@ RenderQueue Scene::getRenderQueue(const std::string& passName)
 std::vector<Ref<SpotLight>> Scene::getSpotLights() const
 {
     return m_SpotLights;
+}
+
+std::vector<Ref<PointLight>> Scene::getPointLights() const
+{
+    return m_PointLights;
 }
 
 void Scene::setActiveCamera(const Ref<Camera>& camera)
