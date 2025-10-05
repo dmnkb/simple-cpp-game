@@ -35,7 +35,6 @@ class SpotLight
         m_properties.coneInner = glm::clamp(m_properties.coneInner, 0.0f, 89.0f);
         m_properties.coneOuter = glm::clamp(glm::max(m_properties.coneOuter, m_properties.coneInner), 0.0f, 89.0f);
 
-        // Shadow camera
         syncShadowCamera_();
     }
 
@@ -134,11 +133,15 @@ class SpotLight
         if (!m_shadowCam)
             m_shadowCam = CreateRef<Camera>();
 
+        // Compute a reasonable far plane from attenuation (e.g., 1% cutoff)
+        m_range =
+            glm::max(computeEffectiveRange_(m_properties.colorIntensity.w, m_properties.attenuation, 0.01f), 1.0f);
+
         // Spotlight perspective: FOV ≈ outerCone*2, aspect = 1 for square shadow maps
         const float fovY = glm::radians(glm::clamp(m_properties.coneOuter * 2.0f, 1.0f, 178.0f));
         const float nearP = 0.05f;
-        const float farP =
-            glm::max(computeEffectiveRange_(m_properties.colorIntensity.w, m_properties.attenuation, 0.01f), 1.0f);
+        const float farP = m_range;
+
         m_shadowCam->setPerspective(fovY, /*aspect*/ 1.0f, nearP, farP);
         m_shadowCam->setPosition(m_properties.position);
         m_shadowCam->setDirection(m_properties.direction);

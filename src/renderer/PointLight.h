@@ -27,6 +27,7 @@ class PointLight
     explicit PointLight(const PointLightProperties& props) : m_properties(props)
     {
         m_properties.colorIntensity.w = glm::max(m_properties.colorIntensity.w, 0.0f);
+
         syncShadowCameras_();
     }
 
@@ -56,12 +57,6 @@ class PointLight
     }
 
     float getRange() const
-    {
-        return m_range;
-    }
-
-    // Far plane is useful in shaders when sampling depth cubemaps
-    float getShadowFarPlane() const
     {
         return m_range;
     }
