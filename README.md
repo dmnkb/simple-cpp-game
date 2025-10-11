@@ -20,15 +20,16 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [x] Basic post processing (Screen quad)
 - [x] Profiler
 - [x] Window & Framebuffer rezising
-- [ ] Refactor lights
+- [x] Refactor lights
+- [ ] Cascaded shadow maps 
 - [ ] Change debug to editor
 - [ ] ImGUI Gimbal controls
 - [ ] ECS
 - [x] Display frametime (CPU)
-- [ ] Split architecture into engine.cpp and game.cpp
+- [ ] Split architecture into engine and game
+- [ ] Layer architecture
 - [ ] SSAO
 - [ ] Debug view (Wireframe, per instance coloring)
-- [ ] Cascaded shadow maps 
 - [ ] Mip chain bloom
 - [ ] Integrate Bullet Physics (Drag and drop objects)
 - [ ] Audio using [miniaudio](https://github.com/mackron/miniaudio)
