@@ -27,13 +27,13 @@ class ShadowPass
     void renderPointLights(Scene& scene, const std::vector<Ref<PointLight>>& pointLights);
 
   private:
-    Shader m_depthShader;
-
     // Spot light resources
+    Shader m_depthShader;
     Ref<Framebuffer> m_spotLightShadowFramebuffer;
     Ref<Texture> m_spotLightDepthArray; // GL_TEXTURE_2D_ARRAY (depth)
 
     // Point light resources
+    Shader m_depthShaderCube;
     Ref<Framebuffer> m_pointLightShadowFramebuffer;
     Ref<Texture> m_pointLightDepthCubeArray; // GL_TEXTURE_CUBE_MAP_ARRAY (depth)
 

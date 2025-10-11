@@ -96,25 +96,47 @@ void Texture::create()
 
     if (properties.target == GL_TEXTURE_2D_ARRAY)
     {
-        // allocate array (pixels only valid for level 0 single layer uploads; here we allocate empty)
         glTexImage3D(GL_TEXTURE_2D_ARRAY, properties.level, properties.internalFormat, properties.width,
                      properties.height, properties.layers, properties.border, properties.format, properties.type,
                      properties.pixels);
     }
+    else if (properties.target == GL_TEXTURE_CUBE_MAP_ARRAY)
+    {
+        // NOTE: properties.layers must be 6 * cubeCount (you already set this in your shadow pass)
+        glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, properties.level, properties.internalFormat, properties.width,
+                     properties.height,
+                     properties.layers, // 6 * numCubes
+                     properties.border, properties.format, properties.type, properties.pixels);
+
+        // On macOS, clamp mip levels if you’re not providing mipmaps:
+        glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_BASE_LEVEL, 0);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAX_LEVEL, 0);
+    }
+    else if (properties.target == GL_TEXTURE_CUBE_MAP)
+    {
+        // Allocate each face (in case you ever use non-array cubemaps here)
+        for (int face = 0; face < 6; ++face)
+        {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, properties.level, properties.internalFormat,
+                         properties.width, properties.height, properties.border, properties.format, properties.type,
+                         nullptr);
+        }
+    }
     else
-    { // GL_TEXTURE_2D, etc.
+    {
         glTexImage2D(properties.target, properties.level, properties.internalFormat, properties.width,
                      properties.height, properties.border, properties.format, properties.type, properties.pixels);
     }
 
     if (isDepth)
     {
+        // TODO: Should the compare mode value be something else?
         glTexParameteri(properties.target, GL_TEXTURE_COMPARE_MODE, GL_NONE);
         glTexParameteri(properties.target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(properties.target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(properties.target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTexParameteri(properties.target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        if (properties.target == GL_TEXTURE_2D_ARRAY)
+        if (properties.target == GL_TEXTURE_2D_ARRAY || properties.target == GL_TEXTURE_CUBE_MAP_ARRAY)
             glTexParameteri(properties.target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
         const float border[4] = {1.f, 1.f, 1.f, 1.f};
         glTexParameterfv(properties.target, GL_TEXTURE_BORDER_COLOR, border);
@@ -127,7 +149,7 @@ void Texture::create()
         glTexParameteri(properties.target, GL_TEXTURE_MAG_FILTER, customProperties.magFilter);
         glTexParameteri(properties.target, GL_TEXTURE_WRAP_S, customProperties.wrapS);
         glTexParameteri(properties.target, GL_TEXTURE_WRAP_T, customProperties.wrapT);
-        if (properties.target == GL_TEXTURE_2D_ARRAY)
+        if (properties.target == GL_TEXTURE_2D_ARRAY || properties.target == GL_TEXTURE_CUBE_MAP_ARRAY)
             glTexParameteri(properties.target, GL_TEXTURE_WRAP_R, customProperties.wrapR);
     }
 }
@@ -175,6 +197,12 @@ void Texture::resize(int w, int h)
                          properties.format, properties.type, nullptr);
         }
     }
+    else if (properties.target == GL_TEXTURE_CUBE_MAP_ARRAY)
+    {
+        glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, properties.internalFormat, w, h, properties.layers, border,
+                     properties.format, properties.type, nullptr);
+    }
+
     else
     {
         glTexImage2D(properties.target, level, properties.internalFormat, w, h, border, properties.format,

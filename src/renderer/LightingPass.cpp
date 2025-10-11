@@ -39,11 +39,18 @@ static float ComputeEffectiveRange(float intensity, const glm::vec3& att, float 
 
 LightingPass::LightingPass()
 {
-    // MARK: UBO (binding = 0, matches GLSL)
+    // ---- Spot UBO (binding = 0) ----
     glGenBuffers(1, &m_spotLightsUBO);
     glBindBuffer(GL_UNIFORM_BUFFER, m_spotLightsUBO);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(SpotLightsUBO), nullptr, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_UNIFORM_BUFFER, /*binding*/ 0, m_spotLightsUBO);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_spotLightsUBO);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    // ---- NEW: Point UBO (binding = 1) ----
+    glGenBuffers(1, &m_pointLightsUBO);
+    glBindBuffer(GL_UNIFORM_BUFFER, m_pointLightsUBO);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(PointLightsUBO), nullptr, GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_pointLightsUBO);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     // MARK: Color FB
@@ -88,6 +95,7 @@ LightingPass::LightingPass()
 LightingPass::~LightingPass()
 {
     glDeleteBuffers(1, &m_spotLightsUBO);
+    glDeleteBuffers(1, &m_pointLightsUBO);
 }
 
 LightingOutputs LightingPass::execute(Scene& scene, const LightingInputs& lightInputs)
@@ -116,7 +124,6 @@ LightingOutputs LightingPass::execute(Scene& scene, const LightingInputs& lightI
         for (const auto& [mesh, transforms] : meshMap)
         {
             RendererAPI::drawInstanced(mesh, transforms);
-            // MARK: > Draw
             Profiler::registerDrawCall("Lighting Pass");
         }
 
@@ -124,35 +131,30 @@ LightingOutputs LightingPass::execute(Scene& scene, const LightingInputs& lightI
         material->unbind();
     }
 
-    // MARK: Unbind FB
     m_frameBuffer->unbind();
-
     out.renderTargetTexture = m_renderTargetTexture;
     return out;
 }
 
+// MARK: Upload uniforms (spot + point + shadows)
 void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, const LightingInputs& lightInputs)
 {
-    // MARK: [CAM UNIFORMS]
+    // Camera
     const auto cam = scene.getActiveCamera();
-    const auto view = cam->getViewMatrix();
-    const auto proj = cam->getProjectionMatrix();
-    const auto vp = proj * view;
+    const auto vp = cam->getProjectionMatrix() * cam->getViewMatrix();
     const auto camPos = cam->getPosition();
 
     material->setUniformMatrix4fv("u_ViewProjection", vp);
     material->setUniform3fv("viewPos", camPos);
 
-    // MARK: [SPOT L UNIFORMS]
-    const std::vector<Ref<SpotLight>> lights = scene.getSpotLights();
-    const int count = std::min<int>((int)lights.size(), MAX_SPOT_LIGHTS);
+    // MARK: Spot lights
+    const std::vector<Ref<SpotLight>> spotLights = scene.getSpotLights();
+    const int spotCount = std::min<int>((int)spotLights.size(), MAX_SPOT_LIGHTS);
 
-    // Spot light UBO
-    for (int i = 0; i < count; ++i)
+    for (int i = 0; i < spotCount; ++i)
     {
-        const auto& light = lights[i];
+        const auto& light = spotLights[i];
         const auto props = light->getSpotLightProperties();
-
         const float innerCos = std::cos(glm::radians(props.coneInner));
         const float outerCos = std::cos(glm::radians(props.coneOuter));
         const float range = light->getRange();
@@ -164,50 +166,103 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
         m_spotLightsCPU.attenuations[i] = glm::vec4(props.attenuation, 0.0f);
     }
 
-    GLuint uboBindingPoint = 0; // must match GLSL binding=0
-    GLuint prog = material->getShader()->getProgramID();
-    GLuint blockIndex = glGetUniformBlockIndex(prog, "SpotLights");
-    if (blockIndex != GL_INVALID_INDEX)
+    // Bind SpotLights block to binding=0
     {
-        glUniformBlockBinding(prog, blockIndex, uboBindingPoint);
-        glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, m_spotLightsUBO);
-        glBindBuffer(GL_UNIFORM_BUFFER, m_spotLightsUBO);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SpotLightsUBO), &m_spotLightsCPU);
-    }
-
-    // Shadows array bindings & per-light matrices/layers
-    constexpr GLint SHADOW_TU = 5; // Shadow Texture Unit is arbitrary. Needs to be a free one
-    if (lightInputs.spotShadowArray)
-    {
-        // Bind shadow array to the chosen unit
-        lightInputs.spotShadowArray->bind(SHADOW_TU);
-
-        // Ensure linear filtering
-        // TODO: Check, why this needs to be activated "again" (Should be during creation)
-        glActiveTexture(GL_TEXTURE0 + SHADOW_TU);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        // MARK: SL sampler
-        if (material->hasUniform("uSpotLightShadowMapArray"))
-            material->setUniform1i("uSpotLightShadowMapArray", SHADOW_TU);
-    }
-
-    // MARK: SL matrices
-    {
-        glm::mat4 lightVP[MAX_SPOT_LIGHTS];
-        for (int i = 0; i < count; ++i)
+        GLuint prog = material->getShader()->getProgramID();
+        if (GLuint blockIndex = glGetUniformBlockIndex(prog, "SpotLights"); blockIndex != GL_INVALID_INDEX)
         {
-            const auto& light = lights[i];
-            lightVP[i] = light->getShadowCam()->getProjectionMatrix() * light->getShadowCam()->getViewMatrix();
+            glUniformBlockBinding(prog, blockIndex, 0);
+            glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_spotLightsUBO);
+            glBindBuffer(GL_UNIFORM_BUFFER, m_spotLightsUBO);
+            glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SpotLightsUBO), &m_spotLightsCPU);
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
         }
-        material->getShader()->setUniformMatrix4fvArray("uSpotLightSpaceMatrices[0]", count,
-                                                        glm::value_ptr(lightVP[0]));
     }
 
-    // MARK: SL count
-    if (material->hasUniform("uSpotLightCount"))
-        material->setUniform1i("uSpotLightCount", count);
+    // Spot shadow array texture + matrices + count
+    {
+        constexpr GLint SPOT_SHADOW_TU = 5; // Shadow Texture Unit is arbitrary. Needs to be a free one
+        if (lightInputs.spotShadowArray)
+        {
+            lightInputs.spotShadowArray->bind(SPOT_SHADOW_TU);
+            // Ensure linear filtering
+            // TODO: Check, why this needs to be activated "again" (Should be during creation)
+            // glActiveTexture(GL_TEXTURE0 + SPOT_SHADOW_TU);
+            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            if (material->hasUniform("uSpotLightShadowMapArray"))
+                material->setUniform1i("uSpotLightShadowMapArray", SPOT_SHADOW_TU);
+        }
+
+        // MARK: SL matrices
+        {
+            glm::mat4 lightVP[MAX_SPOT_LIGHTS];
+            for (int i = 0; i < spotCount; ++i)
+            {
+                const auto& light = spotLights[i];
+                lightVP[i] = light->getShadowCam()->getProjectionMatrix() * light->getShadowCam()->getViewMatrix();
+            }
+            material->getShader()->setUniformMatrix4fvArray("uSpotLightSpaceMatrices[0]", spotCount,
+                                                            glm::value_ptr(lightVP[0]));
+
+            if (material->hasUniform("uSpotLightCount"))
+                material->setUniform1i("uSpotLightCount", spotCount);
+        }
+
+        // MARK: Point lights
+        const std::vector<Ref<PointLight>> pointLights = scene.getPointLights();
+        const int pointCount = std::min<int>((int)pointLights.size(), MAX_POINT_LIGHTS);
+
+        for (int i = 0; i < pointCount; ++i)
+        {
+            const auto& light = pointLights[i];
+            const auto props = light->getPointLightProperties();
+            const float range = light->getRange();
+
+            m_pointLightsCPU.positionsWS[i] = glm::vec4(props.position, 1.0f);
+            m_pointLightsCPU.colorsIntensity[i] = props.colorIntensity;
+            m_pointLightsCPU.ranges[i] = glm::vec4(range, 0.0f, 0.0f, 0.0f);
+            m_pointLightsCPU.attenuations[i] = glm::vec4(props.attenuation, 0.0f);
+        }
+
+        // Bind PointLights block to binding=1
+        {
+            GLuint prog = material->getShader()->getProgramID();
+            if (GLuint blockIndex = glGetUniformBlockIndex(prog, "PointLights"); blockIndex != GL_INVALID_INDEX)
+            {
+                glUniformBlockBinding(prog, blockIndex, 1);
+                glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_pointLightsUBO);
+                glBindBuffer(GL_UNIFORM_BUFFER, m_pointLightsUBO);
+                glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PointLightsUBO), &m_pointLightsCPU);
+                glBindBuffer(GL_UNIFORM_BUFFER, 0);
+            }
+        }
+
+        // Point shadow cubemap array texture + count
+        {
+            constexpr GLint POINT_SHADOW_TU = 6;  // must be free
+            if (lightInputs.pointShadowCubeArray) // <- add this to your LightingInputs
+            {
+                lightInputs.pointShadowCubeArray->bind(POINT_SHADOW_TU);
+
+                // Ensure hardware depth-compare for cubemap array
+                glActiveTexture(GL_TEXTURE0 + POINT_SHADOW_TU);
+                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+                if (material->hasUniform("uPointLightShadowCubeArray"))
+                    material->setUniform1i("uPointLightShadowCubeArray", POINT_SHADOW_TU);
+            }
+
+            if (material->hasUniform("uPointLightCount"))
+                material->setUniform1i("uPointLightCount", pointCount);
+        }
+    }
 }
 
 } // namespace Engine

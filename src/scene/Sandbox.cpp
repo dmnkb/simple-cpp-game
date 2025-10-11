@@ -3,6 +3,7 @@
 #include "pch.h"
 #include "renderer/Material.h"
 #include "renderer/Model.h"
+#include "renderer/PointLight.h"
 #include "renderer/Shader.h"
 #include "renderer/SpotLight.h"
 #include "renderer/Texture.h"
@@ -14,34 +15,42 @@ namespace Engine
 void Sandbox::init(Scene& scene)
 {
     // ---- Spotlights (x = -55 .. 45, step 10) ----
-    {
-        const float y = 5.0f, z = 5.0f;
-        const glm::vec3 dir(-1.0f, -1.0f, -1.0f);
-        for (int x = -55; x <= 45; x += 10)
-        {
-            SpotLight::SpotLightProperties p{};
-            p.position = {(float)x, y, z};
-            const float rx = (((double)rand() / (RAND_MAX)) - .5f);
-            const float ry = (((double)rand() / (RAND_MAX)) - .5f);
-            const float rz = (((double)rand() / (RAND_MAX)) - .5f);
-            const glm::vec3 randRir(rx, ry, rz);
-            std::println("{}", glm::to_string(dir + randRir));
-            p.direction = dir + randRir;
-            scene.addSpotLight(CreateRef<SpotLight>(p));
-        }
-    }
+    // {
+    //     const float y = 5.0f, z = 5.0f;
+    //     const glm::vec3 dir(-1.0f, -1.0f, -1.0f);
+    //     for (int x = -55; x <= 45; x += 10)
+    //     {
+    //         SpotLight::SpotLightProperties p{};
+    //         p.position = {(float)x, y, z};
+    //         const float rx = (((double)rand() / (RAND_MAX)) - .5f);
+    //         const float ry = (((double)rand() / (RAND_MAX)) - .5f);
+    //         const float rz = (((double)rand() / (RAND_MAX)) - .5f);
+    //         const glm::vec3 randRir(rx, ry, rz);
+    //         std::println("{}", glm::to_string(dir + randRir));
+    //         p.direction = dir + randRir;
+    //         scene.addSpotLight(CreateRef<SpotLight>(p));
+    //     }
+    // }
 
-    // ---- Managers / asset context ----
+    PointLight::PointLightProperties p{};
+    p.position = {2, 0, 2};
+    scene.addPointLight(CreateRef<PointLight>(p));
+
+    PointLight::PointLightProperties p2{};
+    p2.position = {-12, 0, -2};
+    scene.addPointLight(CreateRef<PointLight>(p2));
+
+    // Managers / asset context
     MaterialManager materialManager;
     ShaderManager shaderManager;
     TextureManager textureManager;
     AssetContext context(materialManager, shaderManager, textureManager);
 
-    // ---- Ground & tree ----
+    // Ground & tree
     scene.addModel(Model("assets/models/ground/ground.gltf", context, {0.0f, -1.0f, 0.0f}, {10.0f, 1.0f, 10.0f}));
     scene.addModel(Model("assets/models/tree/scene.gltf", context, {10.0f, 0.0f, -10.0f}));
 
-    // ---- Cubes (x = -60 .. 40, step 10) ----
+    // Cubes (x = -60 .. 40, step 10)
     for (int x = -60; x <= 40; x += 10)
         scene.addModel(Model("assets/models/cube/cube.gltf", context, {(float)x, 0.0f, 0.0f}));
 }

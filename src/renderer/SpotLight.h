@@ -37,6 +37,8 @@ class SpotLight
         syncShadowCamera_();
     }
 
+    SpotLight() : SpotLight(SpotLightProperties{}) {}
+
     void setPosition(const glm::vec3& position = {0.f, 0.f, 0.f})
     {
         m_properties.position = position;

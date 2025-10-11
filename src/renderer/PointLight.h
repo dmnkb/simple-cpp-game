@@ -30,6 +30,8 @@ class PointLight
         syncShadowCameras_();
     }
 
+    PointLight() : PointLight(PointLightProperties{}) {}
+
     void setPosition(const glm::vec3& position = {0.f, 0.f, 0.f})
     {
         m_properties.position = position;

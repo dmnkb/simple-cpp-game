@@ -8,17 +8,18 @@
 namespace Engine
 {
 
-ShadowPass::ShadowPass() : m_depthShader("shader/depth.vs", "shader/depth.fs")
+ShadowPass::ShadowPass()
+    : m_depthShader("shader/depth.vs", "shader/depth.fs"),
+      m_depthShaderCube("shader/depthCube.vs", "shader/depthCube.fs")
 {
     setupSpotLightRessources();
     setupPointLightRessources();
 }
 
+// MARK: Execute
 ShadowOutputs ShadowPass::execute(Scene& scene)
 {
     ShadowOutputs out{};
-
-    m_depthShader.bind();
 
     glEnable(GL_DEPTH_TEST);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -28,17 +29,17 @@ ShadowOutputs ShadowPass::execute(Scene& scene)
 
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
-    m_depthShader.unbind();
-
     out.spotShadowArray = m_spotLightDepthArray;
+    out.pointShadowCubeArray = m_pointLightDepthCubeArray;
     return out;
 }
 
 // MARK: Render spot lights
 void ShadowPass::renderSpotLights(Scene& scene, const std::vector<Ref<SpotLight>>& spotLights)
 {
-    const int count = static_cast<int>(spotLights.size());
+    m_depthShader.bind();
 
+    const int count = static_cast<int>(spotLights.size());
     if (count <= 0)
         return;
 
@@ -49,6 +50,7 @@ void ShadowPass::renderSpotLights(Scene& scene, const std::vector<Ref<SpotLight>
         m_spotLightShadowFramebuffer->reattachLayerForAll(lightIndex);
         m_spotLightShadowFramebuffer->bind();
 
+        glViewport(0, 0, m_shadowRes, m_shadowRes);
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -68,8 +70,11 @@ void ShadowPass::renderSpotLights(Scene& scene, const std::vector<Ref<SpotLight>
 
             if (auto diffuse = material->getDiffuseMap())
             {
-                diffuse->bind(0);
-                m_depthShader.setUniform1i("diffuseMap", 0);
+                if (m_depthShader.hasUniform("diffuseMap")) // <- FIX: was checking m_depthShaderCube
+                {
+                    diffuse->bind(0);
+                    m_depthShader.setUniform1i("diffuseMap", 0);
+                }
             }
 
             for (const auto& [mesh, transforms] : meshMap)
@@ -84,34 +89,52 @@ void ShadowPass::renderSpotLights(Scene& scene, const std::vector<Ref<SpotLight>
 
         m_spotLightShadowFramebuffer->unbind();
     }
+
+    m_depthShader.unbind();
 }
 
 // MARK: Render point lights
 void ShadowPass::renderPointLights(Scene& scene, const std::vector<Ref<PointLight>>& pointLights)
 {
+    m_depthShaderCube.bind();
+
     const int count = static_cast<int>(pointLights.size());
     if (count <= 0)
         return;
 
     m_pointLightShadowFramebuffer->bind();
-
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
+
+    // Canonical cube face directions & ups (must match your PointLight)
+    static const glm::vec3 kDir[6] = {{+1, 0, 0}, {-1, 0, 0}, {0, +1, 0}, {0, -1, 0}, {0, 0, +1}, {0, 0, -1}};
+    static const glm::vec3 kUp[6] = {{0, -1, 0}, {0, -1, 0}, {0, 0, +1}, {0, 0, -1}, {0, -1, 0}, {0, -1, 0}};
 
     for (int li = 0; li < count; ++li)
     {
         const auto& light = pointLights[li];
-        const auto& shadowCams = light->getShadowCams(); // +X,-X,+Y,-Y,+Z,-Z
+        const glm::vec3 lpos = light->getPointLightProperties().position;
+        const float nearP = 0.05f;
+        const float farP = light->getRange(); // must match lighting pass p_ranges[li].x
+        const glm::mat4 proj = glm::perspective(glm::radians(90.0f), 1.0f, nearP, farP);
         const int baseLayer = li * 6;
 
         for (int face = 0; face < 6; ++face)
         {
+            // Attach the correct array layer for this (light,face)
             m_pointLightShadowFramebuffer->reattachLayerForAll(baseLayer + face);
+
+            glViewport(0, 0, m_pointShadowRes, m_pointShadowRes);
             glClear(GL_DEPTH_BUFFER_BIT);
 
-            const auto& cam = shadowCams[face];
-            const glm::mat4 lightSpaceMatrix = cam->getProjectionMatrix() * cam->getViewMatrix();
-            m_depthShader.setUniformMatrix4fv("lightSpaceMatrix", lightSpaceMatrix);
+            // Build per-face view matrix
+            const glm::mat4 view = glm::lookAt(lpos, lpos + kDir[face], kUp[face]);
+
+            // Set uniforms expected by depthCube.vs/fs
+            m_depthShaderCube.setUniformMatrix4fv("u_View", view);
+            m_depthShaderCube.setUniformMatrix4fv("u_Proj", proj);
+            m_depthShaderCube.setUniform3fv("uLightPosWS", lpos);
+            m_depthShaderCube.setUniformFloat("uShadowFar", farP);
 
             const std::string rqName = "Shadow Pass (Point light " + std::to_string(li) + ")";
             for (const auto& [material, meshMap] : scene.getRenderQueue(rqName))
@@ -124,8 +147,11 @@ void ShadowPass::renderPointLights(Scene& scene, const std::vector<Ref<PointLigh
 
                 if (auto diffuse = material->getDiffuseMap())
                 {
-                    diffuse->bind(0);
-                    m_depthShader.setUniform1i("diffuseMap", 0);
+                    if (m_depthShaderCube.hasUniform("diffuseMap"))
+                    {
+                        diffuse->bind(0);
+                        m_depthShaderCube.setUniform1i("diffuseMap", 0); // <- FIX: use m_depthShaderCube
+                    }
                 }
 
                 for (const auto& [mesh, transforms] : meshMap)
@@ -141,6 +167,7 @@ void ShadowPass::renderPointLights(Scene& scene, const std::vector<Ref<PointLigh
     }
 
     m_pointLightShadowFramebuffer->unbind();
+    m_depthShaderCube.unbind();
 }
 
 // MARK: Setup spot ressources

@@ -42,8 +42,6 @@ class Material
 
     const bool hasUniform(const char* name);
 
-    static const Ref<Material> getDefaultMaterial();
-
   private:
     Ref<Shader> m_shader = nullptr;
     Ref<Texture> m_diffuseMap;
