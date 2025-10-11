@@ -166,6 +166,7 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
         m_spotLightsCPU.attenuations[i] = glm::vec4(props.attenuation, 0.0f);
     }
 
+    // TODO: Binding point should be configured somewhere, this is too random
     // Bind SpotLights block to binding=0
     {
         GLuint prog = material->getShader()->getProgramID();
@@ -225,6 +226,7 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
             m_pointLightsCPU.attenuations[i] = glm::vec4(props.attenuation, 0.0f);
         }
 
+        // TODO: Binding point should be configured somewhere, this is too random
         // Bind PointLights block to binding=1
         {
             GLuint prog = material->getShader()->getProgramID();
@@ -240,20 +242,11 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
 
         // Point shadow cubemap array texture + count
         {
-            constexpr GLint POINT_SHADOW_TU = 6;  // must be free
-            if (lightInputs.pointShadowCubeArray) // <- add this to your LightingInputs
+            // TODO: Should be configured somewhere, this is too random
+            constexpr GLint POINT_SHADOW_TU = 6;
+            if (lightInputs.pointShadowCubeArray)
             {
                 lightInputs.pointShadowCubeArray->bind(POINT_SHADOW_TU);
-
-                // Ensure hardware depth-compare for cubemap array
-                glActiveTexture(GL_TEXTURE0 + POINT_SHADOW_TU);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
                 if (material->hasUniform("uPointLightShadowCubeArray"))
                     material->setUniform1i("uPointLightShadowCubeArray", POINT_SHADOW_TU);

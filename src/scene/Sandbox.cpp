@@ -15,22 +15,22 @@ namespace Engine
 void Sandbox::init(Scene& scene)
 {
     // ---- Spotlights (x = -55 .. 45, step 10) ----
-    // {
-    //     const float y = 5.0f, z = 5.0f;
-    //     const glm::vec3 dir(-1.0f, -1.0f, -1.0f);
-    //     for (int x = -55; x <= 45; x += 10)
-    //     {
-    //         SpotLight::SpotLightProperties p{};
-    //         p.position = {(float)x, y, z};
-    //         const float rx = (((double)rand() / (RAND_MAX)) - .5f);
-    //         const float ry = (((double)rand() / (RAND_MAX)) - .5f);
-    //         const float rz = (((double)rand() / (RAND_MAX)) - .5f);
-    //         const glm::vec3 randRir(rx, ry, rz);
-    //         std::println("{}", glm::to_string(dir + randRir));
-    //         p.direction = dir + randRir;
-    //         scene.addSpotLight(CreateRef<SpotLight>(p));
-    //     }
-    // }
+    {
+        const float y = 5.0f, z = 5.0f;
+        const glm::vec3 dir(-1.0f, -1.0f, -1.0f);
+        for (int x = -55; x <= 45; x += 10)
+        {
+            SpotLight::SpotLightProperties p{};
+            p.position = {(float)x, y, z};
+            const float rx = (((double)rand() / (RAND_MAX)) - .5f);
+            const float ry = (((double)rand() / (RAND_MAX)) - .5f);
+            const float rz = (((double)rand() / (RAND_MAX)) - .5f);
+            const glm::vec3 randRir(rx, ry, rz);
+            std::println("{}", glm::to_string(dir + randRir));
+            p.direction = dir + randRir;
+            scene.addSpotLight(CreateRef<SpotLight>(p));
+        }
+    }
 
     PointLight::PointLightProperties p{};
     p.position = {2, 0, 2};

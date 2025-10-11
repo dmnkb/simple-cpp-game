@@ -130,10 +130,10 @@ void Texture::create()
 
     if (isDepth)
     {
-        // TODO: Should the compare mode value be something else?
-        glTexParameteri(properties.target, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-        glTexParameteri(properties.target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(properties.target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(properties.target, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+        glTexParameteri(properties.target, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+        glTexParameteri(properties.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(properties.target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(properties.target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTexParameteri(properties.target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
         if (properties.target == GL_TEXTURE_2D_ARRAY || properties.target == GL_TEXTURE_CUBE_MAP_ARRAY)

@@ -197,13 +197,6 @@ void ShadowPass::setupSpotLightRessources()
     customProps.attachLayer = 0;
 
     m_spotLightDepthArray = CreateRef<Texture>(props, customProps);
-
-    // Needed for hardware compare
-    m_spotLightDepthArray->bind(0);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-    m_spotLightDepthArray->unbind(0);
-
     m_spotLightShadowFramebuffer->attachTexture(m_spotLightDepthArray);
 
     std::cout << "Spot light shadow array: " << m_spotLightDepthArray->properties.width << "x"
@@ -238,13 +231,6 @@ void ShadowPass::setupPointLightRessources()
     custom.attachLayer = 0;
 
     m_pointLightDepthCubeArray = CreateRef<Texture>(props, custom);
-
-    // samplerCubeArrayShadow settings
-    m_pointLightDepthCubeArray->bind(0);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-    m_pointLightDepthCubeArray->unbind(0);
 
     // default attach to layer 0; reattach per face with glFramebufferTextureLayer during rendering
     m_pointLightShadowFramebuffer->attachTexture(m_pointLightDepthCubeArray);
