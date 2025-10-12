@@ -13,8 +13,8 @@ namespace Engine
 
 // MARK: Scalar
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-T SmoothDamp(T current, T target, T& currentVelocity, T smoothTime, T deltaTime,
-             T maxSpeed = std::numeric_limits<T>::infinity())
+inline T SmoothDamp(T current, T target, T& currentVelocity, T smoothTime, T deltaTime,
+                    T maxSpeed = std::numeric_limits<T>::infinity())
 {
     // Small floor to avoid division by zero / instability
     smoothTime = std::max<T>(T(0.0001), smoothTime);
@@ -50,8 +50,8 @@ T SmoothDamp(T current, T target, T& currentVelocity, T smoothTime, T deltaTime,
 
 // MARK: glm::vecN
 template <typename Vec>
-Vec SmoothDamp(const Vec& current, const Vec& target, Vec& currentVelocity, float smoothTime, float deltaTime,
-               float maxSpeed = std::numeric_limits<float>::infinity())
+inline Vec SmoothDamp(const Vec& current, const Vec& target, Vec& currentVelocity, float smoothTime, float deltaTime,
+                      float maxSpeed = std::numeric_limits<float>::infinity())
 {
     static_assert(std::is_same_v<Vec, glm::vec2> || std::is_same_v<Vec, glm::vec3> || std::is_same_v<Vec, glm::vec4>,
                   "SmoothDamp vector overload supports glm::vec2/vec3/vec4");

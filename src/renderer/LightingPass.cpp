@@ -14,39 +14,16 @@
 namespace Engine
 {
 
-// Helper: compute effective range from intensity & attenuation
-// TODO: To be used here, instead of per light, when lights become PODs
-static float ComputeEffectiveRange(float intensity, const glm::vec3& att, float cutoff = 0.01f)
-{
-    cutoff = glm::max(cutoff, 1e-6f);
-    intensity = glm::max(intensity, 1e-6f);
-
-    const float kc = att.x, kl = att.y, kq = att.z;
-    const float A = kq, B = kl, C = kc - (intensity / cutoff);
-
-    if (std::abs(A) < 1e-12f)
-    {
-        if (B > 1e-12f)
-            return glm::max(-C / B, 0.0f);
-        return (C < 0.0f) ? 1e6f : 0.0f;
-    }
-    const double disc = double(B) * double(B) - 4.0 * double(A) * double(C);
-    if (disc <= 0.0)
-        return 0.0f;
-    const double d = (-double(B) + std::sqrt(disc)) / (2.0 * double(A));
-    return d > 0.0 ? float(d) : 0.0f;
-}
-
 LightingPass::LightingPass()
 {
-    // ---- Spot UBO (binding = 0) ----
+    // Spot UBO (binding = 0)
     glGenBuffers(1, &m_spotLightsUBO);
     glBindBuffer(GL_UNIFORM_BUFFER, m_spotLightsUBO);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(SpotLightsUBO), nullptr, GL_DYNAMIC_DRAW);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_spotLightsUBO);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    // ---- NEW: Point UBO (binding = 1) ----
+    // Point UBO (binding = 1)
     glGenBuffers(1, &m_pointLightsUBO);
     glBindBuffer(GL_UNIFORM_BUFFER, m_pointLightsUBO);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(PointLightsUBO), nullptr, GL_DYNAMIC_DRAW);

@@ -1,10 +1,10 @@
 #include "PanelStats.h"
 #include "core/Profiler.h"
-#include "helpers/MemoryUsage.h"
 #include "imgui.h"
 #include "pch.h"
 #include "renderer/ClearColor.h"
 #include "renderer/RendererAPI.h"
+#include "util/MemoryUsage.h"
 
 namespace Engine
 {

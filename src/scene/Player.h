@@ -2,9 +2,9 @@
 
 #include "core/Core.h"
 #include "core/EventManager.h"
-#include "helpers/SmoothDamp.h"
 #include "renderer/Camera.h"
 #include "scene/Scene.h"
+#include "util/SmoothDamp.h"
 #include <glm/glm.hpp>
 
 namespace Engine

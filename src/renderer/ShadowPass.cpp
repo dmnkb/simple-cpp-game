@@ -24,6 +24,12 @@ ShadowOutputs ShadowPass::execute(Scene& scene)
     glEnable(GL_DEPTH_TEST);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
+    // TODO: Where to store the results (ECS)
+    // Have a separate ShadowData (derived/runtime) component the system writes to, e.g.:
+    // - Final view/projection matrices (or cubemap face matrices)
+    // - Far range actually used
+    // - Atlas/array layer indices, viewport rects
+
     renderSpotLights(scene, scene.getSpotLights());
     renderPointLights(scene, scene.getPointLights());
 
