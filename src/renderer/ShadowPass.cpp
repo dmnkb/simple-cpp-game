@@ -70,10 +70,10 @@ void ShadowPass::renderSpotLights(Scene& scene, const std::vector<Ref<SpotLight>
 
             if (auto diffuse = material->getDiffuseMap())
             {
-                if (m_depthShader.hasUniform("diffuseMap")) // <- FIX: was checking m_depthShaderCube
+                if (m_depthShader.hasUniform("uDiffuseMap"))
                 {
                     diffuse->bind(0);
-                    m_depthShader.setUniform1i("diffuseMap", 0);
+                    m_depthShader.setUniform1i("uDiffuseMap", 0);
                 }
             }
 
@@ -115,6 +115,7 @@ void ShadowPass::renderPointLights(Scene& scene, const std::vector<Ref<PointLigh
         const auto& light = pointLights[li];
         const glm::vec3 lpos = light->getPointLightProperties().position;
         const float nearP = 0.05f;
+        // TODO: Check if we can simply multiply the cam's proj * view mat instead of passing both
         const float farP = light->getRange(); // must match lighting pass p_ranges[li].x
         const glm::mat4 proj = glm::perspective(glm::radians(90.0f), 1.0f, nearP, farP);
         const int baseLayer = li * 6;
@@ -131,7 +132,7 @@ void ShadowPass::renderPointLights(Scene& scene, const std::vector<Ref<PointLigh
             const glm::mat4 view = glm::lookAt(lpos, lpos + kDir[face], kUp[face]);
 
             // Set uniforms expected by depthCube.vs/fs
-            m_depthShaderCube.setUniformMatrix4fv("u_View", view);
+            m_depthShaderCube.setUniformMatrix4fv("uViewProjection", view);
             m_depthShaderCube.setUniformMatrix4fv("u_Proj", proj);
             m_depthShaderCube.setUniform3fv("uLightPosWS", lpos);
             m_depthShaderCube.setUniformFloat("uShadowFar", farP);
@@ -147,10 +148,10 @@ void ShadowPass::renderPointLights(Scene& scene, const std::vector<Ref<PointLigh
 
                 if (auto diffuse = material->getDiffuseMap())
                 {
-                    if (m_depthShaderCube.hasUniform("diffuseMap"))
+                    if (m_depthShaderCube.hasUniform("uDiffuseMap"))
                     {
                         diffuse->bind(0);
-                        m_depthShaderCube.setUniform1i("diffuseMap", 0); // <- FIX: use m_depthShaderCube
+                        m_depthShaderCube.setUniform1i("uDiffuseMap", 0); // <- FIX: use m_depthShaderCube
                     }
                 }
 

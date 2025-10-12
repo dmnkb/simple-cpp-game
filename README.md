@@ -26,6 +26,7 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [ ] ImGUI Gimbal controls
 - [ ] ECS
 - [x] Display frametime (CPU)
+- [ ] Update stats panel to display frametime per file, instead of region
 - [ ] Split architecture into engine and game
 - [ ] Layer architecture
 - [ ] SSAO

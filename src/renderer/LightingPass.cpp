@@ -144,8 +144,8 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
     const auto vp = cam->getProjectionMatrix() * cam->getViewMatrix();
     const auto camPos = cam->getPosition();
 
-    material->setUniformMatrix4fv("u_ViewProjection", vp);
-    material->setUniform3fv("viewPos", camPos);
+    material->setUniformMatrix4fv("uViewProjection", vp);
+    material->setUniform3fv("uViewPos", camPos);
 
     // MARK: Spot lights
     const std::vector<Ref<SpotLight>> spotLights = scene.getSpotLights();

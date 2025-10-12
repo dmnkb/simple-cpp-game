@@ -1,11 +1,11 @@
 #version 330 core
 
-in vec2 v_UV;
+in vec2 vUV;
 out vec4 FragColor;
 
 uniform sampler2D renderTargetTexture;
 
 void main()
 {
-    FragColor = vec4(texture(renderTargetTexture, v_UV).rgb, 1.0);
+    FragColor = vec4(texture(renderTargetTexture, vUV).rgb, 1.0);
 }

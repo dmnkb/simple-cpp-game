@@ -1,14 +1,14 @@
 #version 410 core
 
 // ===== Inputs / Outputs =====
-in vec2 v_UV;
-in vec3 v_Normal;
-in vec3 FragPos;
+in vec2 vUV;
+in vec3 vNormal;
+in vec3 vFragPos;
 out vec4 FragColor;
 
 // ===== Material / Textures =====
-uniform vec3 viewPos;
-uniform sampler2D diffuseMap;
+uniform vec3 uViewPos;
+uniform sampler2D uDiffuseMap;
 
 #define MAX_SPOT_LIGHTS 16
 #define MAX_POINT_LIGHTS 16
@@ -158,22 +158,22 @@ float shadowFactorPoint(int i, vec3 Ldir, float dist)
 
 void main()
 {
-    vec3 N = normalize(v_Normal);
-    vec2 uv = v_UV * textureRepeat;
+    vec3 N = normalize(vNormal);
+    vec2 uv = vUV * textureRepeat;
 
-    vec4 tex = texture(diffuseMap, uv);
+    vec4 tex = texture(uDiffuseMap, uv);
     if (tex.a < ALPHA_CUTOFF)
         discard;
 
     vec3 albedo = tex.rgb;
-    vec3 V = normalize(viewPos - FragPos);
+    vec3 V = normalize(uViewPos - vFragPos);
 
     vec3 lighting = AMBIENT_COLOR;
 
     // ---- Spot lights ----
     for (int i = 0; i < uSpotLightCount; ++i)
     {
-        vec3 Lvec = positionsWS[i].xyz - FragPos;
+        vec3 Lvec = positionsWS[i].xyz - vFragPos;
         float dist = length(Lvec);
         vec3 L = (dist > 1e-6) ? Lvec / dist : vec3(0.0);
 
@@ -183,7 +183,7 @@ void main()
 
         float atten = attenuation(i, dist);
         float NdotL = max(dot(N, L), 0.0);
-        float s = shadowFactorSpot(i, FragPos /*, N, L*/);
+        float s = shadowFactorSpot(i, vFragPos /*, N, L*/);
 
         vec3 H = normalize(L + V);
         float NdotH = max(dot(N, H), 0.0);
@@ -198,7 +198,7 @@ void main()
     // ---- Point lights ----
     for (int i = 0; i < uPointLightCount; ++i)
     {
-        vec3 Lvec = p_positionsWS[i].xyz - FragPos;
+        vec3 Lvec = p_positionsWS[i].xyz - vFragPos;
         float dist = length(Lvec);
         if (dist <= 1e-6)
             continue;
@@ -208,8 +208,6 @@ void main()
         float atten = pattn(i, dist);
         float NdotL = max(dot(N, L), 0.0);
 
-        // Cubemap array hardware-compare shadow
-        // float s = shadowFactorPoint(i, L, dist);
         float s = shadowFactorPoint(i, L, dist);
 
         vec3 H = normalize(L + V);

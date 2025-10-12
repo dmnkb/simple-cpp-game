@@ -22,7 +22,7 @@ void Material::bind()
     if (m_diffuseMap)
     {
         m_diffuseMap->bind(0);
-        m_shader->setUniform1i("diffuseMap", 0);
+        m_shader->setUniform1i("uDiffuseMap", 0);
     }
 
     // Bind & upload material UBO to binding point 1
@@ -51,7 +51,7 @@ void Material::unbind()
 void Material::update()
 {
     float time = Window::getElapsedTime();
-    m_shader->setUniform1f("u_Time", time);
+    m_shader->setUniform1f("uTime", time);
 }
 
 void Material::setDiffuseMap(Ref<Texture>& texture)

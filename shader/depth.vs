@@ -1,19 +1,19 @@
 #version 330 core
 
-layout(location = 0) in vec3 a_Position;
-layout(location = 1) in vec3 a_Normal;
-layout(location = 2) in vec2 a_UV;
-layout(location = 3) in mat4 a_InstanceTransform;
+layout(location = 0) in vec3 aPosition;
+layout(location = 1) in vec3 aNormal;
+layout(location = 2) in vec2 aUV;
+layout(location = 3) in mat4 aInstanceTransform;
 
 uniform mat4 lightSpaceMatrix;
 
-out vec3 FragPos;
-out vec2 v_UV;
+out vec3 vFragPos;
+out vec2 vUV;
 
 void main()
 {
-    v_UV = a_UV;
+    vUV = aUV;
 
-    FragPos = vec3(a_InstanceTransform * vec4(a_Position, 1.0));
+    vFragPos = vec3(aInstanceTransform * vec4(aPosition, 1.0));
     gl_Position = lightSpaceMatrix * vec4(FragPos, 1.0);
 }
