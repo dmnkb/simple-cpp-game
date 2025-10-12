@@ -12,6 +12,10 @@ out vec4 FragColor;
 uniform vec3 uViewPos;
 uniform sampler2D uDiffuseMap;
 
+// MARK: Max light defines
+#define MAX_SPOT_LIGHTS 16
+#define MAX_POINT_LIGHTS 16
+
 // Spot shadow map array (2D array)
 uniform sampler2DArrayShadow uSpotLightShadowMapArray;
 uniform mat4 uSpotLightSpaceMatrices[MAX_SPOT_LIGHTS];
@@ -55,10 +59,7 @@ layout(std140) uniform MaterialPropsBlock
     float specularIntensity;
 };
 
-// MARK: Defines and tunables
-#define MAX_SPOT_LIGHTS 16
-#define MAX_POINT_LIGHTS 16
-
+// MARK: Tunables
 const vec3 AMBIENT_COLOR = vec3(0.5, 0.55, 0.6);
 const float ALPHA_CUTOFF = 0.5;
 
