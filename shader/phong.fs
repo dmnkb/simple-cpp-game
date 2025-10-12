@@ -1,33 +1,32 @@
 #version 410 core
 
-// ===== Inputs / Outputs =====
+// Inputs
 in vec2 vUV;
 in vec3 vNormal;
 in vec3 vFragPos;
+
+// Outputs
 out vec4 FragColor;
 
-// ===== Material / Textures =====
+// Material / Textures
 uniform vec3 uViewPos;
 uniform sampler2D uDiffuseMap;
 
-#define MAX_SPOT_LIGHTS 16
-#define MAX_POINT_LIGHTS 16
-
-// --- Spot shadow map array (2D array) ---
+// Spot shadow map array (2D array)
 uniform sampler2DArrayShadow uSpotLightShadowMapArray;
 uniform mat4 uSpotLightSpaceMatrices[MAX_SPOT_LIGHTS];
 uniform int uSpotLightCount;
 
-// --- Point shadow map array (CUBEMAP array) ---
+// Point shadow cubemap array
 uniform samplerCubeArrayShadow uPointLightShadowCubeArray;
 uniform int uPointLightCount;
 
-// ===== UBOs =====
+// MARK: UBOs
 layout(std140) uniform SpotLights
 {
     // xyz position (w unused)
     vec4 positionsWS[MAX_SPOT_LIGHTS];
-    // xyz direction ***OUTWARD*** from the light (w unused)
+    // xyz direction from the light (w unused)
     vec4 directionsWS[MAX_SPOT_LIGHTS];
     // rgb color, a=intensity
     vec4 colorsIntensity[MAX_SPOT_LIGHTS];
@@ -45,22 +44,25 @@ layout(std140) uniform PointLights
     vec4 p_colorsIntensity[MAX_POINT_LIGHTS];
     // attenuation: x=kc, y=kl, z=kq, w=0
     vec4 p_attenuations[MAX_POINT_LIGHTS];
-    // range/far: x=range (far plane used when writing depth = dist/range), y=z=w unused
+    // range/far: x=range
     vec4 p_rangeFar[MAX_POINT_LIGHTS];
 };
 
 layout(std140) uniform MaterialPropsBlock
 {
-    float textureRepeat;     // UV tiling
-    float shininess;         // specular power (optional)
-    float specularIntensity; // specular intensity (optional)
+    float textureRepeat;
+    float shininess;
+    float specularIntensity;
 };
 
-// ===== Tunables =====
+// MARK: Defines and tunables
+#define MAX_SPOT_LIGHTS 16
+#define MAX_POINT_LIGHTS 16
+
 const vec3 AMBIENT_COLOR = vec3(0.5, 0.55, 0.6);
 const float ALPHA_CUTOFF = 0.5;
 
-// ===== Shadow PCF controls (spot only; point uses HW linear filter) =====
+// Shadow PCF controls
 #ifndef SHADOW_PCF_ENABLED
 #define SHADOW_PCF_ENABLED 3
 #endif
@@ -69,7 +71,7 @@ const float ALPHA_CUTOFF = 0.5;
 #define SHADOW_PCF_RADIUS 3
 #endif
 
-// ===== Helpers (common) =====
+// MARK: Helpers
 float attenuation(int i, float dist)
 {
     float kc = attenuations[i].x;
@@ -86,7 +88,6 @@ float pattn(int i, float dist)
     return 1.0 / (kc + kl * dist + kq * dist * dist);
 }
 
-// ===== Spot light =====
 float spotMask(int i, vec3 L, vec3 LdirOut)
 {
     float innerCos = conesRange[i].x;
@@ -118,6 +119,7 @@ float shadowPCF(int layer, vec2 uv, float ref, float bias)
 #endif
 }
 
+// MARK: Shadow spot
 float shadowFactorSpot(int i, vec3 worldPos /*, vec3 N, vec3 L*/)
 {
     vec4 clip = uSpotLightSpaceMatrices[i] * vec4(worldPos, 1.0);
@@ -131,28 +133,21 @@ float shadowFactorSpot(int i, vec3 worldPos /*, vec3 N, vec3 L*/)
     vec2 uv = ndc.xy * 0.5 + 0.5;
     float ref = ndc.z * 0.5 + 0.5;
 
-    // Bias can be tuned in your depth pass via polygon offset; leave 0 here for HW compare.
     const float bias = 0.0;
     return shadowPCF(i, uv, ref, bias);
 }
 
-// ===== Point light (cubemap array shadow) =====
-// Assumes the depth has been written as: depth = distance(light, worldPos) / rangeFar[i]
-// and the sampler has compare mode enabled (GL_COMPARE_REF_TO_TEXTURE).
+// MARK: Shadow point
 float shadowFactorPoint(int i, vec3 Ldir, float dist)
 {
-    // Normalize direction for cubemap lookup
     vec3 dir = normalize(-Ldir);
 
     float farRange = max(p_rangeFar[i].x, 1e-6);
     float ref = dist / farRange;
 
-    // Optional small bias to reduce acne; tweak if needed (or prefer offset in depth pass)
     const float bias = 0.0;
     float compare = ref - bias;
 
-    // Hardware comparison w/ cubemap array: texture(samplerCubeArrayShadow, vec4(dir, layer), ref)
-    // If the cubemap’s min/mag filters are LINEAR with compare enabled, you get 2x2 PCF-ish filtering.
     return texture(uPointLightShadowCubeArray, vec4(dir, float(i)), compare);
 }
 
@@ -170,7 +165,7 @@ void main()
 
     vec3 lighting = AMBIENT_COLOR;
 
-    // ---- Spot lights ----
+    // MARK: Spot lights
     for (int i = 0; i < uSpotLightCount; ++i)
     {
         vec3 Lvec = positionsWS[i].xyz - vFragPos;
@@ -195,7 +190,7 @@ void main()
         lighting += lightRGB * litTerm * atten * spot;
     }
 
-    // ---- Point lights ----
+    // MARK: Point lights
     for (int i = 0; i < uPointLightCount; ++i)
     {
         vec3 Lvec = p_positionsWS[i].xyz - vFragPos;
