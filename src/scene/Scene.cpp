@@ -5,7 +5,7 @@
 namespace Engine
 {
 
-void Scene::init(const CameraProps& cameraProps)
+void Scene::init(const Camera::CameraProps& cameraProps)
 {
     m_DefaultCamera = CreateRef<Camera>(cameraProps);
     m_DefaultCamera->isMainCamera();

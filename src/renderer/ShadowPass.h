@@ -40,7 +40,6 @@ class ShadowPass
     // State tracking
     int m_shadowRes = 1024;
     int m_pointShadowRes = 1024;
-    int m_allocLayers = 0;
 };
 
 } // namespace Engine

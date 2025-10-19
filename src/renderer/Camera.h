@@ -10,39 +10,38 @@
 namespace Engine
 {
 
-enum ECameraType
-{
-    ECT_PROJECTION,
-    ECT_ORTHOGRAPHIC
-};
-
-struct CameraProps
-{
-    // Store radians for fov; default 45 deg
-    float fov = glm::radians(45.0f);
-    float aspect = 4.0f / 3.0f;
-    float near = 0.1f;
-    float far = 1000.0f;
-
-    glm::vec3 position{0.0f, 0.0f, 0.0f};
-    glm::vec3 target{0.0f, 0.0f, -1.0f}; // looking down -Z by default
-    glm::vec3 up{0.0f, 1.0f, 0.0f};      // NEW: configurable up vector
-
-    ECameraType type = ECT_PROJECTION;
-
-    // (Optional) orthographic bounds; used only if type == ECT_ORTHOGRAPHIC
-    float orthoLeft = -20.0f;
-    float orthoRight = 20.0f;
-    float orthoBottom = -20.0f;
-    float orthoTop = 20.0f;
-
-    // Controls if the aspect ratio adjusts with the screen red
-    bool isMainCamera = false;
-};
-
 class Camera
 {
   public:
+    enum ECameraType
+    {
+        ECT_PROJECTION,
+        ECT_ORTHOGRAPHIC
+    };
+
+    struct CameraProps
+    {
+        // Store radians for fov; default 45 deg
+        float fov = glm::radians(45.0f);
+        float aspect = 4.0f / 3.0f;
+        float near = 0.1f;
+        float far = 1000.0f;
+
+        glm::vec3 position{0.0f, 0.0f, 0.0f};
+        glm::vec3 target{0.0f, 0.0f, -1.0f}; // looking down -Z by default
+        glm::vec3 up{0.0f, 1.0f, 0.0f};      // NEW: configurable up vector
+
+        ECameraType type = ECT_PROJECTION;
+
+        // (Optional) orthographic bounds; used only if type == ECT_ORTHOGRAPHIC
+        float orthoLeft = -20.0f;
+        float orthoRight = 20.0f;
+        float orthoBottom = -20.0f;
+        float orthoTop = 20.0f;
+
+        // Controls if the aspect ratio adjusts with the screen red
+        bool isMainCamera = false;
+    };
     Camera() : m_props{} {}
 
     Camera(const CameraProps& props) : m_props(props)
@@ -59,15 +58,17 @@ class Camera
     void setPosition(const glm::vec3& position)
     {
         m_props.position = position;
+
+        onUpdate();
     }
 
-    // Existing lookAt: keeps default up=(0,1,0)
     void lookAt(const glm::vec3& target)
     {
         m_props.target = target;
+
+        onUpdate();
     }
 
-    // NEW: lookAt with explicit up
     void lookAt(const glm::vec3& target, const glm::vec3& up)
     {
         m_props.target = target;
@@ -76,6 +77,8 @@ class Camera
         if (len2 < 1e-12f)
             u = glm::vec3(0.0f, 1.0f, 0.0f);
         m_props.up = u * glm::inversesqrt(glm::max(len2, 1e-12f));
+
+        onUpdate();
     }
 
     void setDirection(const glm::vec3& dir)
@@ -87,6 +90,8 @@ class Camera
         else
             d = d * glm::inversesqrt(len2);
         m_props.target = m_props.position + d;
+
+        onUpdate();
     }
 
     void setDirection(const glm::vec3& dir, const glm::vec3& upHint)
@@ -111,6 +116,8 @@ class Camera
 
         m_props.target = m_props.position + d;
         m_props.up = up;
+
+        onUpdate();
     }
 
     void setPerspective(float fovYRadians, float aspect, float nearPlane, float farPlane)
@@ -183,6 +190,31 @@ class Camera
         const float height = static_cast<float>(windowReziseEvent->windowHeight);
 
         m_props.aspect = width / height;
+    }
+
+    void onUpdate()
+    {
+        if (!m_props.isMainCamera)
+            return;
+
+        // Forward from position→target
+        glm::vec3 fwd = m_props.target - m_props.position;
+        float f2 = glm::dot(fwd, fwd);
+        fwd = (f2 > 1e-12f) ? fwd * glm::inversesqrt(f2) : glm::vec3(0, 0, -1);
+
+        // Safe, normalized up
+        glm::vec3 up = m_props.up;
+        float u2 = glm::dot(up, up);
+        up = (u2 > 1e-12f) ? up * glm::inversesqrt(u2) : glm::vec3(0, 1, 0);
+
+        // Perspective params (fallback FOV if orthographic)
+        float fovY = (m_props.type == ECT_PROJECTION) ? m_props.fov : glm::radians(60.0f);
+        float aspect = m_props.aspect;
+        float zn = m_props.near;
+        float zf = m_props.far;
+
+        auto ev = CreateRef<MainCameraChangedEvent>(m_props.position, fwd, up, fovY, aspect, zn, zf);
+        EventManager::queueEvent(ev);
     }
 
     CameraProps m_props;

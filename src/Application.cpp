@@ -34,8 +34,8 @@ Application::Application() : m_Player()
     m_renderer = CreateScope<Renderer>();
 
     // Scene
-    CameraProps cameraProps = {45.0f * (M_PI / 180.0f), ((float)Window::dimensions.x / Window::dimensions.y), 0.1f,
-                               1000.0f};
+    Camera::CameraProps cameraProps = {45.0f * (M_PI / 180.0f), ((float)Window::dimensions.x / Window::dimensions.y),
+                                       0.1f, 1000.0f};
     m_Scene.init(cameraProps);
 
     // Events

@@ -1,6 +1,7 @@
 #include "Sandbox.h"
 #include "glm/gtx/string_cast.hpp"
 #include "pch.h"
+#include "renderer/DirectionalLight.h"
 #include "renderer/Material.h"
 #include "renderer/Model.h"
 #include "renderer/PointLight.h"

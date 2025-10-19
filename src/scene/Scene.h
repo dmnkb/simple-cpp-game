@@ -15,7 +15,7 @@ class Scene
 {
   public:
     Scene() = default;
-    void init(const CameraProps& cameraProps);
+    void init(const Camera::CameraProps& cameraProps);
 
     void addModel(const Model& model);
     void addSpotLight(const Ref<SpotLight>& light);

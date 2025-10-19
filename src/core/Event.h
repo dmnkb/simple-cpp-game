@@ -1,5 +1,7 @@
 #pragma once
 
+#include <glm/glm.hpp>
+
 namespace Engine
 {
 
@@ -35,6 +37,24 @@ class WindowReziseEvent : public Event
     WindowReziseEvent(int windowWidth, int windowHeight) : windowWidth(windowWidth), windowHeight(windowHeight) {}
     int windowWidth;
     int windowHeight;
+};
+
+class MainCameraChangedEvent : public Event
+{
+  public:
+    MainCameraChangedEvent(glm::vec3 pos, glm::vec3 fwd, glm::vec3 up_, float fovy, float aspect_, float zn, float zf)
+        : position(pos), forward(glm::normalize(fwd)), up(glm::normalize(up_)), fovY(fovy), aspect(aspect_), znear(zn),
+          zfar(zf)
+    {
+    }
+
+    glm::vec3 position{};
+    glm::vec3 forward{0, 0, -1};
+    glm::vec3 up{0, 1, 0};
+    float fovY{glm::radians(60.f)};
+    float aspect{16.f / 9.f};
+    float znear{0.1f};
+    float zfar{200.f};
 };
 
 } // namespace Engine
