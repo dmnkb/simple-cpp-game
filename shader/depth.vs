@@ -15,5 +15,5 @@ void main()
     vUV = aUV;
 
     vFragPos = vec3(aInstanceTransform * vec4(aPosition, 1.0));
-    gl_Position = lightSpaceMatrix * vec4(FragPos, 1.0);
+    gl_Position = lightSpaceMatrix * vec4(vFragPos, 1.0);
 }

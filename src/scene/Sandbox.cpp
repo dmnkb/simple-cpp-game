@@ -20,7 +20,7 @@ void Sandbox::init(Scene& scene)
     scene.addSpotLight(CreateRef<SpotLight>(sp));
 
     PointLight::PointLightProperties p2{};
-    p2.position = {-15, 0, 0};
+    p2.position = {-15, 0, 5};
     scene.addPointLight(CreateRef<PointLight>(p2));
 
     // Managers / asset context
