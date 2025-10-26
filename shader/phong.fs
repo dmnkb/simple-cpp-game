@@ -176,7 +176,7 @@ float shadowFactorDirectional(vec3 worldPos)
         vec2 uv = ndc.xy * 0.5 + 0.5;
         float ref = ndc.z * 0.5 + 0.5;
 
-        const float bias = 0.0; // tweak if acne
+        const float bias = 0.005; // tweak if acne
         return shadowPCFDirectional(c, uv, ref, bias);
     }
     return 1.0;

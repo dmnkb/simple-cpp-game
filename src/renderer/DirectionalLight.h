@@ -129,12 +129,20 @@ class DirectionalLight
 
         // 2) light basis
         const glm::vec3 L = glm::normalize(m_properties.direction); // from light → scene
-        const glm::vec3 up =
-            (std::abs(glm::dot(L, glm::vec3(0, 1, 0))) > 0.99f) ? glm::vec3(0, 0, 1) : glm::vec3(0, 1, 0);
+        const glm::vec3 worldUp(0.f, 1.f, 0.f);
+        const glm::vec3 altUp(0.f, 0.f, 1.f);
+        const float pole = 0.99f;
+        const glm::vec3 up = (std::abs(glm::dot(L, worldUp)) > pole) ? altUp : worldUp;
 
-        for (std::size_t c = 0; c < kCascadeCount; c++)
+        // Tunables
+        const float mapRes = 2048.0f;   // shadow map resolution per cascade
+        const float overlapXY = 1.02f;  // slight overlap between cascades in XY (2%)
+        const float baseZPad = 10.0f;   // minimal z padding
+        const float backoffMul = 1.5f;  // scale eye backoff by slice depth
+        const float minBackoff = 50.0f; // do not let eye get too close
+
+        for (std::size_t c = 0; c < kCascadeCount; ++c)
         {
-            std::println("init camera {}", c);
             // ensure cam exists
             if (!m_shadowCams[c])
             {
@@ -143,53 +151,87 @@ class DirectionalLight
                 m_shadowCams[c] = CreateRef<Camera>(p);
             }
 
-            // 3) corners of this cascade in WS
+            // 3) corners of this cascade in WS (receiver slice)
             glm::vec3 cornersWS[8];
             frustumCornersWS(m_main, split[c], split[c + 1], cornersWS);
 
-            // cascade center
-            glm::vec3 center(0);
-            for (auto& v : cornersWS)
-                center += v;
-            center *= 1.0f / 8.0f;
+            // slice center in world
+            glm::vec3 centerWS(0.0f);
+            for (int i = 0; i < 8; ++i)
+                centerWS += cornersWS[i];
+            centerWS *= 1.0f / 8.0f;
 
-            // 4) build light view at some distance "behind" the cascade
-            float backoff = 100.0f; // big enough to cover near plane; tweak later
-            glm::vec3 eye = center - L * backoff;
-            glm::mat4 Vlight = glm::lookAt(eye, center, up);
+            // 4) build light view behind the slice
+            const float sliceDepth = (split[c + 1] - split[c]);
+            const float backoff = glm::max(minBackoff, backoffMul * sliceDepth);
+            const glm::vec3 eyeWS = centerWS - L * backoff;
+            const glm::mat4 Vlight = glm::lookAt(eyeWS, centerWS, up);
 
-            // 5) AABB in light space → ortho bounds
+            // 5) transform slice corners into light space and get AABB
             glm::vec3 cornersLS[8];
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < 8; ++i)
+                cornersLS[i] = glm::vec3(Vlight * glm::vec4(cornersWS[i], 1.0f));
+
+            glm::vec3 mn = cornersLS[0], mx = cornersLS[0];
+            for (int i = 1; i < 8; ++i)
             {
-                glm::vec4 p = Vlight * glm::vec4(cornersWS[i], 1);
-                cornersLS[i] = glm::vec3(p);
+                mn = glm::min(mn, cornersLS[i]);
+                mx = glm::max(mx, cornersLS[i]);
             }
-            glm::vec3 mn, mx;
-            aabb(cornersLS, 8, mn, mx);
 
-            // optional stabilize (snap xy to texel grid)
-            const float mapRes = 2048.0f;
-            float texel = (mx.x - mn.x) / mapRes;
-            glm::vec2 centerXY = 0.5f * glm::vec2(mn.x + mx.x, mn.y + mx.y);
-            centerXY = glm::floor(centerXY / texel) * texel;
-            float halfW = 0.5f * (mx.x - mn.x), halfH = 0.5f * (mx.y - mn.y);
-            mn.x = centerXY.x - halfW;
-            mx.x = centerXY.x + halfW;
-            mn.y = centerXY.y - halfH;
-            mx.y = centerXY.y + halfH;
+            // 6) rotation-invariant XY fit (enclose with a circle → square)
+            glm::vec3 centerLS = 0.5f * (mn + mx);
 
-            // small margin
-            const float m = 1.0f;
-            mn -= glm::vec3(m, m, 0);
-            mx += glm::vec3(m, m, 0);
+            float maxR = 0.0f;
+            for (int i = 0; i < 8; ++i)
+            {
+                glm::vec2 d = glm::vec2(cornersLS[i].x, cornersLS[i].y) - glm::vec2(centerLS.x, centerLS.y);
+                maxR = glm::max(maxR, glm::length(d));
+            }
+            maxR *= overlapXY;
 
-            // 6) set camera params (ortho bounds + near/far in light space)
+            // 7) texel-grid stabilization (snap center in LS XY)
+            const float texel = (2.0f * maxR) / mapRes;
+            if (texel > 0.0f)
+            {
+                glm::vec2 cxy(centerLS.x, centerLS.y);
+                cxy = glm::floor(cxy / texel) * texel;
+                centerLS.x = cxy.x;
+                centerLS.y = cxy.y;
+            }
+
+            // Ortho XY from stabilized center + half-extent
+            const float left = centerLS.x - maxR;
+            const float right = centerLS.x + maxR;
+            const float bottom = centerLS.y - maxR;
+            const float top = centerLS.y + maxR;
+
+            // 8) Z range (include potential casters!)
+            //    Start from true slice z span, then extend by caster margin ~ XY radius,
+            //    plus extra padding for near cascade.
+            float zmin = mn.z;
+            float zmax = mx.z;
+
+            // caster margin: anything within the cascade footprint can cast onto it
+            float casterExtend = maxR; // try 1.0–2.0 * maxR if needed
+            float zPad = baseZPad;
+
+            // give the near cascade more headroom (most likely to miss nearby casters)
+            if (c == 0)
+            {
+                casterExtend *= 1.5f;
+                zPad = glm::max(zPad, 0.5f * sliceDepth);
+            }
+
+            zmin -= (casterExtend + zPad);
+            zmax += (casterExtend + zPad);
+
+            // 9) program the camera with the SAME view we used for fitting
             Camera& cam = *m_shadowCams[c];
-            cam.setOrthographic(mn.x, mx.x, mn.y, mx.y, -mx.z, -mn.z); // note: depends on your camera convention
-
-            cam.setPosition(eye);
-            cam.setDirection(L); // looks along light → scene
+            cam.setPosition(eyeWS);
+            cam.lookAt(centerWS, up);                     // match Vlight exactly
+            cam.setOrthographic(left, right, bottom, top, // projection
+                                -zmax, -zmin);            // keep your convention
         }
     }
 
@@ -198,8 +240,6 @@ class DirectionalLight
         auto ev = std::dynamic_pointer_cast<MainCameraChangedEvent>(e);
         if (!ev)
             return;
-
-        std::println("on main cam changed");
 
         // Expect your event to carry these (adapt names accordingly)
         m_main.pos = ev->position;
