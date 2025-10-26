@@ -91,6 +91,11 @@ std::vector<Ref<PointLight>> Scene::getPointLights() const
     return m_PointLights;
 }
 
+Ref<DirectionalLight> Scene::getDirectionalLight() const
+{
+    return m_DirectionalLight;
+}
+
 void Scene::setActiveCamera(const Ref<Camera>& camera)
 {
     m_ActiveCamera = camera;

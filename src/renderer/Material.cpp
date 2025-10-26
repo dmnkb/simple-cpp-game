@@ -27,7 +27,7 @@ void Material::bind()
 
     // Bind & upload material UBO to binding point 1
     // FIXME: Fuck this, the binding points need to be aligned somehow. Too much randomness
-    GLuint uboBindingPoint = 2;
+    GLuint uboBindingPoint = 3;
     GLuint prog = m_shader->getProgramID();
     GLuint blockIndex = glGetUniformBlockIndex(prog, "MaterialPropsBlock");
     if (blockIndex != GL_INVALID_INDEX)

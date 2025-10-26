@@ -3,12 +3,12 @@
 #include "Framebuffer.h"
 #include "Material.h"
 #include "PassIO.h"
-#include "SpotLight.h"
 #include "scene/Scene.h"
 
 namespace Engine
 {
 
+// TODO: Should be a) central and b) constexpr
 #define MAX_SPOT_LIGHTS 16
 #define MAX_POINT_LIGHTS 16
 
@@ -34,6 +34,13 @@ class LightingPass
     };
     static_assert(alignof(PointLightsUBO) == 16, "std140 alignment");
 
+    struct alignas(16) DirectionalLightUBO
+    {
+        glm::vec4 directionWS;     // xyz pos
+        glm::vec4 colorsIntensity; // rgb color, a=intensity
+    };
+    static_assert(alignof(DirectionalLightUBO) == 16, "std140 alignment");
+
     LightingPass();
     ~LightingPass();
 
@@ -54,6 +61,10 @@ class LightingPass
     // Point UBO
     PointLightsUBO m_pointLightsCPU{};
     GLuint m_pointLightsUBO = 0; // binding = 1
+
+    // Directional UBO
+    DirectionalLightUBO m_directionalLightCPU{};
+    GLuint m_directionalLightUBO = 0; // binding = 2
 
     Ref<Framebuffer> m_frameBuffer;
     Ref<Texture> m_renderTargetTexture;

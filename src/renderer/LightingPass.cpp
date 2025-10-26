@@ -1,4 +1,5 @@
 #include "LightingPass.h"
+#include "DirectionalLight.h"
 #include "Framebuffer.h"
 #include "RendererAPI.h"
 #include "core/Profiler.h"
@@ -6,7 +7,6 @@
 #include "glm/gtx/string_cast.hpp"
 #include "pch.h"
 #include "scene/Scene.h"
-#include <algorithm>
 #include <cmath>
 #include <fmt/core.h>
 #include <glm/gtc/type_ptr.hpp>
@@ -16,6 +16,7 @@ namespace Engine
 
 LightingPass::LightingPass()
 {
+    // MARK: Shadow UBO binding
     // Spot UBO (binding = 0)
     glGenBuffers(1, &m_spotLightsUBO);
     glBindBuffer(GL_UNIFORM_BUFFER, m_spotLightsUBO);
@@ -30,7 +31,14 @@ LightingPass::LightingPass()
     glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_pointLightsUBO);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    // MARK: Color FB
+    // Directional UBO (binding = 2)
+    glGenBuffers(1, &m_directionalLightUBO);
+    glBindBuffer(GL_UNIFORM_BUFFER, m_directionalLightUBO);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(DirectionalLightUBO), nullptr, GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 2, m_directionalLightUBO);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    // MARK: Framebuffers
     m_frameBuffer = CreateRef<Framebuffer>();
 
     TextureProperties props{};
@@ -46,7 +54,7 @@ LightingPass::LightingPass()
 
     m_renderTargetTexture = CreateRef<Texture>(props, customProps);
 
-    // MARK: Depth FB
+    // A depth FB is needed for alpha sorting
     TextureProperties depthProps{};
     depthProps.internalFormat = GL_DEPTH_COMPONENT24;
     depthProps.width = (int)Window::frameBufferDimensions.x;
@@ -75,11 +83,11 @@ LightingPass::~LightingPass()
     glDeleteBuffers(1, &m_pointLightsUBO);
 }
 
+// MARK: Execute
 LightingOutputs LightingPass::execute(Scene& scene, const LightingInputs& lightInputs)
 {
     LightingOutputs out{};
 
-    // MARK: Bind FB
     m_frameBuffer->bind();
 
     for (const auto& [material, meshMap] : scene.getRenderQueue("Lighting Pass"))
@@ -113,7 +121,7 @@ LightingOutputs LightingPass::execute(Scene& scene, const LightingInputs& lightI
     return out;
 }
 
-// MARK: Upload uniforms (spot + point + shadows)
+// MARK: Upload uniforms
 void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, const LightingInputs& lightInputs)
 {
     // Camera
@@ -125,41 +133,41 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
     material->setUniform3fv("uViewPos", camPos);
 
     // MARK: Spot lights
-    const std::vector<Ref<SpotLight>> spotLights = scene.getSpotLights();
-    const int spotCount = std::min<int>((int)spotLights.size(), MAX_SPOT_LIGHTS);
-
-    for (int i = 0; i < spotCount; ++i)
     {
-        const auto& light = spotLights[i];
-        const auto props = light->getSpotLightProperties();
-        const float innerCos = std::cos(glm::radians(props.coneInner));
-        const float outerCos = std::cos(glm::radians(props.coneOuter));
-        const float range = light->getRange();
+        const std::vector<Ref<SpotLight>> spotLights = scene.getSpotLights();
+        const int spotCount = std::min<int>((int)spotLights.size(), MAX_SPOT_LIGHTS);
 
-        m_spotLightsCPU.positionsWS[i] = glm::vec4(props.position, 1.0f);
-        m_spotLightsCPU.directionsWS[i] = glm::vec4(props.direction, 0.0f);
-        m_spotLightsCPU.colorsIntensity[i] = props.colorIntensity;
-        m_spotLightsCPU.conesRange[i] = glm::vec4(innerCos, outerCos, range, 0.0f);
-        m_spotLightsCPU.attenuations[i] = glm::vec4(props.attenuation, 0.0f);
-    }
-
-    // TODO: Binding point should be configured somewhere, this is too random
-    // Bind SpotLights block to binding=0
-    {
-        GLuint prog = material->getShader()->getProgramID();
-        if (GLuint blockIndex = glGetUniformBlockIndex(prog, "SpotLights"); blockIndex != GL_INVALID_INDEX)
+        // Sync
+        for (int i = 0; i < spotCount; ++i)
         {
-            glUniformBlockBinding(prog, blockIndex, 0);
-            glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_spotLightsUBO);
-            glBindBuffer(GL_UNIFORM_BUFFER, m_spotLightsUBO);
-            glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SpotLightsUBO), &m_spotLightsCPU);
-            glBindBuffer(GL_UNIFORM_BUFFER, 0);
-        }
-    }
+            const auto& light = spotLights[i];
+            const auto props = light->getSpotLightProperties();
+            const float innerCos = std::cos(glm::radians(props.coneInner));
+            const float outerCos = std::cos(glm::radians(props.coneOuter));
+            const float range = light->getRange();
 
-    // Spot shadow array texture + matrices + count
-    {
-        constexpr GLint SPOT_SHADOW_TU = 5; // Shadow Texture Unit is arbitrary. Needs to be a free one
+            m_spotLightsCPU.positionsWS[i] = glm::vec4(props.position, 1.0f);
+            m_spotLightsCPU.directionsWS[i] = glm::vec4(props.direction, 0.0f);
+            m_spotLightsCPU.colorsIntensity[i] = props.colorIntensity;
+            m_spotLightsCPU.conesRange[i] = glm::vec4(innerCos, outerCos, range, 0.0f);
+            m_spotLightsCPU.attenuations[i] = glm::vec4(props.attenuation, 0.0f);
+        }
+
+        // UBO (binding = 0) TODO: Binding point should be configured somewhere, this is too random
+        {
+            GLuint prog = material->getShader()->getProgramID();
+            if (GLuint blockIndex = glGetUniformBlockIndex(prog, "SpotLights"); blockIndex != GL_INVALID_INDEX)
+            {
+                glUniformBlockBinding(prog, blockIndex, 0);
+                glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_spotLightsUBO);
+                glBindBuffer(GL_UNIFORM_BUFFER, m_spotLightsUBO);
+                glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SpotLightsUBO), &m_spotLightsCPU);
+                glBindBuffer(GL_UNIFORM_BUFFER, 0);
+            }
+        }
+
+        // Shadow array
+        constexpr GLint SPOT_SHADOW_TU = 5; // Texture Unit is arbitrary. Needs to be a free one
         if (lightInputs.spotShadowArray)
         {
             lightInputs.spotShadowArray->bind(SPOT_SHADOW_TU);
@@ -172,7 +180,7 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
                 material->setUniform1i("uSpotLightShadowMapArray", SPOT_SHADOW_TU);
         }
 
-        // MARK: SL matrices
+        // Matrices
         {
             glm::mat4 lightVP[MAX_SPOT_LIGHTS];
             for (int i = 0; i < spotCount; ++i)
@@ -186,11 +194,14 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
             if (material->hasUniform("uSpotLightCount"))
                 material->setUniform1i("uSpotLightCount", spotCount);
         }
+    }
 
-        // MARK: Point lights
+    // MARK: Point lights
+    {
         const std::vector<Ref<PointLight>> pointLights = scene.getPointLights();
         const int pointCount = std::min<int>((int)pointLights.size(), MAX_POINT_LIGHTS);
 
+        // Sync
         for (int i = 0; i < pointCount; ++i)
         {
             const auto& light = pointLights[i];
@@ -203,8 +214,7 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
             m_pointLightsCPU.attenuations[i] = glm::vec4(props.attenuation, 0.0f);
         }
 
-        // TODO: Binding point should be configured somewhere, this is too random
-        // Bind PointLights block to binding=1
+        // UBO (binding = 0) TODO: Binding point should be configured somewhere, this is too random
         {
             GLuint prog = material->getShader()->getProgramID();
             if (GLuint blockIndex = glGetUniformBlockIndex(prog, "PointLights"); blockIndex != GL_INVALID_INDEX)
@@ -217,7 +227,7 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
             }
         }
 
-        // Point shadow cubemap array texture + count
+        // Shadow array
         {
             // TODO: Should be configured somewhere, this is too random
             constexpr GLint POINT_SHADOW_TU = 6;
@@ -231,6 +241,61 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
 
             if (material->hasUniform("uPointLightCount"))
                 material->setUniform1i("uPointLightCount", pointCount);
+        }
+    }
+
+    // MARK: Directional light
+    {
+        const Ref<DirectionalLight> directionalLight = scene.getDirectionalLight();
+
+        // Sync
+        for (int i = 0; i < kCascadeCount; ++i)
+        {
+            const DirectionalLight::DirectionalLightProperties props = directionalLight->props();
+
+            m_spotLightsCPU.directionsWS[i] = glm::vec4(props.direction, 0.0f);
+            m_spotLightsCPU.colorsIntensity[i] = props.colorIntensity;
+        }
+
+        // UBO (binding = 2) TODO: Binding point should be configured somewhere, this is too random
+        {
+            GLuint prog = material->getShader()->getProgramID();
+            if (GLuint blockIndex = glGetUniformBlockIndex(prog, "DirectionalLight"); blockIndex != GL_INVALID_INDEX)
+            {
+                glUniformBlockBinding(prog, blockIndex, 0);
+                glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_directionalLightUBO);
+                glBindBuffer(GL_UNIFORM_BUFFER, m_directionalLightUBO);
+                glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(DirectionalLightUBO), &m_directionalLightCPU);
+                glBindBuffer(GL_UNIFORM_BUFFER, 0);
+            }
+        }
+
+        // Shadow array
+        constexpr GLint SPOT_SHADOW_TU = 7; // Texture Unit is arbitrary. Needs to be a free one
+        if (lightInputs.directionalShadowArray)
+        {
+            lightInputs.directionalShadowArray->bind(SPOT_SHADOW_TU);
+            // Ensure linear filtering
+            // TODO: Check, why this needs to be activated "again" (Should be during creation)
+            // glActiveTexture(GL_TEXTURE0 + SPOT_SHADOW_TU);
+            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            if (material->hasUniform("uDirectionalLightShadowMapArray"))
+                material->setUniform1i("uDirectionalLightShadowMapArray", SPOT_SHADOW_TU);
+        }
+
+        // Matrices
+        {
+            glm::mat4 lightVP[kCascadeCount];
+            for (int cascade = 0; cascade < kCascadeCount; ++cascade)
+            {
+                const auto cam = directionalLight->getShadowCams()[cascade];
+                if (!cam)
+                    return;
+                lightVP[cascade] = cam->getProjectionMatrix() * cam->getViewMatrix();
+            }
+            material->getShader()->setUniformMatrix4fvArray("uDirectionalLightSpaceMatrix[0]", 4,
+                                                            glm::value_ptr(lightVP[0]));
         }
     }
 }

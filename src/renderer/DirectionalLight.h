@@ -10,6 +10,7 @@
 namespace Engine
 {
 
+// TODO: Store centralized
 inline constexpr std::size_t kCascadeCount = 4;
 
 class DirectionalLight
@@ -43,6 +44,7 @@ class DirectionalLight
 
         syncShadowCameras();
     }
+
     DirectionalLight() : DirectionalLight(DirectionalLightProperties{}) {}
 
     void setDirection(glm::vec3 dir = {-1.f, -1.f, -1.f})
@@ -51,6 +53,7 @@ class DirectionalLight
             m_properties.direction = glm::normalize(dir);
         syncShadowCameras();
     }
+
     void setIntensity(float I)
     {
         m_properties.colorIntensity.w = glm::max(I, 0.0f);
@@ -131,6 +134,7 @@ class DirectionalLight
 
         for (std::size_t c = 0; c < kCascadeCount; c++)
         {
+            std::println("init camera {}", c);
             // ensure cam exists
             if (!m_shadowCams[c])
             {

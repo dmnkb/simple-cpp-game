@@ -11,6 +11,7 @@ struct ShadowOutputs
 {
     Ref<Texture> spotShadowArray;
     Ref<Texture> pointShadowCubeArray;
+    Ref<Texture> directionalShadowArray;
     // TODO: per-layer light VP matrices, when lights become PODs without cameras
 };
 

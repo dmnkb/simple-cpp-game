@@ -14,6 +14,7 @@ ShadowPass::ShadowPass()
 {
     setupSpotLightRessources();
     setupPointLightRessources();
+    setupDirectionalLightRessources();
 }
 
 // MARK: Execute
@@ -32,6 +33,7 @@ ShadowOutputs ShadowPass::execute(Scene& scene)
 
     renderSpotLights(scene, scene.getSpotLights());
     renderPointLights(scene, scene.getPointLights());
+    renderDirectionalLight(scene, scene.getDirectionalLight());
 
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
@@ -56,7 +58,7 @@ void ShadowPass::renderSpotLights(Scene& scene, const std::vector<Ref<SpotLight>
         m_spotLightShadowFramebuffer->reattachLayerForAll(lightIndex);
         m_spotLightShadowFramebuffer->bind();
 
-        glViewport(0, 0, m_shadowRes, m_shadowRes);
+        glViewport(0, 0, m_pointShadowRes, m_pointShadowRes);
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -177,6 +179,65 @@ void ShadowPass::renderPointLights(Scene& scene, const std::vector<Ref<PointLigh
     m_depthShaderCube.unbind();
 }
 
+// MARK: Render directional light
+void ShadowPass::renderDirectionalLight(Scene& scene, const Ref<DirectionalLight>& directionalLight)
+{
+    if (!directionalLight)
+        return;
+
+    m_depthShader.bind();
+
+    for (int cascade = 0; cascade < DIRECTIONAL_SHADOW_CASCADE_COUNT; ++cascade)
+    {
+        m_directionalLightShadowFramebuffer->reattachLayerForAll(cascade);
+        m_directionalLightShadowFramebuffer->bind();
+
+        glViewport(0, 0, m_directionalShadowRes, m_directionalShadowRes);
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        const auto& cam = directionalLight->getShadowCams()[cascade];
+        if (!cam)
+            return;
+
+        const glm::mat4 matrix = cam->getProjectionMatrix() * cam->getViewMatrix();
+        m_depthShader.setUniformMatrix4fv("lightSpaceMatrix", matrix);
+
+        const std::string rqName = "Shadow Pass (Directional light cascade " + std::to_string(cascade) + ")";
+        for (const auto& [material, meshMap] : scene.getRenderQueue(rqName))
+        {
+            if (!material->isDoubleSided)
+            {
+                glEnable(GL_CULL_FACE);
+                glCullFace(GL_FRONT);
+            }
+
+            if (auto diffuse = material->getDiffuseMap())
+            {
+                if (m_depthShader.hasUniform("uDiffuseMap"))
+                {
+                    diffuse->bind(0);
+                    m_depthShader.setUniform1i("uDiffuseMap", 0);
+                }
+            }
+
+            for (const auto& [mesh, transforms] : meshMap)
+            {
+                RendererAPI::drawInstanced(mesh, transforms);
+                Profiler::registerDrawCall("Shadow Pass");
+            }
+
+            if (!material->isDoubleSided)
+                glCullFace(GL_BACK);
+        }
+
+        m_directionalLightShadowFramebuffer->unbind();
+    }
+
+    m_depthShader.unbind();
+}
+
 // MARK: Setup spot ressources
 void ShadowPass::setupSpotLightRessources()
 {
@@ -185,8 +246,8 @@ void ShadowPass::setupSpotLightRessources()
     TextureProperties props{};
     props.target = GL_TEXTURE_2D_ARRAY;
     props.level = 0;
-    props.width = m_shadowRes;
-    props.height = m_shadowRes;
+    props.width = m_spotShadowRes;
+    props.height = m_spotShadowRes;
     props.layers = MAX_SPOTLIGHT_SHADOW_COUNT;
     props.internalFormat = GL_DEPTH_COMPONENT24;
     props.format = GL_DEPTH_COMPONENT;
@@ -245,6 +306,40 @@ void ShadowPass::setupPointLightRessources()
     std::cout << "Point light shadow cube array: " << m_pointLightDepthCubeArray->properties.width << "x"
               << m_pointLightDepthCubeArray->properties.height << " cubes=" << MAX_POINTLIGHT_SHADOW_COUNT
               << " layers=" << m_pointLightDepthCubeArray->properties.layers << "\n";
+}
+
+// MARK: Setup directional ressources
+void ShadowPass::setupDirectionalLightRessources()
+{
+    m_directionalLightShadowFramebuffer = CreateRef<Framebuffer>();
+
+    TextureProperties props{};
+    props.target = GL_TEXTURE_2D_ARRAY;
+    props.level = 0;
+    props.width = m_directionalShadowRes;
+    props.height = m_directionalShadowRes;
+    props.layers = DIRECTIONAL_SHADOW_CASCADE_COUNT;
+    props.internalFormat = GL_DEPTH_COMPONENT24;
+    props.format = GL_DEPTH_COMPONENT;
+    props.type = GL_FLOAT;
+    props.pixels = nullptr;
+
+    CustomProperties customProps{};
+    customProps.mipmaps = false;
+    customProps.minFilter = GL_LINEAR;
+    customProps.magFilter = GL_LINEAR;
+    customProps.wrapS = GL_CLAMP_TO_BORDER;
+    customProps.wrapT = GL_CLAMP_TO_BORDER;
+    customProps.wrapR = GL_CLAMP_TO_BORDER;
+    customProps.attachmentType = GL_DEPTH_ATTACHMENT;
+    customProps.attachLayer = 0;
+
+    m_directionalLightDepthArray = CreateRef<Texture>(props, customProps);
+    m_directionalLightShadowFramebuffer->attachTexture(m_directionalLightDepthArray);
+
+    std::cout << "Directional light shadow array: " << m_directionalLightDepthArray->properties.width << "x"
+              << m_directionalLightDepthArray->properties.height
+              << " layers=" << m_directionalLightDepthArray->properties.layers << "\n";
 }
 
 } // namespace Engine
