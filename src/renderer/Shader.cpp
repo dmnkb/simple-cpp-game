@@ -125,6 +125,13 @@ void Shader::setUniform3fv(const char* name, const glm::vec3 value)
         glUniform3fv(location, 1, (const GLfloat*)&value);
 }
 
+void Shader::setUniform4fv(const char* name, const glm::vec4 value)
+{
+    auto location = getCachedLocation(name);
+    if (location >= 0)
+        glUniform4fv(location, 1, (const GLfloat*)&value);
+}
+
 void Shader::setUniform1i(const char* name, GLint value)
 {
     auto location = getCachedLocation(name);

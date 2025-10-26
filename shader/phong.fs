@@ -170,7 +170,7 @@ float shadowFactorDirectional(vec3 worldPos)
             continue;
 
         vec3 ndc = clip.xyz / clip.w; // [-1, 1]
-        if (ndc.x < -1.0 || ndc.x > 1.0 || ndc.y < -1.0 || ndc.y > 1.0 || ndc.z < 0.0 || ndc.z > 1.0)
+        if (ndc.x < -1.0 || ndc.x > 1.0 || ndc.y < -1.0 || ndc.y > 1.0 || ndc.z < -1.0 || ndc.z > 1.0)
             continue;
 
         vec2 uv = ndc.xy * 0.5 + 0.5;

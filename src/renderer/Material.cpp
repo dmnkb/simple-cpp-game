@@ -79,6 +79,11 @@ void Material::setUniform3fv(const char* name, const glm::vec3 value)
     m_shader->setUniform3fv(name, value);
 }
 
+void Material::setUniform4fv(const char* name, const glm::vec4 value)
+{
+    m_shader->setUniform4fv(name, value);
+}
+
 void Material::setUniform1i(const char* name, GLint value)
 {
     m_shader->setUniform1i(name, value);

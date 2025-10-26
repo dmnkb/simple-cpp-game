@@ -54,7 +54,7 @@ class MainCameraChangedEvent : public Event
     float fovY{glm::radians(60.f)};
     float aspect{16.f / 9.f};
     float znear{0.1f};
-    float zfar{200.f};
+    float zfar{1000.f};
 };
 
 } // namespace Engine

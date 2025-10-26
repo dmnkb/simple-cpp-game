@@ -19,7 +19,7 @@ class DirectionalLight
     struct DirectionalLightProperties
     {
         glm::vec3 direction = glm::normalize(glm::vec3(-1.f, -1.f, -1.f)); // from light → scene
-        glm::vec4 colorIntensity = {1, 1, 1, 10};
+        glm::vec4 colorIntensity = {1, 1, 1, 1};
     };
 
     // --- main camera snapshot we need to build cascades ---
