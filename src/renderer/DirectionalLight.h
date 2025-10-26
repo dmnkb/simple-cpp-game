@@ -194,6 +194,9 @@ class DirectionalLight
         auto ev = std::dynamic_pointer_cast<MainCameraChangedEvent>(e);
         if (!ev)
             return;
+
+        std::println("on main cam changed");
+
         // Expect your event to carry these (adapt names accordingly)
         m_main.pos = ev->position;
         m_main.dir = glm::normalize(ev->forward);

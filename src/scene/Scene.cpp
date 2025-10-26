@@ -28,6 +28,11 @@ void Scene::addPointLight(const Ref<PointLight>& light)
     m_PointLights.push_back(light);
 }
 
+void Scene::setDirectionalLight(const Ref<DirectionalLight>& light)
+{
+    m_DirectionalLight = light;
+}
+
 // TODO: Sort transparent renderables back-to-front
 RenderQueue Scene::getRenderQueue(const std::string& passName)
 {

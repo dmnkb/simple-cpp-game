@@ -57,16 +57,20 @@ class Camera
 
     void setPosition(const glm::vec3& position)
     {
-        m_props.position = position;
-
-        onUpdate();
+        if (m_props.position != position)
+        {
+            m_props.position = position;
+            onUpdate();
+        }
     }
 
     void lookAt(const glm::vec3& target)
     {
-        m_props.target = target;
-
-        onUpdate();
+        if (m_props.target != target)
+        {
+            m_props.target = target;
+            onUpdate();
+        }
     }
 
     void lookAt(const glm::vec3& target, const glm::vec3& up)
@@ -76,22 +80,31 @@ class Camera
         float len2 = glm::dot(u, u);
         if (len2 < 1e-12f)
             u = glm::vec3(0.0f, 1.0f, 0.0f);
-        m_props.up = u * glm::inversesqrt(glm::max(len2, 1e-12f));
 
-        onUpdate();
+        if (m_props.up != u)
+        {
+            m_props.up = u * glm::inversesqrt(glm::max(len2, 1e-12f));
+            onUpdate();
+        }
     }
 
     void setDirection(const glm::vec3& dir)
     {
         glm::vec3 d = dir;
+
         float len2 = glm::dot(d, d);
         if (len2 < 1e-12f)
             d = glm::vec3(0.0f, 0.0f, -1.0f);
         else
             d = d * glm::inversesqrt(len2);
-        m_props.target = m_props.position + d;
 
-        onUpdate();
+        auto newTarget = m_props.position + d;
+
+        if (newTarget != m_props.target)
+        {
+            m_props.target = newTarget;
+            onUpdate();
+        }
     }
 
     void setDirection(const glm::vec3& dir, const glm::vec3& upHint)
@@ -114,10 +127,15 @@ class Camera
         const glm::vec3 right = glm::normalize(glm::cross(d, up));
         up = glm::normalize(glm::cross(right, d));
 
-        m_props.target = m_props.position + d;
-        m_props.up = up;
+        auto newTarget = m_props.position + d;
+        auto newUp = up;
 
-        onUpdate();
+        if (newTarget != m_props.target || newUp != m_props.up)
+        {
+            m_props.target = newTarget;
+            m_props.up = newUp;
+            onUpdate();
+        }
     }
 
     void setPerspective(float fovYRadians, float aspect, float nearPlane, float farPlane)
@@ -194,10 +212,11 @@ class Camera
 
     void onUpdate()
     {
+        // Queue change event
         if (!m_props.isMainCamera)
             return;
 
-        // Forward from position→target
+        // Forward from position → target
         glm::vec3 fwd = m_props.target - m_props.position;
         float f2 = glm::dot(fwd, fwd);
         fwd = (f2 > 1e-12f) ? fwd * glm::inversesqrt(f2) : glm::vec3(0, 0, -1);

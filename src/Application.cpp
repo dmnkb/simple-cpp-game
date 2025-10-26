@@ -34,8 +34,13 @@ Application::Application() : m_Player()
     m_renderer = CreateScope<Renderer>();
 
     // Scene
-    Camera::CameraProps cameraProps = {45.0f * (M_PI / 180.0f), ((float)Window::dimensions.x / Window::dimensions.y),
-                                       0.1f, 1000.0f};
+    Camera::CameraProps cameraProps = {};
+    cameraProps.fov = glm::radians(45.0f);
+    cameraProps.aspect = Window::dimensions.x / Window::dimensions.y;
+    cameraProps.near = 0.1f;
+    cameraProps.far = 1000.0f;
+    cameraProps.isMainCamera = true;
+
     m_Scene.init(cameraProps);
 
     // Events

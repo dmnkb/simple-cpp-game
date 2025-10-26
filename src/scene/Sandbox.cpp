@@ -24,6 +24,9 @@ void Sandbox::init(Scene& scene)
     p2.position = {-15, 0, 5};
     scene.addPointLight(CreateRef<PointLight>(p2));
 
+    DirectionalLight::DirectionalLightProperties d{};
+    scene.setDirectionalLight(CreateRef<DirectionalLight>(d));
+
     // Managers / asset context
     MaterialManager materialManager;
     ShaderManager shaderManager;
