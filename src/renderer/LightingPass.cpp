@@ -81,6 +81,7 @@ LightingPass::~LightingPass()
 {
     glDeleteBuffers(1, &m_spotLightsUBO);
     glDeleteBuffers(1, &m_pointLightsUBO);
+    glDeleteBuffers(1, &m_directionalLightUBO);
 }
 
 // MARK: Execute
@@ -249,21 +250,17 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
         const Ref<DirectionalLight> directionalLight = scene.getDirectionalLight();
 
         // Sync
-        for (int i = 0; i < kCascadeCount; ++i)
-        {
-            const DirectionalLight::DirectionalLightProperties props = directionalLight->props();
-
-            m_spotLightsCPU.directionsWS[i] = glm::vec4(props.direction, 0.0f);
-            m_spotLightsCPU.colorsIntensity[i] = props.colorIntensity;
-        }
+        const DirectionalLight::DirectionalLightProperties props = directionalLight->props();
+        m_directionalLightCPU.directionWS = glm::vec4(props.direction, 0.0f);
+        m_directionalLightCPU.colorsIntensity = props.colorIntensity;
 
         // UBO (binding = 2) TODO: Binding point should be configured somewhere, this is too random
         {
             GLuint prog = material->getShader()->getProgramID();
             if (GLuint blockIndex = glGetUniformBlockIndex(prog, "DirectionalLight"); blockIndex != GL_INVALID_INDEX)
             {
-                glUniformBlockBinding(prog, blockIndex, 0);
-                glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_directionalLightUBO);
+                glUniformBlockBinding(prog, blockIndex, 2);
+                glBindBufferBase(GL_UNIFORM_BUFFER, 2, m_directionalLightUBO);
                 glBindBuffer(GL_UNIFORM_BUFFER, m_directionalLightUBO);
                 glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(DirectionalLightUBO), &m_directionalLightCPU);
                 glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -271,17 +268,17 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
         }
 
         // Shadow array
-        constexpr GLint SPOT_SHADOW_TU = 7; // Texture Unit is arbitrary. Needs to be a free one
+        constexpr GLint DIRECTIONAL_SHADOW_TU = 7; // Texture Unit is arbitrary. Needs to be a free one
         if (lightInputs.directionalShadowArray)
         {
-            lightInputs.directionalShadowArray->bind(SPOT_SHADOW_TU);
+            lightInputs.directionalShadowArray->bind(DIRECTIONAL_SHADOW_TU);
             // Ensure linear filtering
             // TODO: Check, why this needs to be activated "again" (Should be during creation)
-            // glActiveTexture(GL_TEXTURE0 + SPOT_SHADOW_TU);
+            // glActiveTexture(GL_TEXTURE0 + DIRECTIONAL_SHADOW_TU);
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             if (material->hasUniform("uDirectionalLightShadowMapArray"))
-                material->setUniform1i("uDirectionalLightShadowMapArray", SPOT_SHADOW_TU);
+                material->setUniform1i("uDirectionalLightShadowMapArray", DIRECTIONAL_SHADOW_TU);
         }
 
         // Matrices
@@ -294,7 +291,7 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
                     return;
                 lightVP[cascade] = cam->getProjectionMatrix() * cam->getViewMatrix();
             }
-            material->getShader()->setUniformMatrix4fvArray("uDirectionalLightSpaceMatrix[0]", 4,
+            material->getShader()->setUniformMatrix4fvArray("uDirectionalLightSpaceMatrix[0]", kCascadeCount,
                                                             glm::value_ptr(lightVP[0]));
         }
     }

@@ -39,6 +39,7 @@ ShadowOutputs ShadowPass::execute(Scene& scene)
 
     out.spotShadowArray = m_spotLightDepthArray;
     out.pointShadowCubeArray = m_pointLightDepthCubeArray;
+    out.directionalShadowArray = m_directionalLightDepthArray;
     return out;
 }
 
@@ -58,7 +59,7 @@ void ShadowPass::renderSpotLights(Scene& scene, const std::vector<Ref<SpotLight>
         m_spotLightShadowFramebuffer->reattachLayerForAll(lightIndex);
         m_spotLightShadowFramebuffer->bind();
 
-        glViewport(0, 0, m_pointShadowRes, m_pointShadowRes);
+        glViewport(0, 0, m_spotShadowRes, m_spotShadowRes);
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
         glClear(GL_DEPTH_BUFFER_BIT);

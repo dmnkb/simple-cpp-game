@@ -12,20 +12,26 @@ out vec4 FragColor;
 uniform vec3 uViewPos;
 uniform sampler2D uDiffuseMap;
 
-// MARK: Max light defines
+// Max light defines
 #define MAX_SPOT_LIGHTS 16
 #define MAX_POINT_LIGHTS 16
+#define DIRECTIONAL_LIGHT_CASCADES 4
 
-// Spot shadow map array (2D array)
+// Shadow map arrays
+// Spot
 uniform sampler2DArrayShadow uSpotLightShadowMapArray;
 uniform mat4 uSpotLightSpaceMatrices[MAX_SPOT_LIGHTS];
 uniform int uSpotLightCount;
 
-// Point shadow cubemap array
+// Point
 uniform samplerCubeArrayShadow uPointLightShadowCubeArray;
 uniform int uPointLightCount;
 
-// MARK: UBOs
+// Directional
+uniform sampler2DArrayShadow uDirectionalLightShadowMapArray;
+uniform mat4 uDirectionalLightSpaceMatrix[DIRECTIONAL_LIGHT_CASCADES];
+
+// MARK: Light blocks
 layout(std140) uniform SpotLights
 {
     // xyz position (w unused)
@@ -52,6 +58,15 @@ layout(std140) uniform PointLights
     vec4 p_rangeFar[MAX_POINT_LIGHTS];
 };
 
+// ✅ Directional block updated & instanced to avoid name clashes
+layout(std140) uniform DirectionalLight
+{
+    vec4 directionWS;     // xyz = direction toward scene, w unused
+    vec4 colorsIntensity; // rgb color, a = intensity
+}
+uDirLight;
+
+// MARK: Material block
 layout(std140) uniform MaterialPropsBlock
 {
     float textureRepeat;
@@ -120,6 +135,53 @@ float shadowPCF(int layer, vec2 uv, float ref, float bias)
 #endif
 }
 
+// ===== Directional light helpers =====
+float shadowPCFDirectional(int layer, vec2 uv, float ref, float bias)
+{
+#if SHADOW_PCF_ENABLED
+    vec2 texel = 1.0 / vec2(textureSize(uDirectionalLightShadowMapArray, 0));
+    float sum = 0.0;
+    int r = SHADOW_PCF_RADIUS;
+    int taps = 0;
+    for (int dy = -r; dy <= r; ++dy)
+    {
+        for (int dx = -r; dx <= r; ++dx)
+        {
+            vec2 offs = vec2(dx, dy) * texel;
+            sum += texture(uDirectionalLightShadowMapArray, vec4(uv + offs, float(layer), ref - bias));
+            ++taps;
+        }
+    }
+    return sum / float(taps);
+#else
+    return texture(uDirectionalLightShadowMapArray, vec4(uv, float(layer), ref - bias));
+#endif
+}
+
+// Choose the first cascade whose clip coords are valid and sample it.
+// Returns 1.0 if the fragment is outside all cascades or behind the light.
+float shadowFactorDirectional(vec3 worldPos)
+{
+    for (int c = 0; c < DIRECTIONAL_LIGHT_CASCADES; ++c)
+    {
+        vec4 clip = uDirectionalLightSpaceMatrix[c] * vec4(worldPos, 1.0);
+
+        if (clip.w <= 0.0)
+            continue;
+
+        vec3 ndc = clip.xyz / clip.w; // [-1, 1]
+        if (ndc.x < -1.0 || ndc.x > 1.0 || ndc.y < -1.0 || ndc.y > 1.0 || ndc.z < 0.0 || ndc.z > 1.0)
+            continue;
+
+        vec2 uv = ndc.xy * 0.5 + 0.5;
+        float ref = ndc.z * 0.5 + 0.5;
+
+        const float bias = 0.0; // tweak if acne
+        return shadowPCFDirectional(c, uv, ref, bias);
+    }
+    return 1.0;
+}
+
 // MARK: Shadow spot
 float shadowFactorSpot(int i, vec3 worldPos /*, vec3 N, vec3 L*/)
 {
@@ -165,6 +227,24 @@ void main()
     vec3 V = normalize(uViewPos - vFragPos);
 
     vec3 lighting = AMBIENT_COLOR;
+
+    // ===== Directional light (uses updated UBO field names) =====
+    {
+        // directionWS.xyz is the light's direction toward the scene
+        vec3 L = normalize(-uDirLight.directionWS.xyz); // from fragment to light
+        float NdotL = max(dot(N, L), 0.0);
+
+        float s = shadowFactorDirectional(vFragPos);
+
+        vec3 H = normalize(L + V);
+        float NdotH = max(dot(N, H), 0.0);
+        float spec = pow(NdotH, max(shininess, 1.0)) * specularIntensity;
+
+        vec3 lightRGB = uDirLight.colorsIntensity.rgb * uDirLight.colorsIntensity.a;
+        float litTerm = (NdotL + spec) * s;
+
+        lighting += lightRGB * litTerm; // no attenuation for directional
+    }
 
     // MARK: Spot lights
     for (int i = 0; i < uSpotLightCount; ++i)
