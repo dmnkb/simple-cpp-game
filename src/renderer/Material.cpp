@@ -104,6 +104,11 @@ Ref<Shader> Material::getShader() const
     return m_shader;
 }
 
+float Material::getTextureRepeat() const
+{
+    return m_props.textureRepeat;
+}
+
 const bool Material::hasUniform(const char* name)
 {
     // True only if the uniform exists (location >= 0)

@@ -221,6 +221,10 @@ void ShadowPass::renderDirectionalLight(Scene& scene, const Ref<DirectionalLight
                     diffuse->bind(0);
                     m_depthShader.setUniform1i("uDiffuseMap", 0);
                 }
+                if (m_depthShader.hasUniform("uTextureRepeat"))
+                {
+                    m_depthShader.setUniform1f("uTextureRepeat", material->getTextureRepeat());
+                }
             }
 
             for (const auto& [mesh, transforms] : meshMap)

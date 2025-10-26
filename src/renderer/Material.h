@@ -40,6 +40,7 @@ class Material
     void setIntArray(const char* name, GLint* values, GLsizei count);
 
     Ref<Shader> getShader() const;
+    [[nodiscard]] float getTextureRepeat() const;
 
     const bool hasUniform(const char* name);
 
