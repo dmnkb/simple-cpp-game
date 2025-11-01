@@ -3,6 +3,7 @@
 #include "Framebuffer.h"
 #include "Texture.h"
 #include "util/ComputeEffectiveRange.h"
+#include "util/uuid.h"
 #include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
@@ -17,12 +18,12 @@ class SpotLight
   public:
     struct SpotLightProperties
     {
-        glm::vec3 position = {0.0f, 0.0f, 0.0f};              // world-space
-        glm::vec3 direction = {0.0f, 0.0f, -1.0f};            // world-space, normalized
-        glm::vec4 colorIntensity = {1.0f, 1.0f, 1.0f, 10.0f}; // rgb + intensity (scalar)
-        float coneInner = 20.0f;                              // degrees
-        float coneOuter = 30.0f;                              // degrees
-        glm::vec3 attenuation = {1.0f, 0.09f, 0.032f};        // (constant, linear, quadratic)
+        glm::vec3 position = {0.0f, 0.0f, 0.0f};             // world-space
+        glm::vec3 direction = {0.0f, 0.0f, -1.0f};           // world-space, normalized
+        glm::vec4 colorIntensity = {1.0f, 1.0f, 1.0f, 1.0f}; // rgb + intensity (scalar)
+        float coneInner = 20.0f;                             // degrees
+        float coneOuter = 30.0f;                             // degrees
+        glm::vec3 attenuation = {1.0f, 0.09f, 0.032f};       // (constant, linear, quadratic)
     };
 
   public:
@@ -90,6 +91,11 @@ class SpotLight
         return m_shadowCam;
     }
 
+    UUID getIdentifier() const
+    {
+        return identifier;
+    }
+
   private:
     void syncShadowCamera_()
     {
@@ -110,6 +116,7 @@ class SpotLight
     }
 
   private:
+    UUID identifier;
     SpotLightProperties m_properties;
     Ref<Camera> m_shadowCam;
     float m_range = 0.0f;

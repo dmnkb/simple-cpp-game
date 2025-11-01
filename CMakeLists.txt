@@ -28,6 +28,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/include
     ${ASSIMP_INCLUDE_DIR}
+    ${CMAKE_SOURCE_DIR}/vendor/stduuid/include
 )
 
 target_link_libraries(${PROJECT_NAME}

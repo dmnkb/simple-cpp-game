@@ -6,6 +6,7 @@
 #include "renderer/Model.h"
 #include "renderer/PointLight.h"
 #include "renderer/SpotLight.h"
+#include "uuid/uuid.h"
 
 namespace Engine
 {
@@ -28,11 +29,17 @@ class Scene
     std::vector<Ref<PointLight>> getPointLights() const;
     Ref<DirectionalLight> getDirectionalLight() const;
 
+    // TODO: Remove once ECS is in place:
+    Ref<SpotLight> getSpotLight(uuids::uuid identifier) const;
+
     void setActiveCamera(const Ref<Camera>& camera);
     Ref<Camera> getActiveCamera() const;
     Ref<Camera> getDefaultCamera() const;
 
   private:
+    // TODO:
+    // entt::registry m_registry;
+
     std::vector<Ref<SpotLight>> m_SpotLights;
     std::vector<Ref<PointLight>> m_PointLights;
     Ref<DirectionalLight> m_DirectionalLight;

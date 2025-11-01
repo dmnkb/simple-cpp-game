@@ -146,7 +146,6 @@ const MeshData Model::processMesh(aiMesh* mesh, const aiScene* scene, const Asse
             shader = newShader;
         }
 
-        // Textures (TODO: Normal maps)
         std::vector<Ref<Texture>> diffuseMaps = loadMaterialTextures(assimpMaterial, aiTextureType_DIFFUSE, assets);
         if (diffuseMaps.empty())
             std::cerr << "[Model] WARNING: Missing diffuse map (Model::processMesh)" << std::endl;

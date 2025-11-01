@@ -1,8 +1,10 @@
 #pragma once
+
 #include "Camera.h"
 #include "Framebuffer.h"
 #include "Texture.h"
 #include "util/ComputeEffectiveRange.h"
+#include "util/uuid.h"
 #include <array>
 #include <cmath>
 #include <glm/glm.hpp>
@@ -20,9 +22,9 @@ class PointLight
     // will pick up and use to recalculate the range and cosines (spot)
     struct PointLightProperties
     {
-        glm::vec3 position = {0.0f, 0.0f, 0.0f};              // world-space
-        glm::vec4 colorIntensity = {1.0f, 1.0f, 1.0f, 10.0f}; // rgb + intensity (scalar in .w)
-        glm::vec3 attenuation = {1.0f, 0.09f, 0.032f};        // (constant, linear, quadratic)
+        glm::vec3 position = {0.0f, 0.0f, 0.0f};             // world-space
+        glm::vec4 colorIntensity = {1.0f, 1.0f, 1.0f, 1.0f}; // rgb + intensity (scalar in .w)
+        glm::vec3 attenuation = {1.0f, 0.09f, 0.032f};       // (constant, linear, quadratic)
     };
 
   public:
@@ -68,6 +70,11 @@ class PointLight
         return m_shadowCams;
     }
 
+    UUID getIdentifier() const
+    {
+        return identifier;
+    }
+
   private:
     void syncShadowCameras_()
     {
@@ -110,6 +117,7 @@ class PointLight
     }
 
   private:
+    UUID identifier;
     PointLightProperties m_properties;
     std::array<Ref<Camera>, 6> m_shadowCams;
     float m_range = 0.0f;

@@ -9,6 +9,7 @@
 #include "renderer/SpotLight.h"
 #include "renderer/Texture.h"
 #include "scene/Scene.h"
+#include <random>
 
 namespace Engine
 {
@@ -16,12 +17,14 @@ namespace Engine
 void Sandbox::init(Scene& scene)
 {
     SpotLight::SpotLightProperties sp{};
-    sp.position = {10, 5.0, 15.0};
-    sp.direction = {0, -.5, -1.0};
+    sp.position = {-20, 5.0, 15.0};
+    sp.direction = {0, 0, -1.0};
+    sp.colorIntensity = {1.0f, 1.0f, 1.0f, 15.0f};
     scene.addSpotLight(CreateRef<SpotLight>(sp));
 
     PointLight::PointLightProperties p2{};
-    p2.position = {-15, 0, 5};
+    p2.position = {20, 5.0, 5};
+    p2.colorIntensity = {1.0f, 1.0f, 1.0f, 5.0f};
     scene.addPointLight(CreateRef<PointLight>(p2));
 
     DirectionalLight::DirectionalLightProperties d{};
@@ -33,13 +36,11 @@ void Sandbox::init(Scene& scene)
     TextureManager textureManager;
     AssetContext context(materialManager, shaderManager, textureManager);
 
-    // Ground & tree
-    scene.addModel(Model("assets/models/ground/ground.gltf", context, {0.0f, -1.0f, 0.0f}, {10.0f, 1.0f, 10.0f}));
-    scene.addModel(Model("assets/models/tree/scene.gltf", context, {10.0f, 0.0f, -10.0f}));
-
-    // Cubes (x = -60 .. 40, step 10)
-    for (int x = -60; x <= 40; x += 10)
-        scene.addModel(Model("assets/models/cube/cube.gltf", context, {(float)x, 0.0f, 0.0f}));
+    const auto ground = Model("assets/models/ground/ground.gltf", context, {0.0f, 0.0f, 0.0f}, {5.0f, 1.0f, 5.0f});
+    scene.addModel(ground);
+    scene.addModel(Model("assets/models/cube/cube.gltf", context, {-20.0f, 5.0f, 0.0f}, {1.0f, 10.0f, 1.0f}));
+    scene.addModel(Model("assets/models/cube/cube.gltf", context, {0.0f, 5.0f, 0.0f}, {1.0f, 10.0f, 1.0f}));
+    scene.addModel(Model("assets/models/cube/cube.gltf", context, {20.0f, 5.0f, 0.0f}, {1.0f, 10.0f, 1.0f}));
 }
 
 void Sandbox::update(double deltaTime)

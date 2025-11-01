@@ -5,42 +5,123 @@
 #include "renderer/ClearColor.h"
 #include "renderer/RendererAPI.h"
 #include "util/MemoryUsage.h"
+#include "util/uuid.h"
 
 namespace Engine
 {
 
 void PanelSceneHierarchy::render(const Scene& scene)
 {
+    // ImGui::ShowDemoWindow();
+    constexpr float footerHeight = 220.0f;
+
     static bool open = true;
-    ImGui::Begin("Hierarchy", &open);
+    static int itemClicked = -1;
+    static std::unordered_map<int, UUID> lightDict = {};
 
-    if (ImGui::TreeNode("Basic trees"))
+    const auto& spotLights = scene.getSpotLights();
+    const auto& pointLights = scene.getPointLights();
+    const auto& dirLight = scene.getDirectionalLight();
+
+    int spotLightCount = static_cast<int>(scene.getSpotLights().size());
+    int pointLightCount = static_cast<int>(scene.getPointLights().size());
+
+    ImGui::Begin("hierarchy", &open);
+    ImGui::BeginChild("##hier_tree", ImVec2(0, -footerHeight));
     {
-        for (int i = 0; i < 5; i++)
-        {
-            // Use SetNextItemOpen() so set the default state of a node to be open. We could
-            // also use TreeNodeEx() with the ImGuiTreeNodeFlags_DefaultOpen flag to achieve the same thing!
-            if (i == 0)
-                ImGui::SetNextItemOpen(true, ImGuiCond_Once);
 
-            // Here we use PushID() to generate a unique base ID, and then the "" used as TreeNode id won't conflict.
-            // An alternative to using 'PushID() + TreeNode("", ...)' to generate a unique ID is to use
-            // 'TreeNode((void*)(intptr_t)i, ...)', aka generate a dummy pointer-sized value to be hashed. The demo
-            // below uses that technique. Both are fine.
-            ImGui::PushID(i);
-            if (ImGui::TreeNode("", "Child %d", i))
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::TreeNode("Lights"))
+        {
+
+            for (size_t i = 0; i < spotLightCount; ++i)
             {
-                ImGui::Text("blah blah");
-                ImGui::SameLine();
-                if (ImGui::SmallButton("button"))
+                ImGui::PushID(i);
+
+                const char* label = ("Spot Light " + std::to_string(i)).c_str();
+                ImGui::Selectable(label, false, ImGuiTreeNodeFlags_SpanAvailWidth);
+
+                lightDict[i] = spotLights[i]->getIdentifier();
+
+                if (ImGui::IsItemClicked())
                 {
+                    itemClicked = static_cast<int>(i);
                 }
-                ImGui::TreePop();
+
+                ImGui::PopID();
+            }
+            for (size_t i = 0; i < pointLightCount; ++i)
+            {
+                ImGui::PushID(static_cast<int>(i + spotLightCount));
+
+                const char* label = ("Point Light " + std::to_string(i)).c_str();
+                ImGui::Selectable(label, false, ImGuiTreeNodeFlags_SpanAvailWidth);
+
+                lightDict[static_cast<int>(i + spotLightCount)] = pointLights[i]->getIdentifier();
+
+                if (ImGui::IsItemClicked())
+                {
+                    itemClicked = static_cast<int>(i + spotLightCount);
+                }
+                ImGui::PopID();
+            }
+            ImGui::PushID(static_cast<int>(spotLightCount + pointLightCount));
+            ImGui::Selectable("Directional Light", false, ImGuiTreeNodeFlags_SpanAvailWidth);
+            lightDict[static_cast<int>(spotLightCount + pointLightCount)] = dirLight->getIdentifier();
+            if (ImGui::IsItemClicked())
+            {
+                itemClicked = static_cast<int>(spotLightCount + pointLightCount);
             }
             ImGui::PopID();
+
+            ImGui::TreePop();
         }
-        ImGui::TreePop();
     }
+    ImGui::EndChild();
+
+    ImGui::Separator();
+
+    ImGui::BeginChild("##hier_details", ImVec2(0, footerHeight));
+    {
+        if (itemClicked == -1)
+        {
+            ImGui::Text("Properties: None");
+        }
+        else if (itemClicked < spotLightCount)
+        {
+            // Spot
+            if (auto it = lightDict.find(itemClicked); it != lightDict.end())
+            {
+                auto identifier = it->second;
+                ImGui::Text("Spot Light ID: %s", identifier.to_string().c_str());
+
+                // TODO: Show more properties
+            }
+        }
+        else if (itemClicked < spotLightCount + pointLightCount)
+        {
+            // Point
+            if (auto it = lightDict.find(itemClicked); it != lightDict.end())
+            {
+                auto identifier = it->second;
+                ImGui::Text("Point Light ID: %s", identifier.to_string().c_str());
+
+                // TODO: Show more properties
+            }
+        }
+        else
+        {
+            // Directional
+            if (auto it = lightDict.find(itemClicked); it != lightDict.end())
+            {
+                auto identifier = it->second;
+                ImGui::Text("Directional Light ID: %s", identifier.to_string().c_str());
+
+                // TODO: Show more properties
+            }
+        }
+    }
+    ImGui::EndChild();
 
     ImGui::End();
 }

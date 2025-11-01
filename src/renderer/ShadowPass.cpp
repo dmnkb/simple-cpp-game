@@ -208,12 +208,6 @@ void ShadowPass::renderDirectionalLight(Scene& scene, const Ref<DirectionalLight
         const std::string rqName = "Shadow Pass (Directional light cascade " + std::to_string(cascade) + ")";
         for (const auto& [material, meshMap] : scene.getRenderQueue(rqName))
         {
-            if (!material->isDoubleSided)
-            {
-                glEnable(GL_CULL_FACE);
-                glCullFace(GL_FRONT);
-            }
-
             if (auto diffuse = material->getDiffuseMap())
             {
                 if (m_depthShader.hasUniform("uDiffuseMap"))
@@ -232,9 +226,6 @@ void ShadowPass::renderDirectionalLight(Scene& scene, const Ref<DirectionalLight
                 RendererAPI::drawInstanced(mesh, transforms);
                 Profiler::registerDrawCall("Shadow Pass");
             }
-
-            if (!material->isDoubleSided)
-                glCullFace(GL_BACK);
         }
 
         m_directionalLightShadowFramebuffer->unbind();

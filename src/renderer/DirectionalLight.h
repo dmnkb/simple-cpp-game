@@ -1,7 +1,9 @@
 #pragma once
+
 #include "Camera.h"
 #include "core/Event.h"
 #include "core/EventManager.h"
+#include "util/uuid.h"
 #include <array>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -67,6 +69,11 @@ class DirectionalLight
     [[nodiscard]] const std::array<Ref<Camera>, kCascadeCount>& getShadowCams() const
     {
         return m_shadowCams;
+    }
+
+    UUID getIdentifier() const
+    {
+        return identifier;
     }
 
   private:
@@ -254,6 +261,7 @@ class DirectionalLight
     }
 
   private:
+    UUID identifier;
     DirectionalLightProperties m_properties;
     std::array<Ref<Camera>, kCascadeCount> m_shadowCams;
     MainCamData m_main{};
