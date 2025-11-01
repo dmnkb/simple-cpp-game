@@ -30,7 +30,32 @@ class Scene
     Ref<DirectionalLight> getDirectionalLight() const;
 
     // TODO: Remove once ECS is in place:
-    Ref<SpotLight> getSpotLight(uuids::uuid identifier) const;
+    Ref<SpotLight> getSpotLightByID(UUID identifier) const
+    {
+        for (const auto& light : m_SpotLights)
+        {
+            if (light->getIdentifier() == identifier)
+                return light;
+        }
+        return nullptr;
+    }
+
+    Ref<PointLight> getPointLightByID(UUID identifier) const
+    {
+        for (const auto& light : m_PointLights)
+        {
+            if (light->getIdentifier() == identifier)
+                return light;
+        }
+        return nullptr;
+    }
+
+    Ref<DirectionalLight> getDirectionalLightByID(UUID identifier) const
+    {
+        if (m_DirectionalLight && m_DirectionalLight->getIdentifier() == identifier)
+            return m_DirectionalLight;
+        return nullptr;
+    }
 
     void setActiveCamera(const Ref<Camera>& camera);
     Ref<Camera> getActiveCamera() const;

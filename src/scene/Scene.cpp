@@ -36,11 +36,8 @@ void Scene::setDirectionalLight(const Ref<DirectionalLight>& light)
 // TODO: Sort transparent renderables back-to-front
 RenderQueue Scene::getRenderQueue(const std::string& passName)
 {
-    Engine::Profiler::beginRegion("Prepare Render Queue (" + passName + ")");
-
     if (!m_renderablesDirty)
     {
-        Engine::Profiler::endRegion("Prepare Render Queue (" + passName + ")");
         return m_cachedRenderQueue;
     }
 
@@ -77,7 +74,6 @@ RenderQueue Scene::getRenderQueue(const std::string& passName)
     m_renderablesDirty = false;
     m_cachedRenderQueue = renderQueue;
 
-    Engine::Profiler::endRegion("Prepare Render Queue (" + passName + ")");
     return renderQueue;
 }
 

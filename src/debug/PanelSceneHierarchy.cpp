@@ -13,6 +13,7 @@ namespace Engine
 void PanelSceneHierarchy::render(const Scene& scene)
 {
     // ImGui::ShowDemoWindow();
+    // ImGui::ShowStyleEditor();
     constexpr float footerHeight = 220.0f;
 
     static bool open = true;
@@ -95,7 +96,23 @@ void PanelSceneHierarchy::render(const Scene& scene)
                 auto identifier = it->second;
                 ImGui::Text("Spot Light ID: %s", identifier.to_string().c_str());
 
-                // TODO: Show more properties
+                auto light = scene.getSpotLightByID(identifier);
+                if (light)
+                {
+                    ImGui::Text("Position:");
+                    static glm::vec3 position = light->getSpotLightProperties().position;
+                    ImGui::SliderFloat("X", (float*)&position.x, -100.0f, 100.0f, "%.0f");
+                    ImGui::SliderFloat("Y", (float*)&position.y, -100.0f, 100.0f, "%.0f");
+                    ImGui::SliderFloat("Z", (float*)&position.z, -100.0f, 100.0f, "%.0f");
+                    light->setPosition(position);
+                    ImGui::Separator();
+                    ImGui::Text("Direction:");
+                    static glm::vec3 direction = light->getSpotLightProperties().direction;
+                    ImGui::SliderFloat("Dir X", (float*)&direction.x, -1.0f, 1.0f, "%.2f");
+                    ImGui::SliderFloat("Dir Y", (float*)&direction.y, -1.0f, 1.0f, "%.2f");
+                    ImGui::SliderFloat("Dir Z", (float*)&direction.z, -1.0f, 1.0f, "%.2f");
+                    light->setDirection(direction);
+                }
             }
         }
         else if (itemClicked < spotLightCount + pointLightCount)
@@ -104,9 +121,17 @@ void PanelSceneHierarchy::render(const Scene& scene)
             if (auto it = lightDict.find(itemClicked); it != lightDict.end())
             {
                 auto identifier = it->second;
-                ImGui::Text("Point Light ID: %s", identifier.to_string().c_str());
 
-                // TODO: Show more properties
+                auto light = scene.getPointLightByID(identifier);
+                if (light)
+                {
+                    ImGui::Text("Position:");
+                    static glm::vec3 position = light->getPointLightProperties().position;
+                    ImGui::SliderFloat("X", (float*)&position.x, -100.0f, 100.0f, "%.0f");
+                    ImGui::SliderFloat("Y", (float*)&position.y, -100.0f, 100.0f, "%.0f");
+                    ImGui::SliderFloat("Z", (float*)&position.z, -100.0f, 100.0f, "%.0f");
+                    light->setPosition(position);
+                }
             }
         }
         else
@@ -117,10 +142,21 @@ void PanelSceneHierarchy::render(const Scene& scene)
                 auto identifier = it->second;
                 ImGui::Text("Directional Light ID: %s", identifier.to_string().c_str());
 
-                // TODO: Show more properties
+                auto light = scene.getDirectionalLightByID(identifier);
+                ;
+                if (light)
+                {
+                    ImGui::Text("Direction:");
+                    static glm::vec3 direction = light->getDirectionalLightProperties().direction;
+                    ImGui::SliderFloat("Dir X", (float*)&direction.x, -1.0f, 1.0f, "%.2f");
+                    ImGui::SliderFloat("Dir Y", (float*)&direction.y, -1.0f, 1.0f, "%.2f");
+                    ImGui::SliderFloat("Dir Z", (float*)&direction.z, -1.0f, 1.0f, "%.2f");
+                    light->setDirection(direction);
+                }
             }
         }
     }
+
     ImGui::EndChild();
 
     ImGui::End();

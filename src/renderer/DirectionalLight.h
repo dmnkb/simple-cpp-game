@@ -71,6 +71,11 @@ class DirectionalLight
         return m_shadowCams;
     }
 
+    DirectionalLightProperties getDirectionalLightProperties() const
+    {
+        return m_properties;
+    }
+
     UUID getIdentifier() const
     {
         return identifier;
