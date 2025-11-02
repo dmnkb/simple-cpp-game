@@ -92,6 +92,16 @@ Ref<DirectionalLight> Scene::getDirectionalLight() const
     return m_DirectionalLight;
 }
 
+void Scene::setAmbientLightColor(const glm::vec4& color)
+{
+    ambientLightColor = color;
+}
+
+glm::vec4 Scene::getAmbientLightColor() const
+{
+    return ambientLightColor;
+}
+
 void Scene::setActiveCamera(const Ref<Camera>& camera)
 {
     m_ActiveCamera = camera;

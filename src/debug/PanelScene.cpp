@@ -7,7 +7,7 @@
 namespace Engine
 {
 
-void PanelScene::render(const float fps, const Scene& scene)
+void PanelScene::render(const float fps, Scene& scene)
 {
     static bool open = true;
     ImGui::Begin("Scene", &open);
@@ -112,36 +112,83 @@ void PanelScene::render(const float fps, const Scene& scene)
             // Environment Lighting
             ImGui::SeparatorText("Environment Lighting");
 
-            if (ImGui::BeginTable("tex_props", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoBordersInBody))
+            Ref<DirectionalLight> sunLight = scene.getDirectionalLight();
+            static DirectionalLight::DirectionalLightProperties sunLightProps =
+                sunLight->getDirectionalLightProperties();
+
+            if (sunLight)
             {
-                ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, availableWidth * 0.4f);
-                ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
-
-                static float sunColor[4] = {1, 1, 1, 1};
-
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::TextUnformatted("Sun Color");
-                ImGui::TableSetColumnIndex(1);
-
-                if (ImGui::ColorButton("##sunColorBtn", ImVec4(sunColor[0], sunColor[1], sunColor[2], sunColor[3]),
-                                       ImGuiColorEditFlags_NoTooltip, ImVec2(ImGui::GetContentRegionAvail().x, 24.0f)))
+                if (ImGui::BeginTable("tex_props", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoBordersInBody))
                 {
-                    ImGui::OpenPopup("##sunColorPopup");
-                }
-                if (ImGui::BeginPopup("##sunColorPopup"))
-                {
-                    ImGui::ColorPicker4("##sunColorPicker", sunColor,
-                                        ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB |
-                                            ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_PickerHueBar |
-                                            ImGuiColorEditFlags_NoSidePreview);
-                    ImGui::EndPopup();
-                }
+                    ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, availableWidth * 0.4f);
+                    ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
 
-                ImGui::EndTable();
+                    // Sun Color
+                    static glm::vec4 intensity = sunLightProps.colorIntensity;
+                    static float sunColor[4] = {intensity.r, intensity.g, intensity.b, intensity.a};
+
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::TextUnformatted("Sun Color");
+                    ImGui::TableSetColumnIndex(1);
+
+                    if (ImGui::ColorButton("##sunColorBtn", ImVec4(sunColor[0], sunColor[1], sunColor[2], sunColor[3]),
+                                           ImGuiColorEditFlags_NoTooltip,
+                                           ImVec2(ImGui::GetContentRegionAvail().x, 24.0f)))
+                    {
+                        ImGui::OpenPopup("##sunColorPopup");
+                    }
+                    if (ImGui::BeginPopup("##sunColorPopup"))
+                    {
+                        ImGui::ColorPicker4("##sunColorPicker", sunColor,
+                                            ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB |
+                                                ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_PickerHueBar |
+                                                ImGuiColorEditFlags_NoSidePreview);
+                        ImGui::EndPopup();
+                    }
+                    sunLight->setColor(sunColor[0], sunColor[1], sunColor[2], sunColor[3]);
+
+                    // Sun Direction
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::TextUnformatted("Sun Direction");
+                    ImGui::TableSetColumnIndex(1);
+
+                    static glm::vec3 direction = sunLightProps.direction;
+                    ImGui::SliderFloat("Dir X", (float*)&direction.x, -1.0f, 1.0f, "%.2f");
+                    ImGui::SliderFloat("Dir Y", (float*)&direction.y, -1.0f, 1.0f, "%.2f");
+                    ImGui::SliderFloat("Dir Z", (float*)&direction.z, -1.0f, 1.0f, "%.2f");
+                    sunLight->setDirection(direction);
+
+                    // Ambient  Light Color
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::TextUnformatted("Ambient Light Color");
+                    ImGui::TableSetColumnIndex(1);
+
+                    static glm::vec4 ambientColor = scene.getAmbientLightColor();
+                    if (ImGui::ColorButton(
+                            "##ambientColorBtn", ImVec4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a),
+                            ImGuiColorEditFlags_NoTooltip, ImVec2(ImGui::GetContentRegionAvail().x, 24.0f)))
+                    {
+                        ImGui::OpenPopup("##ambientColorPopup");
+                    }
+                    if (ImGui::BeginPopup("##ambientColorPopup"))
+                    {
+                        ImGui::ColorPicker4("##ambientColorPicker", (float*)&ambientColor,
+                                            ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB |
+                                                ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_PickerHueBar |
+                                                ImGuiColorEditFlags_NoSidePreview);
+                        ImGui::EndPopup();
+                    }
+                    scene.setAmbientLightColor(ambientColor);
+                }
             }
-            ImGui::EndTabItem();
+
+            ImGui::EndTable();
         }
+        ImGui::EndTabItem();
+
         if (ImGui::BeginTabItem("Inspector"))
         {
             ImGui::SeparatorText("Inspector Panel");

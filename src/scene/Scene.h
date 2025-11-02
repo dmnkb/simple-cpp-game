@@ -23,6 +23,8 @@ class Scene
     void addSpotLight(const Ref<SpotLight>& light);
     void addPointLight(const Ref<PointLight>& light);
     void setDirectionalLight(const Ref<DirectionalLight>& light);
+    void setAmbientLightColor(const glm::vec4& color);
+    glm::vec4 getAmbientLightColor() const;
 
     RenderQueue getRenderQueue(const std::string& passName);
     std::vector<Ref<SpotLight>> getSpotLights() const;
@@ -69,6 +71,8 @@ class Scene
     std::vector<Ref<PointLight>> m_PointLights;
     Ref<DirectionalLight> m_DirectionalLight;
     std::vector<Model> m_Models;
+
+    glm::vec4 ambientLightColor = {0.1f, 0.1f, 0.1f, 1.0f};
 
     RenderQueue m_cachedRenderQueue;
     bool m_renderablesDirty = true;

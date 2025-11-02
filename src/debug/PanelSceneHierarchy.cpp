@@ -22,7 +22,6 @@ void PanelSceneHierarchy::render(const Scene& scene)
 
     const auto& spotLights = scene.getSpotLights();
     const auto& pointLights = scene.getPointLights();
-    const auto& dirLight = scene.getDirectionalLight();
 
     int spotLightCount = static_cast<int>(scene.getSpotLights().size());
     int pointLightCount = static_cast<int>(scene.getPointLights().size());
@@ -66,14 +65,6 @@ void PanelSceneHierarchy::render(const Scene& scene)
                 }
                 ImGui::PopID();
             }
-            ImGui::PushID(static_cast<int>(spotLightCount + pointLightCount));
-            ImGui::Selectable("Directional Light", false, ImGuiTreeNodeFlags_SpanAvailWidth);
-            lightDict[static_cast<int>(spotLightCount + pointLightCount)] = dirLight->getIdentifier();
-            if (ImGui::IsItemClicked())
-            {
-                itemClicked = static_cast<int>(spotLightCount + pointLightCount);
-            }
-            ImGui::PopID();
 
             ImGui::TreePop();
         }
@@ -131,27 +122,6 @@ void PanelSceneHierarchy::render(const Scene& scene)
                     ImGui::SliderFloat("Y", (float*)&position.y, -100.0f, 100.0f, "%.0f");
                     ImGui::SliderFloat("Z", (float*)&position.z, -100.0f, 100.0f, "%.0f");
                     light->setPosition(position);
-                }
-            }
-        }
-        else
-        {
-            // Directional
-            if (auto it = lightDict.find(itemClicked); it != lightDict.end())
-            {
-                auto identifier = it->second;
-                ImGui::Text("Directional Light ID: %s", identifier.to_string().c_str());
-
-                auto light = scene.getDirectionalLightByID(identifier);
-                ;
-                if (light)
-                {
-                    ImGui::Text("Direction:");
-                    static glm::vec3 direction = light->getDirectionalLightProperties().direction;
-                    ImGui::SliderFloat("Dir X", (float*)&direction.x, -1.0f, 1.0f, "%.2f");
-                    ImGui::SliderFloat("Dir Y", (float*)&direction.y, -1.0f, 1.0f, "%.2f");
-                    ImGui::SliderFloat("Dir Z", (float*)&direction.z, -1.0f, 1.0f, "%.2f");
-                    light->setDirection(direction);
                 }
             }
         }

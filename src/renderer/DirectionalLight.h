@@ -56,6 +56,12 @@ class DirectionalLight
         syncShadowCameras();
     }
 
+    void setColor(float r, float g, float b, float a)
+    {
+        m_properties.colorIntensity = {r, g, b, a};
+        syncShadowCameras();
+    }
+
     void setIntensity(float I)
     {
         m_properties.colorIntensity.w = glm::max(I, 0.0f);

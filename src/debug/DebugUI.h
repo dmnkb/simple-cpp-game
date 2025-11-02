@@ -11,7 +11,7 @@ namespace Engine
 class DebugUI
 {
   public:
-    static void render(float fps, const Scene& scene);
+    static void render(float fps, Scene& scene);
 };
 
 } // namespace Engine

@@ -9,7 +9,7 @@ namespace Engine
 class PanelScene
 {
   public:
-    static void render(const float fps, const Scene& scene);
+    static void render(const float fps, Scene& scene);
 };
 
 } // namespace Engine

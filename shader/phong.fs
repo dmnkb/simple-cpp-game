@@ -11,6 +11,7 @@ out vec4 FragColor;
 // Material / Textures
 uniform vec3 uViewPos;
 uniform sampler2D uDiffuseMap;
+uniform vec4 uAmbientLightColor;
 
 // Max light defines
 #define MAX_SPOT_LIGHTS 16
@@ -66,7 +67,6 @@ layout(std140) uniform MaterialPropsBlock
 };
 
 // MARK: Tunables
-const vec3 AMBIENT_COLOR = vec3(0.3, 0.35, 0.4);
 const float ALPHA_CUTOFF = 0.5;
 
 // Bias tuning
@@ -179,7 +179,7 @@ void main()
     vec3 albedo = tex.rgb;
     vec3 V = normalize(uViewPos - vFragPos);
 
-    vec3 lighting = AMBIENT_COLOR;
+    vec3 lighting = uAmbientLightColor.rgb * uAmbientLightColor.a;
 
     // MARK: Directional light
     {
