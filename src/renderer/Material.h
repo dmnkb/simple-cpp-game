@@ -11,7 +11,7 @@ namespace Engine
 struct MaterialProps
 {
     float textureRepeat = 1;
-    float shininess = 32.0f;
+    float shininess = 16.0f;
     float specularIntensity = 0.5f;
 };
 

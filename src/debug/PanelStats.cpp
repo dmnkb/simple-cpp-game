@@ -2,8 +2,6 @@
 #include "core/Profiler.h"
 #include "imgui.h"
 #include "pch.h"
-#include "renderer/ClearColor.h"
-#include "renderer/RendererAPI.h"
 #include "util/MemoryUsage.h"
 
 namespace Engine
@@ -77,33 +75,6 @@ void PanelStats::render(const float fps, const Scene& scene)
             ImGui::EndTable();
             ImGui::Spacing();
         }
-    }
-
-    // Clear Color
-    if (ImGui::CollapsingHeader("Sky Color"))
-    {
-        static int selected = static_cast<int>(EClearColor::CharcoalGray);
-
-        ImGui::Spacing();
-        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-        if (ImGui::BeginCombo("##ClearColorCombo", clearColorTitles[selected].c_str()))
-        {
-            for (int i = 0; i < ClearColorCount; ++i)
-            {
-                bool isSelected = (i == selected);
-
-                if (ImGui::Selectable(clearColorTitles[i].c_str(), isSelected))
-                    selected = i;
-
-                if (isSelected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
-        }
-        ImGui::Spacing();
-
-        const SClearColor& color = clearColorValues[selected];
-        RendererAPI::setClearColor(color);
     }
 
     ImGui::End();

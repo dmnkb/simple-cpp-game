@@ -66,7 +66,7 @@ layout(std140) uniform MaterialPropsBlock
 };
 
 // MARK: Tunables
-const vec3 AMBIENT_COLOR = vec3(0.5, 0.55, 0.6);
+const vec3 AMBIENT_COLOR = vec3(0.3, 0.35, 0.4);
 const float ALPHA_CUTOFF = 0.5;
 
 // Bias tuning

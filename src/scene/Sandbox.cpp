@@ -28,6 +28,7 @@ void Sandbox::init(Scene& scene)
     scene.addPointLight(CreateRef<PointLight>(p2));
 
     DirectionalLight::DirectionalLightProperties d{};
+    d.colorIntensity = {1.00, 0.547, 0.173, 1.0f};
     scene.setDirectionalLight(CreateRef<DirectionalLight>(d));
 
     // Managers / asset context

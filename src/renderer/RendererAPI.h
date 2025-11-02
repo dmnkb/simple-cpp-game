@@ -8,7 +8,7 @@ namespace Engine
 struct RendererAPIData
 {
     GLuint instanceBuffer = -1;
-    SClearColor clearColor = clearColorValues[static_cast<int>(EClearColor::CharcoalGray)];
+    SClearColor clearColor = clearColorValues[0];
     int drawCallCount = 0;
 };
 

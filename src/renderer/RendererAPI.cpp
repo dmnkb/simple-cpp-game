@@ -11,7 +11,7 @@ void RendererAPI::init()
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
     enableOpenGLDebugOutput();
 
-    glClearColor(s_Data.clearColor.red, s_Data.clearColor.green, s_Data.clearColor.blue, s_Data.clearColor.alpha);
+    glClearColor(s_Data.clearColor.r(), s_Data.clearColor.g(), s_Data.clearColor.b(), s_Data.clearColor.a());
     glEnable(GL_DEPTH_TEST);
 
     glEnable(GL_CULL_FACE);
@@ -33,7 +33,7 @@ void RendererAPI::shutdown()
 
 void RendererAPI::drawInstanced(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& transforms)
 {
-    glClearColor(s_Data.clearColor.red, s_Data.clearColor.green, s_Data.clearColor.blue, s_Data.clearColor.alpha);
+    glClearColor(s_Data.clearColor.r(), s_Data.clearColor.g(), s_Data.clearColor.b(), s_Data.clearColor.a());
 
     mesh->bind();
     bindInstanceBuffer(transforms);

@@ -6,12 +6,10 @@
 namespace Engine
 {
 
-// TODO: Rename to editor
-
-class DebugUI
+class PanelScene
 {
   public:
-    static void render(float fps, const Scene& scene);
+    static void render(const float fps, const Scene& scene);
 };
 
 } // namespace Engine
