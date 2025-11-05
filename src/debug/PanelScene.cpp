@@ -155,10 +155,10 @@ void PanelScene::render(const float fps, Scene& scene)
                     ImGui::TableSetColumnIndex(1);
 
                     static glm::vec3 direction = sunLightProps.direction;
-                    ImGui::SliderFloat("Dir X", (float*)&direction.x, -1.0f, 1.0f, "%.2f");
-                    ImGui::SliderFloat("Dir Y", (float*)&direction.y, -1.0f, 1.0f, "%.2f");
-                    ImGui::SliderFloat("Dir Z", (float*)&direction.z, -1.0f, 1.0f, "%.2f");
-                    sunLight->setDirection(direction);
+                    ImGui::DragFloat("Dir X", &direction.x, 0.1f, 0.0f, 0.0f, "%.3f");
+                    ImGui::DragFloat("Dir Y", &direction.y, 0.1f, 0.0f, 0.0f, "%.3f");
+                    ImGui::DragFloat("Dir Z", &direction.z, 0.1f, 0.0f, 0.0f, "%.3f");
+                    sunLight->setDirection({direction.x, direction.y, direction.z});
 
                     // Ambient  Light Color
                     ImGui::TableNextRow();
@@ -186,8 +186,8 @@ void PanelScene::render(const float fps, Scene& scene)
             }
 
             ImGui::EndTable();
+            ImGui::EndTabItem();
         }
-        ImGui::EndTabItem();
 
         if (ImGui::BeginTabItem("Inspector"))
         {

@@ -5,32 +5,37 @@
 namespace Engine
 {
 
+Scene::Scene() : m_directionalLight(CreateRef<DirectionalLight>())
+{
+    m_directionalLight->setColor(m_sunLightColor);
+}
+
 void Scene::init(const Camera::CameraProps& cameraProps)
 {
-    m_DefaultCamera = CreateRef<Camera>(cameraProps);
-    m_DefaultCamera->isMainCamera();
-    setActiveCamera(m_DefaultCamera);
+    m_defaultCamera = CreateRef<Camera>(cameraProps);
+    m_defaultCamera->isMainCamera();
+    setActiveCamera(m_defaultCamera);
 }
 
 void Scene::addModel(const Model& model)
 {
-    m_Models.push_back(model);
+    m_models.push_back(model);
     m_renderablesDirty = true;
 }
 
 void Scene::addSpotLight(const Ref<SpotLight>& light)
 {
-    m_SpotLights.push_back(light);
+    m_spotLights.push_back(light);
 }
 
 void Scene::addPointLight(const Ref<PointLight>& light)
 {
-    m_PointLights.push_back(light);
+    m_pointLights.push_back(light);
 }
 
 void Scene::setDirectionalLight(const Ref<DirectionalLight>& light)
 {
-    m_DirectionalLight = light;
+    m_directionalLight = light;
 }
 
 // TODO: Sort transparent renderables back-to-front
@@ -45,7 +50,7 @@ RenderQueue Scene::getRenderQueue(const std::string& passName)
 
     // Group renderables by their name to ensure identical meshes are processed together
     std::unordered_map<std::string, std::vector<Renderable>> sortedRenderables = {};
-    for (const auto& model : m_Models)
+    for (const auto& model : m_models)
     {
         for (const auto& renderable : model.renderables)
         {
@@ -79,42 +84,42 @@ RenderQueue Scene::getRenderQueue(const std::string& passName)
 
 std::vector<Ref<SpotLight>> Scene::getSpotLights() const
 {
-    return m_SpotLights;
+    return m_spotLights;
 }
 
 std::vector<Ref<PointLight>> Scene::getPointLights() const
 {
-    return m_PointLights;
+    return m_pointLights;
 }
 
 Ref<DirectionalLight> Scene::getDirectionalLight() const
 {
-    return m_DirectionalLight;
+    return m_directionalLight;
 }
 
 void Scene::setAmbientLightColor(const glm::vec4& color)
 {
-    ambientLightColor = color;
+    m_ambientLightColor = color;
 }
 
 glm::vec4 Scene::getAmbientLightColor() const
 {
-    return ambientLightColor;
+    return m_ambientLightColor;
 }
 
 void Scene::setActiveCamera(const Ref<Camera>& camera)
 {
-    m_ActiveCamera = camera;
+    m_activeCamera = camera;
 }
 
 Ref<Camera> Scene::getActiveCamera() const
 {
-    return m_ActiveCamera;
+    return m_activeCamera;
 }
 
 Ref<Camera> Scene::getDefaultCamera() const
 {
-    return m_DefaultCamera;
+    return m_defaultCamera;
 }
 
 } // namespace Engine

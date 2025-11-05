@@ -189,6 +189,14 @@ class Camera
         return glm::normalize(m_props.target - m_props.position);
     }
 
+    glm::vec3 getRotation() const
+    {
+        glm::vec3 dir = getDirection();
+        float pitch = glm::degrees(asin(dir.y));
+        float yaw = glm::degrees(atan2(dir.x, -dir.z));
+        return glm::vec3(pitch, yaw, 0.0f);
+    }
+
     float getAspect() const
     {
         return m_props.aspect;

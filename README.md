@@ -26,15 +26,14 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [ ] ImGUI Gimbal controls
 - [ ] ECS
 - [x] Display frametime (CPU)
-- [ ] Update stats panel to display frametime per file, instead of region
 - [ ] Split architecture into engine and game
-- [ ] Layer architecture
+- [ ] Layer architecture (Or scene stack?)
 - [ ] SSAO
 - [ ] Debug view (Wireframe, per instance coloring)
 - [ ] Mip chain bloom
-- [ ] Integrate Bullet Physics (Drag and drop objects)
+- [ ] Integrate Bullet Physics (Pull and throw objects)
 - [ ] Audio using [miniaudio](https://github.com/mackron/miniaudio)
-- [ ] UI using [clay](https://github.com/nicbarker/clay)
+- [ ] UI using [RmlUi](https://github.com/mikke89/RmlUi)
 - [ ] Improve event system referencing ([this](https://github.com/TheCherno/Hazel/blob/1feb70572fa87fa1c4ba784a2cfeada5b4a500db/Hazel/src/Hazel/Core/Base.h#L26))
 - [ ] Simple particle system OR grass rendering
 - [ ] Rendering a heightmap from a texture

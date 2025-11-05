@@ -16,7 +16,7 @@ using RenderQueue = std::unordered_map<Ref<Material>, std::unordered_map<Ref<Mes
 class Scene
 {
   public:
-    Scene() = default;
+    Scene();
     void init(const Camera::CameraProps& cameraProps);
 
     void addModel(const Model& model);
@@ -34,7 +34,7 @@ class Scene
     // TODO: Remove once ECS is in place:
     Ref<SpotLight> getSpotLightByID(UUID identifier) const
     {
-        for (const auto& light : m_SpotLights)
+        for (const auto& light : m_spotLights)
         {
             if (light->getIdentifier() == identifier)
                 return light;
@@ -44,7 +44,7 @@ class Scene
 
     Ref<PointLight> getPointLightByID(UUID identifier) const
     {
-        for (const auto& light : m_PointLights)
+        for (const auto& light : m_pointLights)
         {
             if (light->getIdentifier() == identifier)
                 return light;
@@ -54,8 +54,8 @@ class Scene
 
     Ref<DirectionalLight> getDirectionalLightByID(UUID identifier) const
     {
-        if (m_DirectionalLight && m_DirectionalLight->getIdentifier() == identifier)
-            return m_DirectionalLight;
+        if (m_directionalLight && m_directionalLight->getIdentifier() == identifier)
+            return m_directionalLight;
         return nullptr;
     }
 
@@ -67,18 +67,19 @@ class Scene
     // TODO:
     // entt::registry m_registry;
 
-    std::vector<Ref<SpotLight>> m_SpotLights;
-    std::vector<Ref<PointLight>> m_PointLights;
-    Ref<DirectionalLight> m_DirectionalLight;
-    std::vector<Model> m_Models;
+    std::vector<Ref<SpotLight>> m_spotLights;
+    std::vector<Ref<PointLight>> m_pointLights;
+    Ref<DirectionalLight> m_directionalLight;
+    std::vector<Model> m_models;
 
-    glm::vec4 ambientLightColor = {0.1f, 0.1f, 0.1f, 1.0f};
+    glm::vec4 m_ambientLightColor = {0.21f, 0.29f, 0.37f, 1.0f};
+    glm::vec4 m_sunLightColor = {1.0f, 0.95f, 0.7f, 0.7f};
 
     RenderQueue m_cachedRenderQueue;
     bool m_renderablesDirty = true;
 
-    Ref<Camera> m_DefaultCamera = nullptr;
-    Ref<Camera> m_ActiveCamera = nullptr;
+    Ref<Camera> m_defaultCamera = nullptr;
+    Ref<Camera> m_activeCamera = nullptr;
 };
 
 } // namespace Engine

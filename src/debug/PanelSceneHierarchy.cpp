@@ -92,16 +92,15 @@ void PanelSceneHierarchy::render(const Scene& scene)
                 {
                     ImGui::Text("Position:");
                     static glm::vec3 position = light->getSpotLightProperties().position;
-                    ImGui::SliderFloat("X", (float*)&position.x, -100.0f, 100.0f, "%.0f");
-                    ImGui::SliderFloat("Y", (float*)&position.y, -100.0f, 100.0f, "%.0f");
-                    ImGui::SliderFloat("Z", (float*)&position.z, -100.0f, 100.0f, "%.0f");
+                    ImGui::DragFloat("X", (float*)&position.x, 0.1f, 0.0f, 0.0f, "%.3f");
+                    ImGui::DragFloat("Y", (float*)&position.y, 0.1f, 0.0f, 0.0f, "%.3f");
+                    ImGui::DragFloat("Z", (float*)&position.z, 0.1f, 0.0f, 0.0f, "%.3f");
                     light->setPosition(position);
-                    ImGui::Separator();
                     ImGui::Text("Direction:");
                     static glm::vec3 direction = light->getSpotLightProperties().direction;
-                    ImGui::SliderFloat("Dir X", (float*)&direction.x, -1.0f, 1.0f, "%.2f");
-                    ImGui::SliderFloat("Dir Y", (float*)&direction.y, -1.0f, 1.0f, "%.2f");
-                    ImGui::SliderFloat("Dir Z", (float*)&direction.z, -1.0f, 1.0f, "%.2f");
+                    ImGui::DragFloat("Dir X", (float*)&direction.x, 0.1f, 0.0f, 0.0f, "%.3f");
+                    ImGui::DragFloat("Dir Y", (float*)&direction.y, 0.1f, 0.0f, 0.0f, "%.3f");
+                    ImGui::DragFloat("Dir Z", (float*)&direction.z, 0.1f, 0.0f, 0.0f, "%.3f");
                     light->setDirection(direction);
                 }
             }
@@ -118,9 +117,9 @@ void PanelSceneHierarchy::render(const Scene& scene)
                 {
                     ImGui::Text("Position:");
                     static glm::vec3 position = light->getPointLightProperties().position;
-                    ImGui::SliderFloat("X", (float*)&position.x, -100.0f, 100.0f, "%.0f");
-                    ImGui::SliderFloat("Y", (float*)&position.y, -100.0f, 100.0f, "%.0f");
-                    ImGui::SliderFloat("Z", (float*)&position.z, -100.0f, 100.0f, "%.0f");
+                    ImGui::DragFloat("X", (float*)&position.x, 0.1f, -100.0f, 100.0f, "%.1f");
+                    ImGui::DragFloat("Y", (float*)&position.y, 0.1f, -100.0f, 100.0f, "%.1f");
+                    ImGui::DragFloat("Z", (float*)&position.z, 0.1f, -100.0f, 100.0f, "%.1f");
                     light->setPosition(position);
                 }
             }

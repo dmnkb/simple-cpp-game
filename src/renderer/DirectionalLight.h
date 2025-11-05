@@ -24,7 +24,7 @@ class DirectionalLight
         glm::vec4 colorIntensity = {1, 1, 1, 1};
     };
 
-    // --- main camera snapshot we need to build cascades ---
+    // main camera snapshot to build cascades
     struct MainCamData
     {
         glm::vec3 pos{0};
@@ -59,6 +59,12 @@ class DirectionalLight
     void setColor(float r, float g, float b, float a)
     {
         m_properties.colorIntensity = {r, g, b, a};
+        syncShadowCameras();
+    }
+
+    void setColor(glm::vec4 color)
+    {
+        m_properties.colorIntensity = color;
         syncShadowCameras();
     }
 
