@@ -1,4 +1,5 @@
 #include "PanelScene.h"
+#include "Shared.h"
 #include "imgui.h"
 #include "pch.h"
 #include "renderer/ClearColor.h"
@@ -22,7 +23,7 @@ void PanelScene::render(const float fps, Scene& scene)
             ImGui::SeparatorText("Clear Color");
             if (ImGui::BeginTable("tex_props", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoBordersInBody))
             {
-                ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, availableWidth * 0.4f);
+                ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, availableWidth * 0.3f);
                 ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
 
                 static int selected = 0;
@@ -120,7 +121,7 @@ void PanelScene::render(const float fps, Scene& scene)
             {
                 if (ImGui::BeginTable("tex_props", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoBordersInBody))
                 {
-                    ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, availableWidth * 0.4f);
+                    ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, availableWidth * 0.3f);
                     ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
 
                     // Sun Color
@@ -155,15 +156,13 @@ void PanelScene::render(const float fps, Scene& scene)
                     ImGui::TableSetColumnIndex(1);
 
                     static glm::vec3 direction = sunLightProps.direction;
-                    ImGui::DragFloat("Dir X", &direction.x, 0.1f, 0.0f, 0.0f, "%.3f");
-                    ImGui::DragFloat("Dir Y", &direction.y, 0.1f, 0.0f, 0.0f, "%.3f");
-                    ImGui::DragFloat("Dir Z", &direction.z, 0.1f, 0.0f, 0.0f, "%.3f");
-                    sunLight->setDirection({direction.x, direction.y, direction.z});
+                    if (DragVec3Row("direction", direction, 0.1f))
+                        sunLight->setDirection(direction);
 
                     // Ambient  Light Color
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
-                    ImGui::TextUnformatted("Ambient Light Color");
+                    ImGui::TextUnformatted("Ambient Color");
                     ImGui::TableSetColumnIndex(1);
 
                     static glm::vec4 ambientColor = scene.getAmbientLightColor();

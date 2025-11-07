@@ -1,6 +1,9 @@
-#include "PanelSceneHierarchy.h"
-#include "core/Profiler.h"
 #include "imgui.h"
+#include <imgui_internal.h>
+
+#include "PanelSceneHierarchy.h"
+#include "Shared.h"
+#include "core/Profiler.h"
 #include "pch.h"
 #include "renderer/ClearColor.h"
 #include "renderer/RendererAPI.h"
@@ -15,6 +18,7 @@ void PanelSceneHierarchy::render(const Scene& scene)
     // ImGui::ShowDemoWindow();
     // ImGui::ShowStyleEditor();
     constexpr float footerHeight = 220.0f;
+    const float availableWidth = ImGui::GetContentRegionAvail().x;
 
     static bool open = true;
     static int itemClicked = -1;
@@ -75,11 +79,7 @@ void PanelSceneHierarchy::render(const Scene& scene)
 
     ImGui::BeginChild("##hier_details", ImVec2(0, footerHeight));
     {
-        if (itemClicked == -1)
-        {
-            ImGui::Text("Properties: None");
-        }
-        else if (itemClicked < spotLightCount)
+        if (itemClicked < spotLightCount)
         {
             // Spot
             if (auto it = lightDict.find(itemClicked); it != lightDict.end())
@@ -90,18 +90,89 @@ void PanelSceneHierarchy::render(const Scene& scene)
                 auto light = scene.getSpotLightByID(identifier);
                 if (light)
                 {
-                    ImGui::Text("Position:");
-                    static glm::vec3 position = light->getSpotLightProperties().position;
-                    ImGui::DragFloat("X", (float*)&position.x, 0.1f, 0.0f, 0.0f, "%.3f");
-                    ImGui::DragFloat("Y", (float*)&position.y, 0.1f, 0.0f, 0.0f, "%.3f");
-                    ImGui::DragFloat("Z", (float*)&position.z, 0.1f, 0.0f, 0.0f, "%.3f");
-                    light->setPosition(position);
-                    ImGui::Text("Direction:");
-                    static glm::vec3 direction = light->getSpotLightProperties().direction;
-                    ImGui::DragFloat("Dir X", (float*)&direction.x, 0.1f, 0.0f, 0.0f, "%.3f");
-                    ImGui::DragFloat("Dir Y", (float*)&direction.y, 0.1f, 0.0f, 0.0f, "%.3f");
-                    ImGui::DragFloat("Dir Z", (float*)&direction.z, 0.1f, 0.0f, 0.0f, "%.3f");
-                    light->setDirection(direction);
+                    if (ImGui::BeginTable("table_spot_light", 2,
+                                          ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoBordersInBody))
+                    {
+                        ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed,
+                                                ImGui::GetContentRegionAvail().x * 0.3f);
+                        ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
+
+                        // Position
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::TextUnformatted("Position");
+
+                        ImGui::TableSetColumnIndex(1);
+                        static glm::vec3 pos = light->getSpotLightProperties().position;
+                        if (DragVec3Row("position", pos, 0.1f))
+                            light->setPosition(pos);
+
+                        // Direction
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::TextUnformatted("Direction");
+
+                        ImGui::TableSetColumnIndex(1);
+                        static glm::vec3 dir = light->getSpotLightProperties().direction;
+                        if (DragVec3Row("direction", dir, 0.1f))
+                            light->setDirection(dir);
+
+                        // Color + Intensity (same row)
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::TextUnformatted("Color / Intensity");
+
+                        ImGui::TableSetColumnIndex(1);
+                        {
+                            // Read current values (avoid statics so it always reflects engine state)
+                            const auto& ci = light->getSpotLightProperties().colorIntensity; // rgba in [0..1]
+                            float color[4] = {ci.r, ci.g, ci.b, ci.a};
+                            float intensity = ci.w;
+
+                            ImGui::PushID("color_intensity");
+
+                            ImGuiStyle& style = ImGui::GetStyle();
+                            const float avail = ImGui::GetContentRegionAvail().x;
+                            const float h = ImGui::GetFrameHeight(); // nice control height
+                            const float btnW = avail / 3.0f;         // swatch width (tweak)
+                            const float spacing = style.ItemSpacing.x;
+
+                            // Swatch button
+                            if (ImGui::ColorButton("##swatch", ImVec4(color[0], color[1], color[2], color[3]),
+                                                   ImGuiColorEditFlags_NoTooltip, ImVec2(btnW, h)))
+                            {
+                                ImGui::OpenPopup("##picker");
+                            }
+
+                            // Intensity to the right of the swatch
+                            ImGui::SameLine(0.0f, spacing);
+                            ImGui::SetNextItemWidth(avail - btnW - spacing);
+                            bool intensityChanged =
+                                ImGui::DragFloat("##intensity", &intensity, 0.1f, 0.0f, FLT_MAX, "I: %.2f");
+
+                            // Color popup
+                            if (ImGui::BeginPopup("##picker"))
+                            {
+                                bool colorChanged = ImGui::ColorPicker4(
+                                    "##picker4", color,
+                                    ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB |
+                                        ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_PickerHueBar |
+                                        ImGuiColorEditFlags_NoSidePreview);
+
+                                if (colorChanged || ImGui::IsItemDeactivatedAfterEdit())
+                                    light->setColor(color[0], color[1], color[2]); // add alpha if your API uses it
+
+                                ImGui::EndPopup();
+                            }
+
+                            if (intensityChanged)
+                                light->setIntensity(intensity);
+
+                            ImGui::PopID();
+                        }
+
+                        ImGui::EndTable();
+                    }
                 }
             }
         }
@@ -111,24 +182,89 @@ void PanelSceneHierarchy::render(const Scene& scene)
             if (auto it = lightDict.find(itemClicked); it != lightDict.end())
             {
                 auto identifier = it->second;
+                ImGui::Text("Point Light ID: %s", identifier.to_string().c_str());
 
                 auto light = scene.getPointLightByID(identifier);
                 if (light)
                 {
-                    ImGui::Text("Position:");
-                    static glm::vec3 position = light->getPointLightProperties().position;
-                    ImGui::DragFloat("X", (float*)&position.x, 0.1f, -100.0f, 100.0f, "%.1f");
-                    ImGui::DragFloat("Y", (float*)&position.y, 0.1f, -100.0f, 100.0f, "%.1f");
-                    ImGui::DragFloat("Z", (float*)&position.z, 0.1f, -100.0f, 100.0f, "%.1f");
-                    light->setPosition(position);
+                    if (ImGui::BeginTable("table_point_light", 2,
+                                          ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoBordersInBody))
+                    {
+                        ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed,
+                                                ImGui::GetContentRegionAvail().x * 0.3f);
+                        ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
+
+                        // Position
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::TextUnformatted("Position");
+
+                        ImGui::TableSetColumnIndex(1);
+                        static glm::vec3 pos = light->getPointLightProperties().position;
+                        if (DragVec3Row("position", pos, 0.1f))
+                            light->setPosition(pos);
+
+                        // Color + Intensity (same row)
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::TextUnformatted("Color / Intensity");
+
+                        ImGui::TableSetColumnIndex(1);
+                        {
+                            // Read current values (avoid statics so it always reflects engine state)
+                            const auto& ci = light->getPointLightProperties().colorIntensity; // rgba in [0..1]
+                            float color[4] = {ci.r, ci.g, ci.b, ci.a};
+                            float intensity = ci.w;
+
+                            ImGui::PushID("color_intensity");
+
+                            ImGuiStyle& style = ImGui::GetStyle();
+                            const float avail = ImGui::GetContentRegionAvail().x;
+                            const float h = ImGui::GetFrameHeight(); // nice control height
+                            const float btnW = avail / 3.0f;         // swatch width (tweak)
+                            const float spacing = style.ItemSpacing.x;
+
+                            // Swatch button
+                            if (ImGui::ColorButton("##swatch", ImVec4(color[0], color[1], color[2], color[3]),
+                                                   ImGuiColorEditFlags_NoTooltip, ImVec2(btnW, h)))
+                            {
+                                ImGui::OpenPopup("##picker");
+                            }
+
+                            // Intensity to the right of the swatch
+                            ImGui::SameLine(0.0f, spacing);
+                            ImGui::SetNextItemWidth(avail - btnW - spacing);
+                            bool intensityChanged =
+                                ImGui::DragFloat("##intensity", &intensity, 0.1f, 0.0f, FLT_MAX, "I: %.2f");
+
+                            // Color popup
+                            if (ImGui::BeginPopup("##picker"))
+                            {
+                                bool colorChanged = ImGui::ColorPicker4(
+                                    "##picker4", color,
+                                    ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB |
+                                        ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_PickerHueBar |
+                                        ImGuiColorEditFlags_NoSidePreview);
+
+                                if (colorChanged || ImGui::IsItemDeactivatedAfterEdit())
+                                    light->setColor(color[0], color[1], color[2]); // add alpha if your API uses it
+
+                                ImGui::EndPopup();
+                            }
+
+                            if (intensityChanged)
+                                light->setIntensity(intensity);
+
+                            ImGui::PopID();
+                        }
+
+                        ImGui::EndTable();
+                    }
                 }
             }
         }
     }
-
     ImGui::EndChild();
-
     ImGui::End();
 }
-
 } // namespace Engine

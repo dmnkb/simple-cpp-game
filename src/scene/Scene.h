@@ -72,8 +72,8 @@ class Scene
     Ref<DirectionalLight> m_directionalLight;
     std::vector<Model> m_models;
 
-    glm::vec4 m_ambientLightColor = {0.21f, 0.29f, 0.37f, 1.0f};
-    glm::vec4 m_sunLightColor = {1.0f, 0.95f, 0.7f, 0.7f};
+    glm::vec4 m_ambientLightColor = {0.302f, 0.329f, 0.357f, 1.0f};
+    glm::vec4 m_sunLightColor = {0.925f, 0.886f, 0.804f, 0.702f};
 
     RenderQueue m_cachedRenderQueue;
     bool m_renderablesDirty = true;

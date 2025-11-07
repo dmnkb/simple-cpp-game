@@ -71,6 +71,13 @@ class SpotLight
         syncShadowCamera_();
     }
 
+    void setColor(float r, float g, float b)
+    {
+        m_properties.colorIntensity.r = r;
+        m_properties.colorIntensity.g = g;
+        m_properties.colorIntensity.b = b;
+    }
+
     void setIntensity(float I)
     {
         m_properties.colorIntensity.w = glm::max(I, 0.0f);
