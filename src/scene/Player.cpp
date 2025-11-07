@@ -69,7 +69,7 @@ void Player::update(const Scene& scene, double deltaTime)
     m_Direction.z = cos(pitchRadians) * cos(yawRadians);
     m_Direction = glm::normalize(m_Direction);
 
-    const float speed = 20.0f;
+    const float speed = 80.0f;
     const float gravity = -9.8f;
 
     glm::vec3 movementVector(0.0f);
@@ -99,7 +99,7 @@ void Player::update(const Scene& scene, double deltaTime)
     m_Position = SmoothDamp(m_Position,                   // current
                             m_TargetPosition,             // target
                             m_PositionVel,                // velocity accumulator (kept across frames)
-                            0.1f,                         // smooth time (s)
+                            0.2f,                         // smooth time (s)
                             static_cast<float>(deltaTime) // DT
 
     );
