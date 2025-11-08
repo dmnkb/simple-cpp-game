@@ -70,19 +70,18 @@ const float MIN_BIAS = 0.00012;
 const float SLOPE_BIAS = 0.0025;
 const float RPDB_SCALE = 0.75;
 
-// -------- NEW: PCSS controls & texel sizes --------
-const float uDirLightRadiusWS = 0.2f;    // light size in world units (softness control)
-const float uSpotLightRadiusWS = 1.05f;  // "
-const float uPointLightRadiusWS = 1.05f; // "
+// -------- PCSS controls & texel sizes --------
+const float uDirLightRadiusWS = 0.5f;
+const float uSpotLightRadiusWS = 1.05f;
+const float uPointLightRadiusWS = 1.05f;
 
-// MARK: NEW PCSS controls (provide from engine)
-const vec2 uDirShadowTexel = vec2(1.0 / 2048.0, 1.0 / 2048.0);  // = vec2(1.0/width, 1.0/height)
-const vec2 uSpotShadowTexel = vec2(1.0 / 1024.0, 1.0 / 1024.0); // = vec2(1.0/width, 1.0/height)
-const float uPointShadowTexel = 1.0 / float(1024.0);            // = 1.0/float(cubemapSize)
+const vec2 uDirShadowTexel = vec2(1.0 / 1024.0, 1.0 / 1024.0);
+const vec2 uSpotShadowTexel = vec2(1.0 / 1024.0, 1.0 / 1024.0);
+const float uPointShadowTexel = 1.0 / 1024.0;
 
 // Sample counts & filter clamps
-const int PCSS_SAMPLES_BLOCKER = 8; // 12
-const int PCSS_SAMPLES_PCF = 16;    // 24
+const int PCSS_SAMPLES_BLOCKER = 6;
+const int PCSS_SAMPLES_PCF = 12;
 const float PCSS_MAX_FILTER = 15.0;
 const float PCSS_MIN_FILTER = 1.0;
 
@@ -131,7 +130,6 @@ float rpdbFromNdc(vec3 ndc)
 const vec2 POISSON_12[12] = vec2[](vec2(-0.326, -0.406), vec2(-0.840, -0.074), vec2(-0.696, 0.457), vec2(-0.203, 0.621),
                                    vec2(0.962, -0.195), vec2(0.473, -0.480), vec2(0.519, 0.767), vec2(0.185, -0.893),
                                    vec2(0.114, 0.223), vec2(0.885, 0.463), vec2(-0.111, -0.137), vec2(-0.321, 0.932));
-
 const vec2 POISSON_24[24] =
     vec2[](vec2(-0.983, 0.184), vec2(-0.919, -0.394), vec2(-0.701, 0.712), vec2(-0.643, -0.265), vec2(-0.454, 0.144),
            vec2(-0.401, -0.882), vec2(-0.276, 0.936), vec2(-0.131, -0.245), vec2(0.040, -0.539), vec2(0.045, 0.321),
@@ -151,36 +149,14 @@ mat2 rot2(float a)
 }
 
 // ------------------------
-// Bilinear “compare-then-filter” helpers
+// Single-tap compare helpers (no bilinear)
 // ------------------------
-float pcfBilinear2D(sampler2DArray shad, vec2 uv, float layer, float refDepth)
+float compare2D(sampler2DArray shad, vec2 uv, float layer, float refDepth)
 {
-    ivec2 size = textureSize(shad, 0).xy;
-    vec2 st = uv * vec2(size) - 0.5;
-    ivec2 i0 = ivec2(floor(st));
-    vec2 f = fract(st);
-
-    vec2 uv00 = (vec2(i0) + 0.5) / vec2(size);
-    vec2 uv10 = (vec2(i0 + ivec2(1, 0)) + 0.5) / vec2(size);
-    vec2 uv01 = (vec2(i0 + ivec2(0, 1)) + 0.5) / vec2(size);
-    vec2 uv11 = (vec2(i0 + ivec2(1, 1)) + 0.5) / vec2(size);
-
-    float z00 = texture(shad, vec3(uv00, layer)).r;
-    float z10 = texture(shad, vec3(uv10, layer)).r;
-    float z01 = texture(shad, vec3(uv01, layer)).r;
-    float z11 = texture(shad, vec3(uv11, layer)).r;
-
-    float c00 = (refDepth <= z00) ? 1.0 : 0.0;
-    float c10 = (refDepth <= z10) ? 1.0 : 0.0;
-    float c01 = (refDepth <= z01) ? 1.0 : 0.0;
-    float c11 = (refDepth <= z11) ? 1.0 : 0.0;
-
-    float cx0 = mix(c00, c10, f.x);
-    float cx1 = mix(c01, c11, f.x);
-    return mix(cx0, cx1, f.y);
+    float z = texture(shad, vec3(uv, layer)).r;
+    return (refDepth <= z) ? 1.0 : 0.0;
 }
 
-// Build basis for angular offsets on the cube
 void basisFromDir(vec3 n, out vec3 t, out vec3 b)
 {
     vec3 a = (abs(n.z) < 0.999) ? vec3(0, 0, 1) : vec3(0, 1, 0);
@@ -188,36 +164,14 @@ void basisFromDir(vec3 n, out vec3 t, out vec3 b)
     b = cross(n, t);
 }
 
-float pcfBilinearCube(samplerCubeArray shad, vec3 dir, float layer, float refDepth, float texelAngle)
+float compareCube(samplerCubeArray shad, vec3 dir, float layer, float refDepth)
 {
-    vec3 t, b;
-    basisFromDir(dir, t, b);
-
-    // Centered bilinear around dir using 4 neighbors at +/- texelAngle
-    vec2 f = vec2(0.5); // can be varied if you want anisotropic lerp
-
-    vec3 d00 = normalize(dir + (-f.x) * texelAngle * t + (-f.y) * texelAngle * b);
-    vec3 d10 = normalize(dir + (1.0 - f.x) * texelAngle * t + (-f.y) * texelAngle * b);
-    vec3 d01 = normalize(dir + (-f.x) * texelAngle * t + (1.0 - f.y) * texelAngle * b);
-    vec3 d11 = normalize(dir + (1.0 - f.x) * texelAngle * t + (1.0 - f.y) * texelAngle * b);
-
-    float z00 = texture(shad, vec4(d00, layer)).r;
-    float z10 = texture(shad, vec4(d10, layer)).r;
-    float z01 = texture(shad, vec4(d01, layer)).r;
-    float z11 = texture(shad, vec4(d11, layer)).r;
-
-    float c00 = (refDepth <= z00) ? 1.0 : 0.0;
-    float c10 = (refDepth <= z10) ? 1.0 : 0.0;
-    float c01 = (refDepth <= z01) ? 1.0 : 0.0;
-    float c11 = (refDepth <= z11) ? 1.0 : 0.0;
-
-    float cx0 = mix(c00, c10, f.x);
-    float cx1 = mix(c01, c11, f.x);
-    return mix(cx0, cx1, f.y);
+    float z = texture(shad, vec4(dir, layer)).r;
+    return (refDepth <= z) ? 1.0 : 0.0;
 }
 
 // ------------------------
-// PCSS: blocker search & PCF (2D)
+// PCSS: blocker search & PCF (2D) – single-sample taps
 // ------------------------
 bool findBlocker2D(sampler2DArray shad, vec2 uv, float layer, float refDepth, vec2 texel, float searchRadiusTexels,
                    out float avgBlocker, mat2 R)
@@ -245,15 +199,15 @@ bool findBlocker2D(sampler2DArray shad, vec2 uv, float layer, float refDepth, ve
 float pcf2D(sampler2DArray shad, vec2 uv, float layer, float refDepth, vec2 texel, float radiusTexels, mat2 R)
 {
     vec2 radius = texel * radiusTexels;
-
     float sum = 0.0, wsum = 0.0;
+
     for (int k = 0; k < PCSS_SAMPLES_PCF; ++k)
     {
         vec2 o = R * POISSON_24[k];
         float w = 1.0 - clamp(length(o), 0.0, 1.0); // tent weight
         vec2 duv = o * radius;
 
-        float s = pcfBilinear2D(shad, uv + duv, layer, refDepth);
+        float s = compare2D(shad, uv + duv, layer, refDepth);
         sum += s * w;
         wsum += w;
     }
@@ -261,7 +215,7 @@ float pcf2D(sampler2DArray shad, vec2 uv, float layer, float refDepth, vec2 texe
 }
 
 // ------------------------
-// PCSS: blocker search & PCF (cube)
+// PCSS: blocker search & PCF (cube) – single-sample taps
 // ------------------------
 bool findBlockerCube(samplerCubeArray shad, vec3 dir, float layer, float refDepth, float texelAngle,
                      float searchRadiusTexels, out float avgBlocker, mat2 R)
@@ -301,10 +255,9 @@ float pcfCube(samplerCubeArray shad, vec3 dir, float layer, float refDepth, floa
     {
         vec2 o = R * POISSON_24[k];
         float w = 1.0 - clamp(length(o), 0.0, 1.0);
-
         vec3 d = normalize(dir + (o.x * angle) * t + (o.y * angle) * b);
 
-        float s = pcfBilinearCube(shad, d, layer, refDepth, texelAngle);
+        float s = compareCube(shad, d, layer, refDepth);
         sum += s * w;
         wsum += w;
     }
@@ -367,7 +320,6 @@ float shadowFactorSpot(int i, vec3 worldPos, vec3 N, vec3 L)
     vec2 uv = ndc.xy * 0.5 + 0.5;
     float ref = ndc.z * 0.5 + 0.5;
 
-    // Keep a small slope bias to avoid acne
     float bias = slopeBias(N, L) * 0.5;
     float r = ref - bias;
 
