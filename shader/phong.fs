@@ -85,6 +85,9 @@ const int PCSS_SAMPLES_PCF = 12;
 const float PCSS_MAX_FILTER = 15.0;
 const float PCSS_MIN_FILTER = 1.0;
 
+// Optional: tiny world-space normal offset ONLY for the spot shadow test
+const float SPOT_NORMAL_OFFSET_WS = 0.015; // ~mm scale; tune per scene
+
 // MARK: Helpers (unchanged)
 float attenuation(int i, float dist)
 {
@@ -134,7 +137,7 @@ const vec2 POISSON_24[24] =
     vec2[](vec2(-0.983, 0.184), vec2(-0.919, -0.394), vec2(-0.701, 0.712), vec2(-0.643, -0.265), vec2(-0.454, 0.144),
            vec2(-0.401, -0.882), vec2(-0.276, 0.936), vec2(-0.131, -0.245), vec2(0.040, -0.539), vec2(0.045, 0.321),
            vec2(0.146, 0.888), vec2(0.233, -0.112), vec2(0.328, -0.730), vec2(0.426, 0.172), vec2(0.614, 0.780),
-           vec2(0.655, -0.238), vec2(0.701, 0.010), vec2(0.735, -0.675), vec2(0.803, 0.315), vec2(0.857, -0.514),
+           vec2(0.655, -0.238), vec2(0.701, 0.010), vec2(0.735, -0.675), vec2(0.803, 0.315), vec2(0.857, -0514),
            vec2(0.905, -0.099), vec2(0.936, 0.658), vec2(-0.036, 0.681), vec2(-0.221, -0.551));
 
 // Optional tiny per-pixel rotation to reduce patterns
@@ -265,7 +268,7 @@ float pcfCube(samplerCubeArray shad, vec3 dir, float layer, float refDepth, floa
 }
 
 // ---------------------------
-// Directional light PCSS
+// Directional light PCSS (unchanged)
 // ---------------------------
 float shadowFactorDirectional(vec3 worldPos, vec3 N, vec3 L)
 {
@@ -285,7 +288,6 @@ float shadowFactorDirectional(vec3 worldPos, vec3 N, vec3 L)
         float bias = slopeBias(N, L) + rpdbFromNdc(ndc);
         float r = ref - bias;
 
-        // Per-pixel rotation for kernels
         float ang = hash12(gl_FragCoord.xy) * 6.2831853;
         mat2 R = rot2(ang);
 
@@ -304,12 +306,108 @@ float shadowFactorDirectional(vec3 worldPos, vec3 N, vec3 L)
     return 1.0;
 }
 
-// ---------------------------
-// Spot light PCSS (2D array)
-// ---------------------------
+// =====================================================
+// SPOT LIGHT — linearized PCSS + RPDB to fix peter-panning
+// =====================================================
+
+// Light's near plane used for the spot shadow camera (matches your C++)
+const float SPOT_NEAR = 0.05;
+
+// Linearize depth in [0..1] using near/far
+float linearizeDepth01(float d, float n, float f)
+{
+    float z = d * 2.0 - 1.0;                      // back to NDC
+    return (2.0 * n * f) / (f + n - z * (f - n)); // positive view-space depth
+}
+
+// Receiver-plane depth bias for perspective (spot) shadow maps.
+// Inputs are the light-clip-space position (pre-divide).
+float rpdbSpot(vec4 clip, vec2 texelSize)
+{
+    // Light NDC
+    vec3 s = clip.xyz / clip.w; // [-1,1]
+    // Derivatives of ndc
+    vec3 sdx = dFdx(s);
+    vec3 sdy = dFdy(s);
+
+    // uv = ndc.xy * 0.5 + 0.5 -> duv/dx = dndc/dx * 0.5, same for y
+    vec2 uvdx = sdx.xy * 0.5;
+    vec2 uvdy = sdy.xy * 0.5;
+
+    float a = uvdx.x, b = uvdx.y;
+    float c = uvdy.x, d = uvdy.y;
+    float det = a * d - b * c;
+
+    if (abs(det) < 1e-8)
+    {
+        // Fallback: conservative screen-space depth gradient scaled by texel
+        float dzlen = length(vec2(sdx.z, sdy.z));
+        return RPDB_SCALE * dzlen * max(texelSize.x, texelSize.y);
+    }
+
+    // Depth gradient wrt uv
+    vec2 g;
+    g.x = (d * sdx.z - b * sdy.z) / det;  // dz/du
+    g.y = (-c * sdx.z + a * sdy.z) / det; // dz/dv
+
+    float gradLen = length(g);
+    float texelLen = length(texelSize);
+    return RPDB_SCALE * gradLen * texelLen;
+}
+
+// Blocker search in linear depth
+bool findBlocker2D_linear(sampler2DArray shad, vec2 uv, float layer, float refLin, vec2 texel, float radiusTexels,
+                          out float avgBlockerLin, mat2 R, float n, float f)
+{
+    float sum = 0.0;
+    int cnt = 0;
+    vec2 radius = texel * radiusTexels;
+    for (int k = 0; k < PCSS_SAMPLES_BLOCKER; ++k)
+    {
+        vec2 duv = (R * POISSON_12[k]) * radius;
+        float z = texture(shad, vec3(uv + duv, layer)).r;
+        float zLin = linearizeDepth01(z, n, f);
+        if (zLin < refLin)
+        {
+            sum += zLin;
+            cnt++;
+        }
+    }
+    if (cnt == 0)
+        return false;
+    avgBlockerLin = sum / float(cnt);
+    return true;
+}
+
+// PCF in linear depth
+float pcf2D_linear(sampler2DArray shad, vec2 uv, float layer, float refLin, vec2 texel, float radiusTexels, mat2 R,
+                   float n, float f)
+{
+    vec2 radius = texel * radiusTexels;
+    float sum = 0.0, wsum = 0.0;
+    for (int k = 0; k < PCSS_SAMPLES_PCF; ++k)
+    {
+        vec2 o = R * POISSON_24[k];
+        float w = 1.0 - clamp(length(o), 0.0, 1.0);
+        vec2 duv = o * radius;
+
+        float z = texture(shad, vec3(uv + duv, layer)).r;
+        float zLin = linearizeDepth01(z, n, f);
+        float s = (refLin <= zLin) ? 1.0 : 0.0;
+
+        sum += s * w;
+        wsum += w;
+    }
+    return sum / max(wsum, 1e-6);
+}
+
 float shadowFactorSpot(int i, vec3 worldPos, vec3 N, vec3 L)
 {
-    vec4 clip = uSpotLightSpaceMatrices[i] * vec4(worldPos, 1.0);
+    // Optional world-space normal offset to reduce self-occlusion without silhouette expansion
+    vec3 wsOffsetPos = worldPos + N * SPOT_NORMAL_OFFSET_WS;
+
+    // Project (offset) world position into light space
+    vec4 clip = uSpotLightSpaceMatrices[i] * vec4(wsOffsetPos, 1.0);
     if (clip.w <= 0.0)
         return 1.0;
 
@@ -320,28 +418,43 @@ float shadowFactorSpot(int i, vec3 worldPos, vec3 N, vec3 L)
     vec2 uv = ndc.xy * 0.5 + 0.5;
     float ref = ndc.z * 0.5 + 0.5;
 
-    float bias = slopeBias(N, L) * 0.5;
-    float r = ref - bias;
+    // Use your light's far from UBO (conesRange[i].z)
+    float farP = max(conesRange[i].z, SPOT_NEAR + 1e-4);
+
+    // --- New: receiver-plane depth bias (computed in non-linear depth space) ---
+    float rpdb = rpdbSpot(clip, uSpotShadowTexel);
+
+    // Gentler base & slope bias; RPDB does the heavy lifting
+    float bias = MIN_BIAS * 0.1 + slopeBias(N, L) * 0.005;
+
+    // Apply bias in the same space as the shadow map value
+    float r = clamp(ref - bias, 0.0, 1.0);
+
+    // Linearize reference depth for linear-PCSS math
+    float refLin = linearizeDepth01(r, SPOT_NEAR, farP);
 
     float ang = hash12(gl_FragCoord.xy) * 6.2831853;
     mat2 R = rot2(ang);
 
-    float searchRadius = clamp(uSpotLightRadiusWS * 150.0, 1.0, 25.0);
+    // Make search/filter grow with distance (simple distance scale)
+    float distScale = clamp(refLin / farP, 0.0, 1.0); // 0 near .. 1 far
+    float searchRadius = clamp(uSpotLightRadiusWS * (120.0) * (0.75 + 0.75 * distScale), 1.0, 25.0);
 
-    float avgBlocker;
-    bool hasBlocker =
-        findBlocker2D(uSpotLightShadowMapArray, uv, float(i), r, uSpotShadowTexel, searchRadius, avgBlocker, R);
+    float avgBlockerLin;
+    bool hasBlocker = findBlocker2D_linear(uSpotLightShadowMapArray, uv, float(i), refLin, uSpotShadowTexel,
+                                           searchRadius, avgBlockerLin, R, SPOT_NEAR, farP);
     if (!hasBlocker)
         return 1.0;
 
-    float penumbra = clamp(((r - avgBlocker) / max(avgBlocker, 1e-4)) * 150.0 * uSpotLightRadiusWS, PCSS_MIN_FILTER,
-                           PCSS_MAX_FILTER);
+    float penumbraRaw = ((refLin - avgBlockerLin) / max(avgBlockerLin, 1e-4)) * uSpotLightRadiusWS * (120.0) *
+                        (0.75 + 0.75 * distScale);
+    float penumbra = clamp(penumbraRaw, PCSS_MIN_FILTER, PCSS_MAX_FILTER);
 
-    return pcf2D(uSpotLightShadowMapArray, uv, float(i), r, uSpotShadowTexel, penumbra, R);
+    return pcf2D_linear(uSpotLightShadowMapArray, uv, float(i), refLin, uSpotShadowTexel, penumbra, R, SPOT_NEAR, farP);
 }
 
 // ---------------------------
-// Point light PCSS (cube array)
+// Point light PCSS (unchanged)
 // ---------------------------
 float shadowFactorPoint(int i, vec3 Ldir, float dist, vec3 N)
 {
@@ -372,9 +485,9 @@ float shadowFactorPoint(int i, vec3 Ldir, float dist, vec3 N)
     return pcfCube(uPointLightShadowCubeArray, dir, float(i), r, texelAngle, penumbra, R);
 }
 
-// ======================================================
-// Main (lighting identical to your original)
-// ======================================================
+// ---------------------------
+// Directional/Spot/Point loops (unchanged shading)
+// ---------------------------
 void main()
 {
     vec3 N = normalize(vNormal);
