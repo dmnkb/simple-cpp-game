@@ -18,21 +18,18 @@ uniform vec4 uAmbientLightColor;
 #define MAX_POINT_LIGHTS 16
 #define DIRECTIONAL_LIGHT_CASCADES 4
 
-// Shadow map arrays
-// Spot
-uniform sampler2DArrayShadow uSpotLightShadowMapArray;
+// Shadow map arrays (NON-comparison samplers)
+uniform sampler2DArray uSpotLightShadowMapArray;
 uniform mat4 uSpotLightSpaceMatrices[MAX_SPOT_LIGHTS];
 uniform int uSpotLightCount;
 
-// Point
-uniform samplerCubeArrayShadow uPointLightShadowCubeArray;
+uniform samplerCubeArray uPointLightShadowCubeArray;
 uniform int uPointLightCount;
 
-// Directional
-uniform sampler2DArrayShadow uDirectionalLightShadowMapArray;
+uniform sampler2DArray uDirectionalLightShadowMapArray;
 uniform mat4 uDirectionalLightSpaceMatrix[DIRECTIONAL_LIGHT_CASCADES];
 
-// MARK: Light blocks
+// MARK: Light blocks (unchanged)
 layout(std140) uniform SpotLights
 {
     vec4 positionsWS[MAX_SPOT_LIGHTS];     // xyz position (w unused)
@@ -50,7 +47,6 @@ layout(std140) uniform PointLights
     vec4 p_rangeFar[MAX_POINT_LIGHTS];        // range/far: x=range
 };
 
-// Directional light UBO
 layout(std140) uniform DirectionalLight
 {
     vec4 directionWS;     // xyz = direction toward scene, w unused
@@ -58,7 +54,7 @@ layout(std140) uniform DirectionalLight
 }
 uDirLight;
 
-// MARK: Material block
+// MARK: Material block (unchanged)
 layout(std140) uniform MaterialPropsBlock
 {
     float textureRepeat;
@@ -69,12 +65,28 @@ layout(std140) uniform MaterialPropsBlock
 // MARK: Tunables
 const float ALPHA_CUTOFF = 0.5;
 
-// Bias tuning
-const float MIN_BIAS = 0.00012;  // base bias
-const float SLOPE_BIAS = 0.0025; // extra bias at grazing angles
-const float RPDB_SCALE = 0.75;   // derivative-based receiver-plane term (0.5–1.0 typical)
+// Bias tuning (keep as before)
+const float MIN_BIAS = 0.00012;
+const float SLOPE_BIAS = 0.0025;
+const float RPDB_SCALE = 0.75;
 
-// MARK: Helpers
+// -------- NEW: PCSS controls & texel sizes --------
+const float uDirLightRadiusWS = 0.2f;    // light size in world units (softness control)
+const float uSpotLightRadiusWS = 1.05f;  // "
+const float uPointLightRadiusWS = 1.05f; // "
+
+// MARK: NEW PCSS controls (provide from engine)
+const vec2 uDirShadowTexel = vec2(1.0 / 2048.0, 1.0 / 2048.0);  // = vec2(1.0/width, 1.0/height)
+const vec2 uSpotShadowTexel = vec2(1.0 / 1024.0, 1.0 / 1024.0); // = vec2(1.0/width, 1.0/height)
+const float uPointShadowTexel = 1.0 / float(1024.0);            // = 1.0/float(cubemapSize)
+
+// Sample counts & filter clamps
+const int PCSS_SAMPLES_BLOCKER = 8; // 12
+const int PCSS_SAMPLES_PCF = 16;    // 24
+const float PCSS_MAX_FILTER = 15.0;
+const float PCSS_MIN_FILTER = 1.0;
+
+// MARK: Helpers (unchanged)
 float attenuation(int i, float dist)
 {
     float kc = attenuations[i].x;
@@ -83,7 +95,6 @@ float attenuation(int i, float dist)
     return 1.0 / (kc + kl * dist + kq * dist * dist);
 }
 
-// Pattern attenuation for point lights
 float pattn(int i, float dist)
 {
     float kc = p_attenuations[i].x;
@@ -107,7 +118,6 @@ float slopeBias(vec3 N, vec3 L)
     return MIN_BIAS + SLOPE_BIAS * (1.0 - nl);
 }
 
-// Receiver-plane depth bias (RPDB)
 float rpdbFromNdc(vec3 ndc)
 {
     float ref = ndc.z * 0.5 + 0.5;
@@ -115,7 +125,195 @@ float rpdbFromNdc(vec3 ndc)
     return RPDB_SCALE * length(d);
 }
 
-// MARK: Directional light shadow factor
+// ------------------------
+// Poisson sets
+// ------------------------
+const vec2 POISSON_12[12] = vec2[](vec2(-0.326, -0.406), vec2(-0.840, -0.074), vec2(-0.696, 0.457), vec2(-0.203, 0.621),
+                                   vec2(0.962, -0.195), vec2(0.473, -0.480), vec2(0.519, 0.767), vec2(0.185, -0.893),
+                                   vec2(0.114, 0.223), vec2(0.885, 0.463), vec2(-0.111, -0.137), vec2(-0.321, 0.932));
+
+const vec2 POISSON_24[24] =
+    vec2[](vec2(-0.983, 0.184), vec2(-0.919, -0.394), vec2(-0.701, 0.712), vec2(-0.643, -0.265), vec2(-0.454, 0.144),
+           vec2(-0.401, -0.882), vec2(-0.276, 0.936), vec2(-0.131, -0.245), vec2(0.040, -0.539), vec2(0.045, 0.321),
+           vec2(0.146, 0.888), vec2(0.233, -0.112), vec2(0.328, -0.730), vec2(0.426, 0.172), vec2(0.614, 0.780),
+           vec2(0.655, -0.238), vec2(0.701, 0.010), vec2(0.735, -0.675), vec2(0.803, 0.315), vec2(0.857, -0.514),
+           vec2(0.905, -0.099), vec2(0.936, 0.658), vec2(-0.036, 0.681), vec2(-0.221, -0.551));
+
+// Optional tiny per-pixel rotation to reduce patterns
+float hash12(vec2 p)
+{
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+mat2 rot2(float a)
+{
+    float c = cos(a), s = sin(a);
+    return mat2(c, -s, s, c);
+}
+
+// ------------------------
+// Bilinear “compare-then-filter” helpers
+// ------------------------
+float pcfBilinear2D(sampler2DArray shad, vec2 uv, float layer, float refDepth)
+{
+    ivec2 size = textureSize(shad, 0).xy;
+    vec2 st = uv * vec2(size) - 0.5;
+    ivec2 i0 = ivec2(floor(st));
+    vec2 f = fract(st);
+
+    vec2 uv00 = (vec2(i0) + 0.5) / vec2(size);
+    vec2 uv10 = (vec2(i0 + ivec2(1, 0)) + 0.5) / vec2(size);
+    vec2 uv01 = (vec2(i0 + ivec2(0, 1)) + 0.5) / vec2(size);
+    vec2 uv11 = (vec2(i0 + ivec2(1, 1)) + 0.5) / vec2(size);
+
+    float z00 = texture(shad, vec3(uv00, layer)).r;
+    float z10 = texture(shad, vec3(uv10, layer)).r;
+    float z01 = texture(shad, vec3(uv01, layer)).r;
+    float z11 = texture(shad, vec3(uv11, layer)).r;
+
+    float c00 = (refDepth <= z00) ? 1.0 : 0.0;
+    float c10 = (refDepth <= z10) ? 1.0 : 0.0;
+    float c01 = (refDepth <= z01) ? 1.0 : 0.0;
+    float c11 = (refDepth <= z11) ? 1.0 : 0.0;
+
+    float cx0 = mix(c00, c10, f.x);
+    float cx1 = mix(c01, c11, f.x);
+    return mix(cx0, cx1, f.y);
+}
+
+// Build basis for angular offsets on the cube
+void basisFromDir(vec3 n, out vec3 t, out vec3 b)
+{
+    vec3 a = (abs(n.z) < 0.999) ? vec3(0, 0, 1) : vec3(0, 1, 0);
+    t = normalize(cross(a, n));
+    b = cross(n, t);
+}
+
+float pcfBilinearCube(samplerCubeArray shad, vec3 dir, float layer, float refDepth, float texelAngle)
+{
+    vec3 t, b;
+    basisFromDir(dir, t, b);
+
+    // Centered bilinear around dir using 4 neighbors at +/- texelAngle
+    vec2 f = vec2(0.5); // can be varied if you want anisotropic lerp
+
+    vec3 d00 = normalize(dir + (-f.x) * texelAngle * t + (-f.y) * texelAngle * b);
+    vec3 d10 = normalize(dir + (1.0 - f.x) * texelAngle * t + (-f.y) * texelAngle * b);
+    vec3 d01 = normalize(dir + (-f.x) * texelAngle * t + (1.0 - f.y) * texelAngle * b);
+    vec3 d11 = normalize(dir + (1.0 - f.x) * texelAngle * t + (1.0 - f.y) * texelAngle * b);
+
+    float z00 = texture(shad, vec4(d00, layer)).r;
+    float z10 = texture(shad, vec4(d10, layer)).r;
+    float z01 = texture(shad, vec4(d01, layer)).r;
+    float z11 = texture(shad, vec4(d11, layer)).r;
+
+    float c00 = (refDepth <= z00) ? 1.0 : 0.0;
+    float c10 = (refDepth <= z10) ? 1.0 : 0.0;
+    float c01 = (refDepth <= z01) ? 1.0 : 0.0;
+    float c11 = (refDepth <= z11) ? 1.0 : 0.0;
+
+    float cx0 = mix(c00, c10, f.x);
+    float cx1 = mix(c01, c11, f.x);
+    return mix(cx0, cx1, f.y);
+}
+
+// ------------------------
+// PCSS: blocker search & PCF (2D)
+// ------------------------
+bool findBlocker2D(sampler2DArray shad, vec2 uv, float layer, float refDepth, vec2 texel, float searchRadiusTexels,
+                   out float avgBlocker, mat2 R)
+{
+    float sum = 0.0;
+    int cnt = 0;
+    vec2 radius = texel * searchRadiusTexels;
+
+    for (int k = 0; k < PCSS_SAMPLES_BLOCKER; ++k)
+    {
+        vec2 duv = (R * POISSON_12[k]) * radius;
+        float z = texture(shad, vec3(uv + duv, layer)).r;
+        if (z < refDepth)
+        {
+            sum += z;
+            cnt++;
+        }
+    }
+    if (cnt == 0)
+        return false;
+    avgBlocker = sum / float(cnt);
+    return true;
+}
+
+float pcf2D(sampler2DArray shad, vec2 uv, float layer, float refDepth, vec2 texel, float radiusTexels, mat2 R)
+{
+    vec2 radius = texel * radiusTexels;
+
+    float sum = 0.0, wsum = 0.0;
+    for (int k = 0; k < PCSS_SAMPLES_PCF; ++k)
+    {
+        vec2 o = R * POISSON_24[k];
+        float w = 1.0 - clamp(length(o), 0.0, 1.0); // tent weight
+        vec2 duv = o * radius;
+
+        float s = pcfBilinear2D(shad, uv + duv, layer, refDepth);
+        sum += s * w;
+        wsum += w;
+    }
+    return sum / max(wsum, 1e-6);
+}
+
+// ------------------------
+// PCSS: blocker search & PCF (cube)
+// ------------------------
+bool findBlockerCube(samplerCubeArray shad, vec3 dir, float layer, float refDepth, float texelAngle,
+                     float searchRadiusTexels, out float avgBlocker, mat2 R)
+{
+    vec3 t, b;
+    basisFromDir(dir, t, b);
+    float angle = texelAngle * searchRadiusTexels;
+
+    float sum = 0.0;
+    int cnt = 0;
+    for (int k = 0; k < PCSS_SAMPLES_BLOCKER; ++k)
+    {
+        vec2 o = R * POISSON_12[k];
+        vec3 d = normalize(dir + (o.x * angle) * t + (o.y * angle) * b);
+        float z = texture(shad, vec4(d, layer)).r;
+        if (z < refDepth)
+        {
+            sum += z;
+            cnt++;
+        }
+    }
+    if (cnt == 0)
+        return false;
+    avgBlocker = sum / float(cnt);
+    return true;
+}
+
+float pcfCube(samplerCubeArray shad, vec3 dir, float layer, float refDepth, float texelAngle, float radiusTexels,
+              mat2 R)
+{
+    vec3 t, b;
+    basisFromDir(dir, t, b);
+    float angle = texelAngle * radiusTexels;
+
+    float sum = 0.0, wsum = 0.0;
+    for (int k = 0; k < PCSS_SAMPLES_PCF; ++k)
+    {
+        vec2 o = R * POISSON_24[k];
+        float w = 1.0 - clamp(length(o), 0.0, 1.0);
+
+        vec3 d = normalize(dir + (o.x * angle) * t + (o.y * angle) * b);
+
+        float s = pcfBilinearCube(shad, d, layer, refDepth, texelAngle);
+        sum += s * w;
+        wsum += w;
+    }
+    return sum / max(wsum, 1e-6);
+}
+
+// ---------------------------
+// Directional light PCSS
+// ---------------------------
 float shadowFactorDirectional(vec3 worldPos, vec3 N, vec3 L)
 {
     for (int c = 0; c < DIRECTIONAL_LIGHT_CASCADES; ++c)
@@ -124,7 +322,7 @@ float shadowFactorDirectional(vec3 worldPos, vec3 N, vec3 L)
         if (clip.w <= 0.0)
             continue;
 
-        vec3 ndc = clip.xyz / clip.w; // [-1, 1]
+        vec3 ndc = clip.xyz / clip.w;
         if (ndc.x < -1.0 || ndc.x > 1.0 || ndc.y < -1.0 || ndc.y > 1.0 || ndc.z < -1.0 || ndc.z > 1.0)
             continue;
 
@@ -132,31 +330,67 @@ float shadowFactorDirectional(vec3 worldPos, vec3 N, vec3 L)
         float ref = ndc.z * 0.5 + 0.5;
 
         float bias = slopeBias(N, L) + rpdbFromNdc(ndc);
-        return texture(uDirectionalLightShadowMapArray, vec4(uv, float(c), ref - bias));
+        float r = ref - bias;
+
+        // Per-pixel rotation for kernels
+        float ang = hash12(gl_FragCoord.xy) * 6.2831853;
+        mat2 R = rot2(ang);
+
+        float searchRadius = clamp(uDirLightRadiusWS * 150.0, 1.0, 25.0);
+        float avgBlocker;
+        bool hasBlocker = findBlocker2D(uDirectionalLightShadowMapArray, uv, float(c), r, uDirShadowTexel, searchRadius,
+                                        avgBlocker, R);
+        if (!hasBlocker)
+            return 1.0;
+
+        float penumbra = clamp(((r - avgBlocker) / max(avgBlocker, 1e-4)) * 150.0 * uDirLightRadiusWS, PCSS_MIN_FILTER,
+                               PCSS_MAX_FILTER);
+
+        return pcf2D(uDirectionalLightShadowMapArray, uv, float(c), r, uDirShadowTexel, penumbra, R);
     }
-    // Outside all cascades -> lit
     return 1.0;
 }
 
-// MARK: Spot light shadow factor
+// ---------------------------
+// Spot light PCSS (2D array)
+// ---------------------------
 float shadowFactorSpot(int i, vec3 worldPos, vec3 N, vec3 L)
 {
     vec4 clip = uSpotLightSpaceMatrices[i] * vec4(worldPos, 1.0);
     if (clip.w <= 0.0)
         return 1.0;
 
-    vec3 ndc = clip.xyz / clip.w; // [-1,1]
+    vec3 ndc = clip.xyz / clip.w;
     if (ndc.x < -1.0 || ndc.x > 1.0 || ndc.y < -1.0 || ndc.y > 1.0 || ndc.z < 0.0 || ndc.z > 1.0)
         return 1.0;
 
     vec2 uv = ndc.xy * 0.5 + 0.5;
     float ref = ndc.z * 0.5 + 0.5;
 
-    float bias = 0.0;
-    return texture(uSpotLightShadowMapArray, vec4(uv, float(i), ref - bias));
+    // Keep a small slope bias to avoid acne
+    float bias = slopeBias(N, L) * 0.5;
+    float r = ref - bias;
+
+    float ang = hash12(gl_FragCoord.xy) * 6.2831853;
+    mat2 R = rot2(ang);
+
+    float searchRadius = clamp(uSpotLightRadiusWS * 150.0, 1.0, 25.0);
+
+    float avgBlocker;
+    bool hasBlocker =
+        findBlocker2D(uSpotLightShadowMapArray, uv, float(i), r, uSpotShadowTexel, searchRadius, avgBlocker, R);
+    if (!hasBlocker)
+        return 1.0;
+
+    float penumbra = clamp(((r - avgBlocker) / max(avgBlocker, 1e-4)) * 150.0 * uSpotLightRadiusWS, PCSS_MIN_FILTER,
+                           PCSS_MAX_FILTER);
+
+    return pcf2D(uSpotLightShadowMapArray, uv, float(i), r, uSpotShadowTexel, penumbra, R);
 }
 
-// MARK: Point light shadow factor
+// ---------------------------
+// Point light PCSS (cube array)
+// ---------------------------
 float shadowFactorPoint(int i, vec3 Ldir, float dist, vec3 N)
 {
     vec3 dir = normalize(-Ldir);
@@ -164,9 +398,31 @@ float shadowFactorPoint(int i, vec3 Ldir, float dist, vec3 N)
     float ref = dist / farRange;
 
     float bias = MIN_BIAS + SLOPE_BIAS * (1.0 - max(dot(N, -dir), 0.0));
-    return texture(uPointLightShadowCubeArray, vec4(dir, float(i)), ref - bias);
+    float r = ref - bias;
+
+    // Angular texel size approximation for 90° face FOV
+    float texelAngle = uPointShadowTexel * 2.0 * 3.14159265 / 4.0;
+
+    float ang = hash12(gl_FragCoord.xy) * 6.2831853;
+    mat2 R = rot2(ang);
+
+    float searchRadius = clamp(uPointLightRadiusWS * 150.0, 1.0, 25.0);
+
+    float avgBlocker;
+    bool hasBlocker =
+        findBlockerCube(uPointLightShadowCubeArray, dir, float(i), r, texelAngle, searchRadius, avgBlocker, R);
+    if (!hasBlocker)
+        return 1.0;
+
+    float penumbra = clamp(((r - avgBlocker) / max(avgBlocker, 1e-4)) * 150.0 * uPointLightRadiusWS, PCSS_MIN_FILTER,
+                           PCSS_MAX_FILTER);
+
+    return pcfCube(uPointLightShadowCubeArray, dir, float(i), r, texelAngle, penumbra, R);
 }
 
+// ======================================================
+// Main (lighting identical to your original)
+// ======================================================
 void main()
 {
     vec3 N = normalize(vNormal);
@@ -181,23 +437,21 @@ void main()
 
     vec3 lighting = uAmbientLightColor.rgb * uAmbientLightColor.a;
 
-    // MARK: Directional light
+    // Directional
     {
         vec3 L = normalize(-uDirLight.directionWS.xyz);
         float NdotL = max(dot(N, L), 0.0);
-
         float s = shadowFactorDirectional(vFragPos, N, L);
 
-        // Blinn-Phong specular
         vec3 H = normalize(L + V);
         float NdotH = max(dot(N, H), 0.0);
         float spec = pow(NdotH, max(shininess, 1.0)) * specularIntensity;
 
         vec3 lightRGB = uDirLight.colorsIntensity.rgb * uDirLight.colorsIntensity.a;
-        lighting += lightRGB * (NdotL + spec) * s; // no attenuation
+        lighting += lightRGB * (NdotL + spec) * s;
     }
 
-    // MARK: Spot lights
+    // Spot
     for (int i = 0; i < uSpotLightCount; ++i)
     {
         vec3 Lvec = positionsWS[i].xyz - vFragPos;
@@ -220,7 +474,7 @@ void main()
         lighting += lightRGB * (NdotL + spec) * s * atten * spot;
     }
 
-    // MARK: Point lights
+    // Point
     for (int i = 0; i < uPointLightCount; ++i)
     {
         vec3 Lvec = p_positionsWS[i].xyz - vFragPos;

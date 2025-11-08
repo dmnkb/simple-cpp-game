@@ -130,8 +130,7 @@ void Texture::create()
 
     if (isDepth)
     {
-        glTexParameteri(properties.target, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-        glTexParameteri(properties.target, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+        glTexParameteri(properties.target, GL_TEXTURE_COMPARE_MODE, GL_NONE);
         glTexParameteri(properties.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(properties.target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(properties.target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
