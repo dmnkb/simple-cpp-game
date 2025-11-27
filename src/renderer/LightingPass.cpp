@@ -85,13 +85,13 @@ LightingPass::~LightingPass()
 }
 
 // MARK: Execute
-LightingOutputs LightingPass::execute(Scene& scene, const LightingInputs& lightInputs)
+LightingOutputs LightingPass::execute(const Ref<Scene>& scene, const LightingInputs& lightInputs)
 {
     LightingOutputs out{};
 
     m_frameBuffer->bind();
 
-    for (const auto& [material, meshMap] : scene.getRenderQueue("Lighting Pass"))
+    for (const auto& [material, meshMap] : scene->getRenderQueue("Lighting Pass"))
     {
         material->bind();
         material->update();
@@ -123,22 +123,23 @@ LightingOutputs LightingPass::execute(Scene& scene, const LightingInputs& lightI
 }
 
 // MARK: Upload uniforms
-void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, const LightingInputs& lightInputs)
+void LightingPass::uploadUniforms(const Ref<Scene>& scene, const Ref<Material>& material,
+                                  const LightingInputs& lightInputs)
 {
     // Camera
-    const auto cam = scene.getActiveCamera();
-    const auto vp = cam->getProjectionMatrix() * cam->getViewMatrix();
-    const auto camPos = cam->getPosition();
+    const auto cam = scene->getActiveCamera();
+    const auto vp = cam.getProjectionMatrix() * cam.getViewMatrix();
+    const auto camPos = cam.getPosition();
 
     material->setUniformMatrix4fv("uViewProjection", vp);
     material->setUniform3fv("uViewPos", camPos);
 
     // Ambient light
-    material->setUniform4fv("uAmbientLightColor", scene.getAmbientLightColor());
+    material->setUniform4fv("uAmbientLightColor", scene->getAmbientLightColor());
 
     // MARK: Spot lights
     {
-        const std::vector<Ref<SpotLight>> spotLights = scene.getSpotLights();
+        const std::vector<Ref<SpotLight>> spotLights = scene->getSpotLights();
         const int spotCount = std::min<int>((int)spotLights.size(), MAX_SPOT_LIGHTS);
 
         // Sync
@@ -202,7 +203,7 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
 
     // MARK: Point lights
     {
-        const std::vector<Ref<PointLight>> pointLights = scene.getPointLights();
+        const std::vector<Ref<PointLight>> pointLights = scene->getPointLights();
         const int pointCount = std::min<int>((int)pointLights.size(), MAX_POINT_LIGHTS);
 
         // Sync
@@ -250,7 +251,7 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
 
     // MARK: Directional light
     {
-        const Ref<DirectionalLight> directionalLight = scene.getDirectionalLight();
+        const Ref<DirectionalLight> directionalLight = scene->getDirectionalLight();
 
         // Sync
         const DirectionalLight::DirectionalLightProperties props = directionalLight->props();
@@ -290,7 +291,7 @@ void LightingPass::uploadUniforms(Scene& scene, const Ref<Material>& material, c
             for (int cascade = 0; cascade < kCascadeCount; ++cascade)
             {
                 const auto cam = directionalLight->getShadowCams()[cascade];
-                if (!cam)
+                if (!cam.has_value())
                     return;
                 lightVP[cascade] = cam->getProjectionMatrix() * cam->getViewMatrix();
             }

@@ -23,7 +23,8 @@ struct WindowProps
 };
 
 void init(const WindowProps& props);
-void update();
+void pollEvents();
+void swapBuffers();
 void shutdown();
 double getElapsedTime();
 void toggleCursorLock();

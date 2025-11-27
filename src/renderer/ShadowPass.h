@@ -19,16 +19,16 @@ class ShadowPass
 {
   public:
     ShadowPass();
-    ShadowOutputs execute(Scene& scene);
+    ShadowOutputs execute(const Ref<Scene>& scene);
 
   private:
     void setupSpotLightRessources();
     void setupPointLightRessources();
     void setupDirectionalLightRessources();
 
-    void renderSpotLights(Scene& scene, const std::vector<Ref<SpotLight>>& spotLights);
-    void renderPointLights(Scene& scene, const std::vector<Ref<PointLight>>& pointLights);
-    void renderDirectionalLight(Scene& scene, const Ref<DirectionalLight>& directionalLight);
+    void renderSpotLights(const Ref<Scene>& scene);
+    void renderPointLights(const Ref<Scene>& scene);
+    void renderDirectionalLight(const Ref<Scene>& scene);
 
   private:
     // Spot light resources
@@ -48,7 +48,7 @@ class ShadowPass
     // State tracking
     int m_spotShadowRes = 1024;
     int m_pointShadowRes = 1024;
-    int m_directionalShadowRes = 1024;
+    int m_directionalShadowRes = 2048;
 };
 
 } // namespace Engine

@@ -9,6 +9,7 @@
 namespace Engine
 {
 
+// TODO: Rename to ObserverCamera
 Player::Player()
 {
     EventManager::registerListeners(typeid(KeyEvent).name(),
@@ -51,7 +52,7 @@ void Player::onMouseMoveEvent(const Ref<Event> event)
     }
 }
 
-void Player::update(const Scene& scene, double deltaTime)
+void Player::update(Camera& camera, double deltaTime)
 {
     // Rotation
     float mouseSpeed = 0.3f;
@@ -101,12 +102,11 @@ void Player::update(const Scene& scene, double deltaTime)
                             m_PositionVel,                // velocity accumulator (kept across frames)
                             0.2f,                         // smooth time (s)
                             static_cast<float>(deltaTime) // DT
-
     );
 
     // Camera Update
-    scene.getActiveCamera()->setPosition(m_Position);
-    scene.getActiveCamera()->lookAt(m_Position + m_Direction);
+    camera.setPosition(m_Position);
+    camera.lookAt(m_Position + m_Direction);
 }
 
 bool Player::isKeyPressed(unsigned int key)

@@ -18,7 +18,7 @@ ShadowPass::ShadowPass()
 }
 
 // MARK: Execute
-ShadowOutputs ShadowPass::execute(Scene& scene)
+ShadowOutputs ShadowPass::execute(const Ref<Scene>& scene)
 {
     ShadowOutputs out{};
 
@@ -31,9 +31,9 @@ ShadowOutputs ShadowPass::execute(Scene& scene)
     // - Far range actually used
     // - Atlas/array layer indices, viewport rects
 
-    renderSpotLights(scene, scene.getSpotLights());
-    renderPointLights(scene, scene.getPointLights());
-    renderDirectionalLight(scene, scene.getDirectionalLight());
+    renderSpotLights(scene);
+    renderPointLights(scene);
+    renderDirectionalLight(scene);
 
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
@@ -44,8 +44,10 @@ ShadowOutputs ShadowPass::execute(Scene& scene)
 }
 
 // MARK: Render spot lights
-void ShadowPass::renderSpotLights(Scene& scene, const std::vector<Ref<SpotLight>>& spotLights)
+void ShadowPass::renderSpotLights(const Ref<Scene>& scene)
 {
+    const auto& spotLights = scene->getSpotLights();
+
     m_depthShader.bind();
 
     const int count = static_cast<int>(spotLights.size());
@@ -69,7 +71,7 @@ void ShadowPass::renderSpotLights(Scene& scene, const std::vector<Ref<SpotLight>
         m_depthShader.setUniformMatrix4fv("lightSpaceMatrix", matrix);
 
         const std::string rqName = "Shadow Pass (Spot light " + std::to_string(lightIndex) + ")";
-        for (const auto& [material, meshMap] : scene.getRenderQueue(rqName))
+        for (const auto& [material, meshMap] : scene->getRenderQueue(rqName))
         {
             if (!material->isDoubleSided)
             {
@@ -103,8 +105,10 @@ void ShadowPass::renderSpotLights(Scene& scene, const std::vector<Ref<SpotLight>
 }
 
 // MARK: Render point lights
-void ShadowPass::renderPointLights(Scene& scene, const std::vector<Ref<PointLight>>& pointLights)
+void ShadowPass::renderPointLights(const Ref<Scene>& scene)
 {
+    const auto& pointLights = scene->getPointLights();
+
     m_depthShaderCube.bind();
 
     const int count = static_cast<int>(pointLights.size());
@@ -147,7 +151,7 @@ void ShadowPass::renderPointLights(Scene& scene, const std::vector<Ref<PointLigh
             m_depthShaderCube.setUniformFloat("uShadowFar", farP);
 
             const std::string rqName = "Shadow Pass (Point light " + std::to_string(li) + ")";
-            for (const auto& [material, meshMap] : scene.getRenderQueue(rqName))
+            for (const auto& [material, meshMap] : scene->getRenderQueue(rqName))
             {
                 if (!material->isDoubleSided)
                 {
@@ -181,8 +185,10 @@ void ShadowPass::renderPointLights(Scene& scene, const std::vector<Ref<PointLigh
 }
 
 // MARK: Render directional light
-void ShadowPass::renderDirectionalLight(Scene& scene, const Ref<DirectionalLight>& directionalLight)
+void ShadowPass::renderDirectionalLight(const Ref<Scene>& scene)
 {
+    const auto& directionalLight = scene->getDirectionalLight();
+
     if (!directionalLight)
         return;
 
@@ -200,13 +206,15 @@ void ShadowPass::renderDirectionalLight(Scene& scene, const Ref<DirectionalLight
 
         const auto& cam = directionalLight->getShadowCams()[cascade];
         if (!cam)
+        {
             return;
+        }
 
         const glm::mat4 matrix = cam->getProjectionMatrix() * cam->getViewMatrix();
         m_depthShader.setUniformMatrix4fv("lightSpaceMatrix", matrix);
 
         const std::string rqName = "Shadow Pass (Directional light cascade " + std::to_string(cascade) + ")";
-        for (const auto& [material, meshMap] : scene.getRenderQueue(rqName))
+        for (const auto& [material, meshMap] : scene->getRenderQueue(rqName))
         {
             if (auto diffuse = material->getDiffuseMap())
             {
@@ -261,7 +269,7 @@ void ShadowPass::setupSpotLightRessources()
     customProps.attachLayer = 0;
 
     m_spotLightDepthArray = CreateRef<Texture>(props, customProps);
-    m_spotLightShadowFramebuffer->attachTexture(m_spotLightDepthArray);
+    m_spotLightShadowFramebuffer->attachTexture(m_spotLightDepthArray, "Spot Light Depth Array");
 
     std::cout << "Spot light shadow array: " << m_spotLightDepthArray->properties.width << "x"
               << m_spotLightDepthArray->properties.height << " layers=" << m_spotLightDepthArray->properties.layers
@@ -297,10 +305,10 @@ void ShadowPass::setupPointLightRessources()
     m_pointLightDepthCubeArray = CreateRef<Texture>(props, custom);
 
     // default attach to layer 0; reattach per face with glFramebufferTextureLayer during rendering
-    m_pointLightShadowFramebuffer->attachTexture(m_pointLightDepthCubeArray);
+    m_pointLightShadowFramebuffer->attachTexture(m_pointLightDepthCubeArray, "Point Light Depth Cube Array");
 
     std::cout << "Point light shadow cube array: " << m_pointLightDepthCubeArray->properties.width << "x"
-              << m_pointLightDepthCubeArray->properties.height << " cubes=" << MAX_POINTLIGHT_SHADOW_COUNT
+              << m_pointLightDepthCubeArray->properties.height << " max cubes=" << MAX_POINTLIGHT_SHADOW_COUNT
               << " layers=" << m_pointLightDepthCubeArray->properties.layers << "\n";
 }
 
@@ -331,7 +339,7 @@ void ShadowPass::setupDirectionalLightRessources()
     customProps.attachLayer = 0;
 
     m_directionalLightDepthArray = CreateRef<Texture>(props, customProps);
-    m_directionalLightShadowFramebuffer->attachTexture(m_directionalLightDepthArray);
+    m_directionalLightShadowFramebuffer->attachTexture(m_directionalLightDepthArray, "Directional Light Depth Array");
 
     std::cout << "Directional light shadow array: " << m_directionalLightDepthArray->properties.width << "x"
               << m_directionalLightDepthArray->properties.height

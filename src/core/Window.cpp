@@ -3,6 +3,7 @@
 
 namespace Engine
 {
+// TODO: Consider making Window a class so that the application can have multiple windows.
 namespace Window
 {
 
@@ -57,10 +58,14 @@ void shutdown()
     glfwTerminate();
 }
 
-void update()
+void pollEvents()
+{
+    glfwPollEvents();
+}
+
+void swapBuffers()
 {
     glfwSwapBuffers(glfwWindow);
-    glfwPollEvents();
 }
 
 double getElapsedTime()

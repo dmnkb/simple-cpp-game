@@ -17,7 +17,6 @@ class Scene
 {
   public:
     Scene();
-    void init(const Camera::CameraProps& cameraProps);
 
     void addModel(const Model& model);
     void addSpotLight(const Ref<SpotLight>& light);
@@ -59,9 +58,8 @@ class Scene
         return nullptr;
     }
 
-    void setActiveCamera(const Ref<Camera>& camera);
-    Ref<Camera> getActiveCamera() const;
-    Ref<Camera> getDefaultCamera() const;
+    void setActiveCamera(const Camera& camera);
+    Camera& getActiveCamera();
 
   private:
     // TODO:
@@ -78,8 +76,7 @@ class Scene
     RenderQueue m_cachedRenderQueue;
     bool m_renderablesDirty = true;
 
-    Ref<Camera> m_defaultCamera = nullptr;
-    Ref<Camera> m_activeCamera = nullptr;
+    Camera m_activeCamera;
 };
 
 } // namespace Engine

@@ -14,7 +14,7 @@ class Renderer
     Renderer();
     ~Renderer();
 
-    void update(Scene& scene);
+    void render(const Ref<Scene>& scene);
 
   private:
     ShadowPass m_shadowPass;

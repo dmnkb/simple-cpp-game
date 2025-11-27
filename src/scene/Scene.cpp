@@ -5,16 +5,13 @@
 namespace Engine
 {
 
-Scene::Scene() : m_directionalLight(CreateRef<DirectionalLight>())
+Scene::Scene()
 {
-    m_directionalLight->setColor(m_sunLightColor);
-}
-
-void Scene::init(const Camera::CameraProps& cameraProps)
-{
-    m_defaultCamera = CreateRef<Camera>(cameraProps);
-    m_defaultCamera->isMainCamera();
-    setActiveCamera(m_defaultCamera);
+    m_activeCamera = Camera(Camera::CameraProps{.fov = glm::radians(45.0f),
+                                                .aspect = 16.f / 9.f, // TODO: change onViewportResize
+                                                .near = 0.1f,
+                                                .far = 1000.0f,
+                                                .isMainCamera = true});
 }
 
 void Scene::addModel(const Model& model)
@@ -107,19 +104,14 @@ glm::vec4 Scene::getAmbientLightColor() const
     return m_ambientLightColor;
 }
 
-void Scene::setActiveCamera(const Ref<Camera>& camera)
+void Scene::setActiveCamera(const Camera& camera)
 {
     m_activeCamera = camera;
 }
 
-Ref<Camera> Scene::getActiveCamera() const
+Camera& Scene::getActiveCamera()
 {
     return m_activeCamera;
-}
-
-Ref<Camera> Scene::getDefaultCamera() const
-{
-    return m_defaultCamera;
 }
 
 } // namespace Engine

@@ -47,7 +47,10 @@ class DirectionalLight
         syncShadowCameras();
     }
 
-    DirectionalLight() : DirectionalLight(DirectionalLightProperties{}) {}
+    DirectionalLight() : DirectionalLight(DirectionalLightProperties{})
+    {
+        std::println("asdfghj");
+    }
 
     void setDirection(glm::vec3 dir = {-1.f, -1.f, -1.f})
     {
@@ -78,7 +81,8 @@ class DirectionalLight
     {
         return m_properties;
     }
-    [[nodiscard]] const std::array<Ref<Camera>, kCascadeCount>& getShadowCams() const
+
+    [[nodiscard]] const std::array<std::optional<Camera>, kCascadeCount>& getShadowCams() const
     {
         return m_shadowCams;
     }
@@ -168,11 +172,11 @@ class DirectionalLight
         for (std::size_t c = 0; c < kCascadeCount; ++c)
         {
             // ensure cam exists
-            if (!m_shadowCams[c])
+            if (!m_shadowCams[c].has_value())
             {
                 Camera::CameraProps p{};
                 p.type = Camera::ECT_ORTHOGRAPHIC;
-                m_shadowCams[c] = CreateRef<Camera>(p);
+                m_shadowCams[c] = Camera(p);
             }
 
             // 3) corners of this cascade in WS (receiver slice)
@@ -251,11 +255,14 @@ class DirectionalLight
             zmax += (casterExtend + zPad);
 
             // 9) program the camera with the SAME view we used for fitting
-            Camera& cam = *m_shadowCams[c];
-            cam.setPosition(eyeWS);
-            cam.lookAt(centerWS, up);                     // match Vlight exactly
-            cam.setOrthographic(left, right, bottom, top, // projection
-                                -zmax, -zmin);            // keep your convention
+            if (m_shadowCams[c].has_value())
+            {
+                auto& cam = m_shadowCams[c];
+                cam->setPosition(eyeWS);
+                cam->lookAt(centerWS, up);                     // match Vlight exactly
+                cam->setOrthographic(left, right, bottom, top, // projection
+                                     -zmax, -zmin);            // keep your convention
+            }
         }
     }
 
@@ -280,7 +287,7 @@ class DirectionalLight
   private:
     UUID identifier;
     DirectionalLightProperties m_properties;
-    std::array<Ref<Camera>, kCascadeCount> m_shadowCams;
+    std::array<std::optional<Camera>, kCascadeCount> m_shadowCams;
     MainCamData m_main{};
 };
 

@@ -15,6 +15,8 @@
 namespace Engine
 {
 
+// TODO: Distinguish between stack and heap memory usage?
+
 inline std::size_t GetProcessMemoryUsage()
 {
 #if defined(_WIN32)

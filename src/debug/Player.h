@@ -3,7 +3,6 @@
 #include "core/Core.h"
 #include "core/EventManager.h"
 #include "renderer/Camera.h"
-#include "scene/Scene.h"
 #include "util/SmoothDamp.h"
 #include <glm/glm.hpp>
 
@@ -17,7 +16,7 @@ class Player
 
     void onKeyEvent(const Ref<Event> event);
     void onMouseMoveEvent(const Ref<Event> event);
-    void update(const Scene& scene, double deltaTime);
+    void update(Camera& camera, double deltaTime);
     bool isKeyPressed(unsigned int key);
 
     glm::vec3 getPosition()

@@ -83,7 +83,7 @@ void Framebuffer::unbind()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Framebuffer::attachTexture(const Ref<Texture>& attachment)
+void Framebuffer::attachTexture(const Ref<Texture>& attachment, std::string_view debugName)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     attachment->bind();
@@ -105,6 +105,9 @@ void Framebuffer::attachTexture(const Ref<Texture>& attachment)
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE)
         std::cerr << "[Framebuffer] Incomplete! Status = 0x" << std::hex << status << std::dec << std::endl;
+    else
+        std::cout << "[Framebuffer] Successfully created FBO with attachment type 0x" << std::hex << att << std::dec
+                  << " (" << debugName << ")" << std::endl;
 
     unbind();
 }

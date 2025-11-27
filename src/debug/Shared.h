@@ -1,8 +1,10 @@
 #pragma once
 
 #include "glm/glm.hpp"
+
 #include "imgui.h"
 #include <imgui_internal.h>
+
 #include <string>
 
 namespace Engine
@@ -29,7 +31,7 @@ static bool DragVec3Row(const char* id, glm::vec3& v, float speed = 0.1f)
         const ImVec4 col = (label[0] == 'X')   ? ImVec4(0.8f, 0.1f, 0.15f, 1.0f)
                            : (label[0] == 'Y') ? ImVec4(0.2f, 0.7f, 0.2f, 1.0f)
                                                : ImVec4(0.1f, 0.25f, 0.8f, 1.0f);
-        ImGui::TextColored(col, label);
+        ImGui::TextColored(col, "%s", label);
 
         ImGui::SameLine(0.0f, style.ItemInnerSpacing.x);
 

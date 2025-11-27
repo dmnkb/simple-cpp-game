@@ -1,8 +1,11 @@
 #include "Shader.h"
+#include "GLDebug.h"
 #include "pch.h"
 
-Shader::Shader(const char* vertexShaderPath, const char* fragmentShaderPath) : m_ProgramID(glCreateProgram())
+Shader::Shader(const char* vertexShaderPath, const char* fragmentShaderPath)
 {
+    GLCall(m_ProgramID = glCreateProgram());
+
     auto shaders = readShaderFiles(vertexShaderPath, fragmentShaderPath);
     auto vertexShaderText = ((*shaders).vertexShader).c_str();
     auto fragmentShaderText = (*shaders).fragmentShader.c_str();

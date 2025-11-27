@@ -10,6 +10,7 @@
 namespace Engine
 {
 
+// TODO: Should live inside scene, not renderer
 class Camera
 {
   public:

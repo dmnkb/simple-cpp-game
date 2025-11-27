@@ -1,3 +1,5 @@
+#pragma once
+
 #include "ClearColor.h"
 #include "Mesh.h"
 #include "core/Core.h"

@@ -24,7 +24,7 @@ class Framebuffer
     void unbind();
 
     // Attach a texture (2D or array/3D). Uses Texture::properties.level and CustomProperties::attachLayer.
-    void attachTexture(const Ref<Texture>& attachment);
+    void attachTexture(const Ref<Texture>& attachment, std::string_view debugName = "");
 
     // Re-attach all array/3D attachments to a specific slice (per-layer rendering).
     void reattachLayerForAll(GLint layer);

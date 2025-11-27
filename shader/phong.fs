@@ -71,11 +71,11 @@ const float SLOPE_BIAS = 0.0025;
 const float RPDB_SCALE = 0.75;
 
 // -------- PCSS controls & texel sizes --------
-const float uDirLightRadiusWS = 0.5f;
+const float uDirLightRadiusWS = 0.25f;
 const float uSpotLightRadiusWS = 1.05f;
 const float uPointLightRadiusWS = 1.05f;
 
-const vec2 uDirShadowTexel = vec2(1.0 / 1024.0, 1.0 / 1024.0);
+const vec2 uDirShadowTexel = vec2(1.0 / 2048.0, 1.0 / 2048.0);
 const vec2 uSpotShadowTexel = vec2(1.0 / 1024.0, 1.0 / 1024.0);
 const float uPointShadowTexel = 1.0 / 1024.0;
 

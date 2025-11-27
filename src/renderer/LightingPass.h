@@ -44,14 +44,14 @@ class LightingPass
     LightingPass();
     ~LightingPass();
 
-    LightingOutputs execute(Scene& scene, const LightingInputs& litIn);
+    LightingOutputs execute(const Ref<Scene>& scene, const LightingInputs& litIn);
     Ref<Texture> getRenderTargetTexture()
     {
         return m_renderTargetTexture;
     }
 
   private:
-    void uploadUniforms(Scene& scene, const Ref<Material>& material, const LightingInputs& litIn);
+    void uploadUniforms(const Ref<Scene>& scene, const Ref<Material>& material, const LightingInputs& litIn);
 
   private:
     // Spot UBO
