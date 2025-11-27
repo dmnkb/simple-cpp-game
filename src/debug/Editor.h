@@ -1,6 +1,6 @@
 #pragma once
 
-#include "debug/Player.h"
+#include "debug/FlySpectatorCtrl.h"
 #include "scene/Scene.h"
 
 namespace Engine
@@ -13,8 +13,6 @@ struct DebugState
     bool showBoundingBoxes = false;
     bool pauseTime = false;
 
-    // Viewport Camera
-    Camera viewportCam;
     // std::variant<OrbitPanCtrl, FlySpectatorCtrl> viewportCamController;
 
     // Cascade Shadow Maps
@@ -36,7 +34,7 @@ class Editor
     void throwAwayDemoScene(const Ref<Scene>& activeScene);
 
   private:
-    Ref<Player> m_viewportCamController;
+    Ref<FlySpectatorCtrl> m_viewportCamController;
 };
 
 } // namespace Engine

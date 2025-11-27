@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <vector>
 
 #include "core/Core.h"
 #include "core/EventManager.h"
@@ -10,10 +11,10 @@
 namespace Engine
 {
 
-class Player
+class FlySpectatorCtrl
 {
   public:
-    Player();
+    FlySpectatorCtrl();
 
     void onKeyEvent(const Ref<Event> event);
     void onMouseMoveEvent(const Ref<Event> event);

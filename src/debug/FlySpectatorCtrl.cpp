@@ -3,14 +3,13 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "debug/Player.h"
+#include "debug/FlySpectatorCtrl.h"
 #include "pch.h"
 
 namespace Engine
 {
 
-// TODO: Rename to ObserverCamera
-Player::Player()
+FlySpectatorCtrl::FlySpectatorCtrl()
 {
     EventManager::registerListeners(typeid(KeyEvent).name(),
                                     [this](const Ref<Event> event) { this->onKeyEvent(event); });
@@ -21,7 +20,7 @@ Player::Player()
     m_TargetPosition = m_Position;
 }
 
-void Player::onKeyEvent(const Ref<Event> event)
+void FlySpectatorCtrl::onKeyEvent(const Ref<Event> event)
 {
     auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(event);
     if (!keyEvent)
@@ -40,7 +39,7 @@ void Player::onKeyEvent(const Ref<Event> event)
     }
 }
 
-void Player::onMouseMoveEvent(const Ref<Event> event)
+void FlySpectatorCtrl::onMouseMoveEvent(const Ref<Event> event)
 {
     if (auto mouseMoveEvent = std::dynamic_pointer_cast<MouseMoveEvent>(event))
     {
@@ -52,7 +51,7 @@ void Player::onMouseMoveEvent(const Ref<Event> event)
     }
 }
 
-void Player::update(Camera& camera, double deltaTime)
+void FlySpectatorCtrl::update(Camera& camera, double deltaTime)
 {
     // Rotation
     float mouseSpeed = 0.3f;
@@ -109,7 +108,7 @@ void Player::update(Camera& camera, double deltaTime)
     camera.lookAt(m_Position + m_Direction);
 }
 
-bool Player::isKeyPressed(unsigned int key)
+bool FlySpectatorCtrl::isKeyPressed(unsigned int key)
 {
     auto it = std::find(m_PressedKeys.begin(), m_PressedKeys.end(), key);
     return it != m_PressedKeys.end();

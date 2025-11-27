@@ -23,7 +23,7 @@ namespace Engine
 
 Editor::Editor(const Ref<Scene>& activeScene)
 {
-    m_viewportCamController = CreateRef<Player>();
+    m_viewportCamController = CreateRef<FlySpectatorCtrl>();
 
     throwAwayDemoScene(activeScene);
 }
