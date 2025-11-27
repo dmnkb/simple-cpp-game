@@ -1,14 +1,15 @@
 #pragma once
 
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
+
 #include "Material.h"
 #include "Mesh.h"
 #include "Shader.h"
 #include "renderer/MaterialManager.h"
 #include "renderer/ShaderManager.h"
 #include "renderer/TextureManager.h"
-#include <assimp/Importer.hpp>
-#include <assimp/postprocess.h>
-#include <assimp/scene.h>
 
 namespace Engine
 {

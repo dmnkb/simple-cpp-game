@@ -1,16 +1,17 @@
 #pragma once
 
-#include "Camera.h"
-#include "Framebuffer.h"
-#include "Texture.h"
-#include "util/ComputeEffectiveRange.h"
-#include "util/uuid.h"
 #include <array>
 #include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/norm.hpp>
+
+#include "Camera.h"
+#include "Framebuffer.h"
+#include "Texture.h"
+#include "util/ComputeEffectiveRange.h"
+#include "util/uuid.h"
 
 namespace Engine
 {

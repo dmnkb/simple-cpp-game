@@ -1,10 +1,11 @@
 #pragma once
 
+#include <glm/glm.hpp>
+
 #include "core/Core.h"
 #include "core/EventManager.h"
 #include "renderer/Camera.h"
 #include "util/SmoothDamp.h"
-#include <glm/glm.hpp>
 
 namespace Engine
 {

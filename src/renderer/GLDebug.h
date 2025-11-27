@@ -1,7 +1,5 @@
-// src/renderer/GLDebug.h
 #pragma once
 
-#include "pch.h"
 #include <glad/glad.h>
 #include <iostream>
 

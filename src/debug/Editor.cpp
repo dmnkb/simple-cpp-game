@@ -8,9 +8,7 @@
 #include "PanelSceneHierarchy.h"
 #include "PanelStats.h"
 #include "PanelStatsHighlights.h"
-
 #include "core/Window.h"
-
 #include "renderer/DirectionalLight.h"
 #include "renderer/Material.h"
 #include "renderer/Model.h"

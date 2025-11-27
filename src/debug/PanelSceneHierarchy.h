@@ -5,7 +5,6 @@
 
 #include "Shared.h"
 #include "core/Profiler.h"
-#include "pch.h"
 #include "renderer/ClearColor.h"
 #include "renderer/RendererAPI.h"
 #include "scene/Scene.h"

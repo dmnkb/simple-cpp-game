@@ -1,7 +1,6 @@
 #pragma once
 
 #include "EventManager.h"
-#include "pch.h"
 // DON'T CHANGE – INCLUDE ORDER MATTERS HERE
 // clang-format off
 #include <glad/glad.h>

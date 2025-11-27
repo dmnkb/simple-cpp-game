@@ -3,7 +3,6 @@
 #include "imgui.h"
 
 #include "core/Profiler.h"
-#include "pch.h"
 
 namespace Engine
 {

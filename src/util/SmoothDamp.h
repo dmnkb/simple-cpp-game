@@ -1,7 +1,6 @@
 
 #pragma once
 
-#include "pch.h"
 #include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtx/norm.hpp>

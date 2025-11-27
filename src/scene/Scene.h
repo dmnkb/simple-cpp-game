@@ -6,7 +6,7 @@
 #include "renderer/Model.h"
 #include "renderer/PointLight.h"
 #include "renderer/SpotLight.h"
-#include "uuid/uuid.h"
+#include "util/uuid.h"
 
 namespace Engine
 {

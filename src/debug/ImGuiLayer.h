@@ -1,7 +1,5 @@
 #pragma once
 
-#include "pch.h"
-
 struct GLFWwindow; // Forward-declared to avoid including GLFW here
 
 namespace Engine

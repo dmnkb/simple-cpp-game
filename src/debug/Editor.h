@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Player.h"
-#include "pch.h"
 #include "scene/Scene.h"
 
 namespace Engine

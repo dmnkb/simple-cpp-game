@@ -2,7 +2,6 @@
 
 #include "imgui.h"
 
-#include "pch.h"
 #include "renderer/Camera.h"
 #include "scene/Scene.h"
 

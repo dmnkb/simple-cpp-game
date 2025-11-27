@@ -1,7 +1,7 @@
+#include <iostream>
+
 #include "Framebuffer.h"
 #include "core/Window.h"
-#include "pch.h"
-#include <iostream>
 
 namespace Engine
 {

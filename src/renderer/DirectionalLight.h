@@ -1,13 +1,14 @@
 #pragma once
 
-#include "Camera.h"
-#include "core/Event.h"
-#include "core/EventManager.h"
-#include "util/uuid.h"
 #include <array>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/norm.hpp>
+
+#include "Camera.h"
+#include "core/Event.h"
+#include "core/EventManager.h"
+#include "util/uuid.h"
 
 namespace Engine
 {
