@@ -23,7 +23,7 @@ class ImGuiLayer
     // Called after all UI rendering is done (submits UI draw calls)
     void endFrame();
 
-    // Optional: expose visibility toggling for debug/editor UI
+    // Optional: expose visibility toggling for editor/editor UI
     void setEnabled(bool enable)
     {
         m_enabled = enable;

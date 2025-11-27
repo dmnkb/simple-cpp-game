@@ -4,7 +4,7 @@
 #include <imgui_internal.h>
 
 #include "core/Profiler.h"
-#include "debug/Shared.h"
+#include "editor/Shared.h"
 #include "renderer/ClearColor.h"
 #include "renderer/RendererAPI.h"
 #include "scene/Scene.h"

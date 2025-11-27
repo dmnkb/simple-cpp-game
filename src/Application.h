@@ -2,8 +2,8 @@
 
 #include "core/Core.h"
 #include "core/EventManager.h"
-#include "debug/Editor.h"
-#include "debug/ImGuiLayer.h"
+#include "editor/Editor.h"
+#include "editor/ImGuiLayer.h"
 #include "renderer/Renderer.h"
 #include "scene/Scene.h"
 

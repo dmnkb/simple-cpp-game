@@ -1,6 +1,6 @@
 #pragma once
 
-#include "debug/FlySpectatorCtrl.h"
+#include "editor/FlySpectatorCtrl.h"
 #include "scene/Scene.h"
 
 namespace Engine

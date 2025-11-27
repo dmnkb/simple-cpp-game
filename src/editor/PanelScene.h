@@ -1,6 +1,6 @@
 #pragma once
 
-#include "debug/Shared.h"
+#include "editor/Shared.h"
 #include "renderer/ClearColor.h"
 #include "renderer/RendererAPI.h"
 #include "scene/Scene.h"
