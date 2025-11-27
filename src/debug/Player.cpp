@@ -1,10 +1,10 @@
-#include "Player.h"
-#include "pch.h"
 #include <GLFW/glfw3.h>
-#include <algorithm> // clamp
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+#include "debug/Player.h"
+#include "pch.h"
 
 namespace Engine
 {

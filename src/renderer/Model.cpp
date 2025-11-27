@@ -1,10 +1,3 @@
-#include "Model.h"
-#include "Mesh.h"
-#include "Texture.h"
-#include "pch.h"
-#include "renderer/MaterialManager.h"
-#include "renderer/ShaderManager.h"
-#include "renderer/TextureManager.h"
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
@@ -15,6 +8,14 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_STATIC
 #include <stb_image.h>
+
+#include "pch.h"
+#include "renderer/MaterialManager.h"
+#include "renderer/Mesh.h"
+#include "renderer/Model.h"
+#include "renderer/ShaderManager.h"
+#include "renderer/Texture.h"
+#include "renderer/TextureManager.h"
 
 namespace Engine
 {

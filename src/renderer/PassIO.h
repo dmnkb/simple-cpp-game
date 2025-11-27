@@ -1,8 +1,8 @@
 
 #pragma once
 
-#include "Texture.h"
 #include "core/Core.h"
+#include "renderer/Texture.h"
 
 namespace Engine
 {

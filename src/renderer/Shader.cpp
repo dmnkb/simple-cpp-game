@@ -1,6 +1,6 @@
-#include "Shader.h"
-#include "GLDebug.h"
+#include "renderer/Shader.h"
 #include "pch.h"
+#include "renderer/GLDebug.h"
 
 Shader::Shader(const char* vertexShaderPath, const char* fragmentShaderPath)
 {

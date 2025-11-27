@@ -1,10 +1,8 @@
 #pragma once
 
 #include "glm/glm.hpp"
-
 #include "imgui.h"
 #include <imgui_internal.h>
-
 #include <string>
 
 namespace Engine

@@ -4,10 +4,10 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
-#include "Material.h"
-#include "Mesh.h"
-#include "Shader.h"
+#include "renderer/Material.h"
 #include "renderer/MaterialManager.h"
+#include "renderer/Mesh.h"
+#include "renderer/Shader.h"
 #include "renderer/ShaderManager.h"
 #include "renderer/TextureManager.h"
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Timer.h"
 #include "core/Core.h"
+#include "core/Timer.h"
 
 namespace Engine
 {

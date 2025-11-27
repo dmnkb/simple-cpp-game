@@ -7,9 +7,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/norm.hpp>
 
-#include "Camera.h"
-#include "Framebuffer.h"
-#include "Texture.h"
+#include "renderer/Camera.h"
+#include "renderer/Framebuffer.h"
+#include "renderer/Texture.h"
 #include "util/ComputeEffectiveRange.h"
 #include "util/uuid.h"
 

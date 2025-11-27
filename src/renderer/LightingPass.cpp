@@ -1,15 +1,16 @@
-#include "LightingPass.h"
-#include "DirectionalLight.h"
-#include "Framebuffer.h"
-#include "RendererAPI.h"
-#include "core/Profiler.h"
-#include "core/Window.h"
 #include "glm/gtx/string_cast.hpp"
-#include "pch.h"
-#include "scene/Scene.h"
 #include <cmath>
 #include <fmt/core.h>
 #include <glm/gtc/type_ptr.hpp>
+
+#include "core/Profiler.h"
+#include "core/Window.h"
+#include "pch.h"
+#include "renderer/DirectionalLight.h"
+#include "renderer/Framebuffer.h"
+#include "renderer/LightingPass.h"
+#include "renderer/RendererAPI.h"
+#include "scene/Scene.h"
 
 namespace Engine
 {

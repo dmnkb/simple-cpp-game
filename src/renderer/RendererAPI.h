@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ClearColor.h"
-#include "Mesh.h"
 #include "core/Core.h"
+#include "renderer/ClearColor.h"
+#include "renderer/Mesh.h"
 
 namespace Engine
 {

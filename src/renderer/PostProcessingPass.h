@@ -1,8 +1,8 @@
 #pragma once
 
-#include "PassIO.h"
-#include "Shader.h"
-#include "Texture.h"
+#include "renderer/PassIO.h"
+#include "renderer/Shader.h"
+#include "renderer/Texture.h"
 #include "scene/Scene.h"
 
 namespace Engine

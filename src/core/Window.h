@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EventManager.h"
+#include "core/EventManager.h"
 // DON'T CHANGE – INCLUDE ORDER MATTERS HERE
 // clang-format off
 #include <glad/glad.h>

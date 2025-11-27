@@ -3,8 +3,8 @@
 #include "imgui.h"
 #include <imgui_internal.h>
 
-#include "Shared.h"
 #include "core/Profiler.h"
+#include "debug/Shared.h"
 #include "renderer/ClearColor.h"
 #include "renderer/RendererAPI.h"
 #include "scene/Scene.h"

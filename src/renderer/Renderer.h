@@ -1,8 +1,8 @@
 #pragma once
 
-#include "LightingPass.h"
-#include "PostProcessingPass.h"
-#include "ShadowPass.h"
+#include "renderer/LightingPass.h"
+#include "renderer/PostProcessingPass.h"
+#include "renderer/ShadowPass.h"
 #include "scene/Scene.h"
 
 namespace Engine

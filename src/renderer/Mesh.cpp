@@ -1,9 +1,10 @@
-#include "Mesh.h"
-#include "Material.h"
-#include "pch.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+#include "pch.h"
+#include "renderer/Material.h"
+#include "renderer/Mesh.h"
 
 namespace Engine
 {

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Framebuffer.h"
-#include "Material.h"
-#include "PassIO.h"
+#include "renderer/Framebuffer.h"
+#include "renderer/Material.h"
+#include "renderer/PassIO.h"
 #include "scene/Scene.h"
 
 namespace Engine

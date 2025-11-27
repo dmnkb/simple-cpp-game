@@ -1,12 +1,12 @@
 #pragma once
 
-#include "DirectionalLight.h"
-#include "Framebuffer.h"
-#include "PassIO.h"
-#include "PointLight.h"
-#include "Shader.h"
-#include "SpotLight.h"
-#include "Texture.h"
+#include "renderer/DirectionalLight.h"
+#include "renderer/Framebuffer.h"
+#include "renderer/PassIO.h"
+#include "renderer/PointLight.h"
+#include "renderer/Shader.h"
+#include "renderer/SpotLight.h"
+#include "renderer/Texture.h"
 #include "scene/Scene.h"
 
 namespace Engine

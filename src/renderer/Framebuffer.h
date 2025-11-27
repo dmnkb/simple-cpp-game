@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Texture.h"
 #include "core/Core.h"
 #include "core/Event.h"
 #include "core/EventManager.h"
+#include "renderer/Texture.h"
 
 namespace Engine
 {

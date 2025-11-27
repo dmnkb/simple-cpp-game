@@ -1,10 +1,11 @@
-#include "Texture.h"
-#include "pch.h"
 #include <filesystem>
 #include <iostream>
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_STATIC
 #include <stb_image.h>
+
+#include "pch.h"
+#include "renderer/Texture.h"
 
 namespace Engine
 {
