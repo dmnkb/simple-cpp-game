@@ -164,7 +164,7 @@ class DirectionalLight
         const glm::vec3 up = (std::abs(glm::dot(L, worldUp)) > pole) ? altUp : worldUp;
 
         // Tunables
-        const float mapRes = 2048.0f;   // shadow map resolution per cascade
+        const float mapRes = 1024.0f;   // shadow map resolution per cascade
         const float overlapXY = 1.02f;  // slight overlap between cascades in XY (2%)
         const float baseZPad = 10.0f;   // minimal z padding
         const float backoffMul = 1.5f;  // scale eye backoff by slice depth
@@ -184,85 +184,95 @@ class DirectionalLight
             glm::vec3 cornersWS[8];
             frustumCornersWS(m_main, split[c], split[c + 1], cornersWS);
 
-            // slice center in world
+            // 4) Calculate bounding sphere of the frustum slice
             glm::vec3 centerWS(0.0f);
             for (int i = 0; i < 8; ++i)
                 centerWS += cornersWS[i];
-            centerWS *= 1.0f / 8.0f;
+            centerWS /= 8.0f;
 
-            // 4) build light view behind the slice
-            const float sliceDepth = (split[c + 1] - split[c]);
-            const float backoff = glm::max(minBackoff, backoffMul * sliceDepth);
-            const glm::vec3 eyeWS = centerWS - L * backoff;
-            const glm::mat4 Vlight = glm::lookAt(eyeWS, centerWS, up);
-
-            // 5) transform slice corners into light space and get AABB
-            glm::vec3 cornersLS[8];
+            float radius = 0.0f;
             for (int i = 0; i < 8; ++i)
-                cornersLS[i] = glm::vec3(Vlight * glm::vec4(cornersWS[i], 1.0f));
+                radius = glm::max(radius, glm::length(cornersWS[i] - centerWS));
+            radius = std::ceil(radius * 16.0f) / 16.0f; // Round to avoid precision issues
 
-            glm::vec3 mn = cornersLS[0], mx = cornersLS[0];
-            for (int i = 1; i < 8; ++i)
-            {
-                mn = glm::min(mn, cornersLS[i]);
-                mx = glm::max(mx, cornersLS[i]);
-            }
+            // 5) Create a stable view matrix
+            // We use a fixed direction (L) and up vector, but we position the "camera"
+            // such that it looks at the origin. However, to stabilize, we need to
+            // ensure the projection window moves in texel-sized increments.
 
-            // 6) rotation-invariant XY fit (enclose with a circle → square)
-            glm::vec3 centerLS = 0.5f * (mn + mx);
+            // Transform center to light space
+            const glm::vec3 zero(0.0f);
+            const glm::mat4 Vlight = glm::lookAt(zero, zero + L, up);
 
-            float maxR = 0.0f;
-            for (int i = 0; i < 8; ++i)
-            {
-                glm::vec2 d = glm::vec2(cornersLS[i].x, cornersLS[i].y) - glm::vec2(centerLS.x, centerLS.y);
-                maxR = glm::max(maxR, glm::length(d));
-            }
-            maxR *= overlapXY;
+            glm::vec3 centerLS = glm::vec3(Vlight * glm::vec4(centerWS, 1.0f));
 
-            // 7) texel-grid stabilization (snap center in LS XY)
-            const float texel = (2.0f * maxR) / mapRes;
-            if (texel > 0.0f)
-            {
-                glm::vec2 cxy(centerLS.x, centerLS.y);
-                cxy = glm::floor(cxy / texel) * texel;
-                centerLS.x = cxy.x;
-                centerLS.y = cxy.y;
-            }
+            // 6) Texel snapping
+            const float diameter = 2.0f * radius;
+            const float texelSize = diameter / mapRes;
 
-            // Ortho XY from stabilized center + half-extent
-            const float left = centerLS.x - maxR;
-            const float right = centerLS.x + maxR;
-            const float bottom = centerLS.y - maxR;
-            const float top = centerLS.y + maxR;
+            centerLS.x = std::floor(centerLS.x / texelSize) * texelSize;
+            centerLS.y = std::floor(centerLS.y / texelSize) * texelSize;
 
-            // 8) Z range (include potential casters!)
-            //    Start from true slice z span, then extend by caster margin ~ XY radius,
-            //    plus extra padding for near cascade.
-            float zmin = mn.z;
-            float zmax = mx.z;
+            // 7) Determine projection bounds
+            // Since we use a bounding sphere, the ortho bounds are simply +/- radius
+            // relative to the snapped center.
+            const float left = centerLS.x - radius;
+            const float right = centerLS.x + radius;
+            const float bottom = centerLS.y - radius;
+            const float top = centerLS.y + radius;
 
-            // caster margin: anything within the cascade footprint can cast onto it
-            float casterExtend = maxR; // try 1.0–2.0 * maxR if needed
-            float zPad = baseZPad;
+            // 8) Z range
+            // We need to ensure we cover the slice depth plus potential casters in front.
+            // In light space, the camera is at origin looking down +Z (or -Z depending on lookAt).
+            // glm::lookAt(zero, zero+L, up) creates a view where forward is -Z (if standard GL).
+            // Let's check: lookAt(eye, center, up). f = normalize(center - eye) = L.
+            // s = normalize(cross(f, up)). u = cross(s, f).
+            // Resulting view matrix transforms world to camera.
+            // In camera space, forward is -Z. So L maps to -Z.
 
-            // give the near cascade more headroom (most likely to miss nearby casters)
-            if (c == 0)
-            {
-                casterExtend *= 1.5f;
-                zPad = glm::max(zPad, 0.5f * sliceDepth);
-            }
+            // We need to find the min/max Z of the slice in light space to set near/far.
+            // Actually, we can just use a large enough range centered on the slice.
+            // But to be safe and simple:
+            // The slice is contained within [centerLS.z - radius, centerLS.z + radius].
+            // We extend the near plane (which is +Z in view space if we look down -Z? No wait).
+            // Standard GL lookAt: forward is -Z.
+            // So if L points into the scene, objects further away have more negative Z.
 
-            zmin -= (casterExtend + zPad);
-            zmax += (casterExtend + zPad);
+            // Let's just use a generous range relative to the center.
+            // We want to capture casters between the light and the receiver.
+            // So we extend "backwards" towards the light (positive Z in view space if L is -Z).
 
-            // 9) program the camera with the SAME view we used for fitting
+            float zMin = centerLS.z - radius - baseZPad - radius; // Extend back for casters
+            float zMax = centerLS.z + radius + baseZPad;
+
+            // 9) Program the camera
             if (m_shadowCams[c].has_value())
             {
                 auto& cam = m_shadowCams[c];
-                cam->setPosition(eyeWS);
-                cam->lookAt(centerWS, up);                     // match Vlight exactly
-                cam->setOrthographic(left, right, bottom, top, // projection
-                                     -zmax, -zmin);            // keep your convention
+                // We want the view matrix to be Vlight.
+                // Camera::lookAt(target, up) sets position to current? No.
+                // Camera::lookAt(target, up) sets target and up.
+                // We need to set position and target such that the resulting view matrix is Vlight.
+                // Vlight is lookAt(zero, zero + L, up).
+                // So pos = zero, target = L.
+                cam->setPosition(zero);
+                cam->lookAt(zero + L, up);
+
+                // Projection:
+                // ortho(left, right, bottom, top, zNear, zFar)
+                // In GL, zNear/zFar are distances from the camera.
+                // If we are at 0, and looking down -Z (L direction).
+                // Objects are at negative Z.
+                // ortho projection maps -zNear to -1 and -zFar to +1.
+                // Wait, glm::ortho(l, r, b, t, n, f) produces a matrix that maps
+                // z=-n to -1 and z=-f to 1.
+                // Our objects are in range [zMin, zMax] in view space.
+                // Since view space Z is negative (looking down -Z), zMin/zMax are likely negative.
+                // We need -near = zMax (closest to eye, most positive)
+                // and -far = zMin (furthest from eye, most negative)
+                // So near = -zMax, far = -zMin.
+
+                cam->setOrthographic(left, right, bottom, top, -zMax, -zMin);
             }
         }
     }
