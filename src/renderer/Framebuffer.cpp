@@ -92,8 +92,7 @@ void Framebuffer::attachTexture(const Ref<Texture>& attachment, std::string_view
     const GLenum att = attachment->customProperties.attachmentType;
 
     if (attachment->properties.target == GL_TEXTURE_2D_ARRAY ||
-        attachment->properties.target == GL_TEXTURE_CUBE_MAP_ARRAY ||
-        attachment->properties.target == GL_TEXTURE_3D)
+        attachment->properties.target == GL_TEXTURE_CUBE_MAP_ARRAY || attachment->properties.target == GL_TEXTURE_3D)
     {
         // attach all layers at level 0; we’ll override the layer each draw via glFramebufferTextureLayer
         GLCall(glFramebufferTexture(GL_FRAMEBUFFER, att, attachment->id, 0));
