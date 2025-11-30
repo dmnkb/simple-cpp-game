@@ -3,6 +3,7 @@
 #include "core/Window.h"
 #include "pch.h"
 #include "scene/Scene.h"
+#include "renderer/GLDebug.h"
 
 namespace Engine
 {
@@ -27,38 +28,38 @@ void PostProcessingPass::initQuad()
         };
     // clang-format on
 
-    glGenVertexArrays(1, &m_quadVAO);
-    glGenBuffers(1, &m_quadVBO);
-    glBindVertexArray(m_quadVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, m_quadVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+    GLCall(glGenVertexArrays(1, &m_quadVAO));
+    GLCall(glGenBuffers(1, &m_quadVBO));
+    GLCall(glBindVertexArray(m_quadVAO));
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, m_quadVBO));
+    GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW));
 
-    glEnableVertexAttribArray(0); // position
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    GLCall(glEnableVertexAttribArray(0)); // position
+    GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0));
 
-    glEnableVertexAttribArray(1); // texCoord
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    GLCall(glEnableVertexAttribArray(1)); // texCoord
+    GLCall(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float))));
 
-    glBindVertexArray(0);
+    GLCall(glBindVertexArray(0));
 }
 
 void PostProcessingPass::execute(const PostProcessingInputs& postProcessingInputs)
 {
-    glColorMask(true, true, true, true);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, Window::frameBufferDimensions.x, Window::frameBufferDimensions.y);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glEnable(GL_DEPTH_TEST);
+    GLCall(glColorMask(true, true, true, true));
+    GLCall(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+    GLCall(glViewport(0, 0, Window::frameBufferDimensions.x, Window::frameBufferDimensions.y));
+    GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+    GLCall(glEnable(GL_DEPTH_TEST));
 
     m_postProcessShader.bind();
 
     postProcessingInputs.renderTargetTexture->bind(0);
     m_postProcessShader.setUniform1i("renderTargetTexture", 0);
 
-    glBindVertexArray(m_quadVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    GLCall(glBindVertexArray(m_quadVAO));
+    GLCall(glDrawArrays(GL_TRIANGLES, 0, 6));
     Profiler::registerDrawCall("PostFX Pass");
-    glBindVertexArray(0);
+    GLCall(glBindVertexArray(0));
 
     m_postProcessShader.unbind();
 }

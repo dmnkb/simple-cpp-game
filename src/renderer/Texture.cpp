@@ -5,6 +5,7 @@
 #include <stb_image.h>
 
 #include "pch.h"
+#include "renderer/GLDebug.h"
 #include "renderer/Texture.h"
 
 namespace Engine
@@ -88,82 +89,88 @@ Texture::Texture(TextureProperties props, CustomProperties customProps)
     create();
 }
 
+Texture::~Texture()
+{
+    GLCall(glDeleteTextures(1, &id));
+}
+
 void Texture::create()
 {
-    glGenTextures(1, &id);
-    glBindTexture(properties.target, id);
+    GLCall(glGenTextures(1, &id));
+    GLCall(glBindTexture(properties.target, id));
 
     const bool isDepth = IsDepthFormat(properties.internalFormat, properties.format);
 
     if (properties.target == GL_TEXTURE_2D_ARRAY)
     {
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, properties.level, properties.internalFormat, properties.width,
-                     properties.height, properties.layers, properties.border, properties.format, properties.type,
-                     properties.pixels);
+        GLCall(glTexImage3D(GL_TEXTURE_2D_ARRAY, properties.level, properties.internalFormat, properties.width,
+                            properties.height, properties.layers, properties.border, properties.format, properties.type,
+                            properties.pixels));
     }
     else if (properties.target == GL_TEXTURE_CUBE_MAP_ARRAY)
     {
         // NOTE: properties.layers must be 6 * cubeCount (you already set this in your shadow pass)
-        glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, properties.level, properties.internalFormat, properties.width,
-                     properties.height,
-                     properties.layers, // 6 * numCubes
-                     properties.border, properties.format, properties.type, properties.pixels);
+        GLCall(glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, properties.level, properties.internalFormat, properties.width,
+                            properties.height,
+                            properties.layers, // 6 * numCubes
+                            properties.border, properties.format, properties.type, properties.pixels));
 
         // On macOS, clamp mip levels if you’re not providing mipmaps:
-        glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_BASE_LEVEL, 0);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAX_LEVEL, 0);
+        GLCall(glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_BASE_LEVEL, 0));
+        GLCall(glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAX_LEVEL, 0));
     }
     else if (properties.target == GL_TEXTURE_CUBE_MAP)
     {
         // Allocate each face (in case you ever use non-array cubemaps here)
         for (int face = 0; face < 6; ++face)
         {
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, properties.level, properties.internalFormat,
-                         properties.width, properties.height, properties.border, properties.format, properties.type,
-                         nullptr);
+            GLCall(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, properties.level, properties.internalFormat,
+                                properties.width, properties.height, properties.border, properties.format,
+                                properties.type, nullptr));
         }
     }
     else
     {
-        glTexImage2D(properties.target, properties.level, properties.internalFormat, properties.width,
-                     properties.height, properties.border, properties.format, properties.type, properties.pixels);
+        GLCall(glTexImage2D(properties.target, properties.level, properties.internalFormat, properties.width,
+                            properties.height, properties.border, properties.format, properties.type,
+                            properties.pixels));
     }
 
     if (isDepth)
     {
-        glTexParameteri(properties.target, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-        glTexParameteri(properties.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(properties.target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(properties.target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(properties.target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        GLCall(glTexParameteri(properties.target, GL_TEXTURE_COMPARE_MODE, GL_NONE));
+        GLCall(glTexParameteri(properties.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+        GLCall(glTexParameteri(properties.target, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+        GLCall(glTexParameteri(properties.target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER));
+        GLCall(glTexParameteri(properties.target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER));
         if (properties.target == GL_TEXTURE_2D_ARRAY || properties.target == GL_TEXTURE_CUBE_MAP_ARRAY)
-            glTexParameteri(properties.target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+            GLCall(glTexParameteri(properties.target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER));
         const float border[4] = {1.f, 1.f, 1.f, 1.f};
-        glTexParameterfv(properties.target, GL_TEXTURE_BORDER_COLOR, border);
+        GLCall(glTexParameterfv(properties.target, GL_TEXTURE_BORDER_COLOR, border));
     }
     else
     {
         if (customProperties.mipmaps)
-            glGenerateMipmap(properties.target);
-        glTexParameteri(properties.target, GL_TEXTURE_MIN_FILTER, customProperties.minFilter);
-        glTexParameteri(properties.target, GL_TEXTURE_MAG_FILTER, customProperties.magFilter);
-        glTexParameteri(properties.target, GL_TEXTURE_WRAP_S, customProperties.wrapS);
-        glTexParameteri(properties.target, GL_TEXTURE_WRAP_T, customProperties.wrapT);
+            GLCall(glGenerateMipmap(properties.target));
+        GLCall(glTexParameteri(properties.target, GL_TEXTURE_MIN_FILTER, customProperties.minFilter));
+        GLCall(glTexParameteri(properties.target, GL_TEXTURE_MAG_FILTER, customProperties.magFilter));
+        GLCall(glTexParameteri(properties.target, GL_TEXTURE_WRAP_S, customProperties.wrapS));
+        GLCall(glTexParameteri(properties.target, GL_TEXTURE_WRAP_T, customProperties.wrapT));
         if (properties.target == GL_TEXTURE_2D_ARRAY || properties.target == GL_TEXTURE_CUBE_MAP_ARRAY)
-            glTexParameteri(properties.target, GL_TEXTURE_WRAP_R, customProperties.wrapR);
+            GLCall(glTexParameteri(properties.target, GL_TEXTURE_WRAP_R, customProperties.wrapR));
     }
 }
 
 void Texture::bind(uint32_t slot) const
 {
-    glActiveTexture(GL_TEXTURE0 + slot);
-    glBindTexture(properties.target, id);
+    GLCall(glActiveTexture(GL_TEXTURE0 + slot));
+    GLCall(glBindTexture(properties.target, id));
 }
 
 void Texture::unbind(uint32_t slot) const
 {
-    glActiveTexture(GL_TEXTURE0 + slot);
-    glBindTexture(properties.target, 0);
+    GLCall(glActiveTexture(GL_TEXTURE0 + slot));
+    GLCall(glBindTexture(properties.target, 0));
 }
 
 void Texture::resize(int w, int h)
@@ -186,44 +193,39 @@ void Texture::resize(int w, int h)
 
     if (properties.target == GL_TEXTURE_2D_ARRAY)
     {
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, level, properties.internalFormat, w, h, properties.layers, border,
-                     properties.format, properties.type, nullptr);
+        GLCall(glTexImage3D(GL_TEXTURE_2D_ARRAY, level, properties.internalFormat, w, h, properties.layers, border,
+                            properties.format, properties.type, nullptr));
     }
     else if (properties.target == GL_TEXTURE_CUBE_MAP)
     {
         for (int face = 0; face < 6; ++face)
         {
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, level, properties.internalFormat, w, h, border,
-                         properties.format, properties.type, nullptr);
+            GLCall(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, level, properties.internalFormat, w, h, border,
+                                properties.format, properties.type, nullptr));
         }
     }
     else if (properties.target == GL_TEXTURE_CUBE_MAP_ARRAY)
     {
-        glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, properties.internalFormat, w, h, properties.layers, border,
-                     properties.format, properties.type, nullptr);
+        GLCall(glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, properties.internalFormat, w, h, properties.layers,
+                            border, properties.format, properties.type, nullptr));
     }
 
     else
     {
-        glTexImage2D(properties.target, level, properties.internalFormat, w, h, border, properties.format,
-                     properties.type, nullptr);
+        GLCall(glTexImage2D(properties.target, level, properties.internalFormat, w, h, border, properties.format,
+                            properties.type, nullptr));
     }
 
     if (!isDepth && customProperties.mipmaps)
     {
         GLint minFilter = 0;
-        glGetTexParameteriv(properties.target, GL_TEXTURE_MIN_FILTER, &minFilter);
+        GLCall(glGetTexParameteriv(properties.target, GL_TEXTURE_MIN_FILTER, &minFilter));
         if (minFilter == GL_NEAREST_MIPMAP_NEAREST || minFilter == GL_NEAREST_MIPMAP_LINEAR ||
             minFilter == GL_LINEAR_MIPMAP_NEAREST || minFilter == GL_LINEAR_MIPMAP_LINEAR)
         {
-            glGenerateMipmap(properties.target);
+            GLCall(glGenerateMipmap(properties.target));
         }
     }
-}
-
-Texture::~Texture()
-{
-    glDeleteTextures(1, &id);
 }
 
 } // namespace Engine

@@ -4,6 +4,7 @@
 #include "renderer/PassIO.h"
 #include "renderer/RendererAPI.h"
 #include "scene/Scene.h"
+#include "renderer/GLDebug.h"
 
 namespace Engine
 {
@@ -22,8 +23,8 @@ ShadowOutputs ShadowPass::execute(const Ref<Scene>& scene)
 {
     ShadowOutputs out{};
 
-    glEnable(GL_DEPTH_TEST);
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    GLCall(glEnable(GL_DEPTH_TEST));
+    GLCall(glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE));
 
     // TODO: Where to store the results (ECS)
     // Have a separate ShadowData (derived/runtime) component the system writes to, e.g.:
@@ -35,7 +36,7 @@ ShadowOutputs ShadowPass::execute(const Ref<Scene>& scene)
     renderPointLights(scene);
     renderDirectionalLight(scene);
 
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    GLCall(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
 
     out.spotShadowArray = m_spotLightDepthArray;
     out.pointShadowCubeArray = m_pointLightDepthCubeArray;
@@ -61,10 +62,10 @@ void ShadowPass::renderSpotLights(const Ref<Scene>& scene)
         m_spotLightShadowFramebuffer->reattachLayerForAll(lightIndex);
         m_spotLightShadowFramebuffer->bind();
 
-        glViewport(0, 0, m_spotShadowRes, m_spotShadowRes);
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
-        glClear(GL_DEPTH_BUFFER_BIT);
+        GLCall(glViewport(0, 0, m_spotShadowRes, m_spotShadowRes));
+        GLCall(glDrawBuffer(GL_NONE));
+        GLCall(glReadBuffer(GL_NONE));
+        GLCall(glClear(GL_DEPTH_BUFFER_BIT));
 
         const auto& cam = light->getShadowCam();
         const glm::mat4 matrix = cam->getProjectionMatrix() * cam->getViewMatrix();
@@ -75,8 +76,8 @@ void ShadowPass::renderSpotLights(const Ref<Scene>& scene)
         {
             if (!material->isDoubleSided)
             {
-                glEnable(GL_CULL_FACE);
-                glCullFace(GL_FRONT);
+                GLCall(glEnable(GL_CULL_FACE));
+                GLCall(glCullFace(GL_FRONT));
             }
 
             if (auto diffuse = material->getDiffuseMap())
@@ -95,7 +96,7 @@ void ShadowPass::renderSpotLights(const Ref<Scene>& scene)
             }
 
             if (!material->isDoubleSided)
-                glCullFace(GL_BACK);
+                GLCall(glCullFace(GL_BACK));
         }
 
         m_spotLightShadowFramebuffer->unbind();
@@ -116,8 +117,8 @@ void ShadowPass::renderPointLights(const Ref<Scene>& scene)
         return;
 
     m_pointLightShadowFramebuffer->bind();
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
+    GLCall(glDrawBuffer(GL_NONE));
+    GLCall(glReadBuffer(GL_NONE));
 
     // Canonical cube face directions & ups (must match your PointLight)
     static const glm::vec3 kDir[6] = {{+1, 0, 0}, {-1, 0, 0}, {0, +1, 0}, {0, -1, 0}, {0, 0, +1}, {0, 0, -1}};
@@ -138,8 +139,8 @@ void ShadowPass::renderPointLights(const Ref<Scene>& scene)
             // Attach the correct array layer for this (light,face)
             m_pointLightShadowFramebuffer->reattachLayerForAll(baseLayer + face);
 
-            glViewport(0, 0, m_pointShadowRes, m_pointShadowRes);
-            glClear(GL_DEPTH_BUFFER_BIT);
+            GLCall(glViewport(0, 0, m_pointShadowRes, m_pointShadowRes));
+            GLCall(glClear(GL_DEPTH_BUFFER_BIT));
 
             // Build per-face view matrix
             const glm::mat4 view = glm::lookAt(lpos, lpos + kDir[face], kUp[face]);
@@ -155,8 +156,8 @@ void ShadowPass::renderPointLights(const Ref<Scene>& scene)
             {
                 if (!material->isDoubleSided)
                 {
-                    glEnable(GL_CULL_FACE);
-                    glCullFace(GL_FRONT);
+                    GLCall(glEnable(GL_CULL_FACE));
+                    GLCall(glCullFace(GL_FRONT));
                 }
 
                 if (auto diffuse = material->getDiffuseMap())
@@ -175,7 +176,7 @@ void ShadowPass::renderPointLights(const Ref<Scene>& scene)
                 }
 
                 if (!material->isDoubleSided)
-                    glCullFace(GL_BACK);
+                    GLCall(glCullFace(GL_BACK));
             }
         }
     }
@@ -199,10 +200,10 @@ void ShadowPass::renderDirectionalLight(const Ref<Scene>& scene)
         m_directionalLightShadowFramebuffer->reattachLayerForAll(cascade);
         m_directionalLightShadowFramebuffer->bind();
 
-        glViewport(0, 0, m_directionalShadowRes, m_directionalShadowRes);
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
-        glClear(GL_DEPTH_BUFFER_BIT);
+        GLCall(glViewport(0, 0, m_directionalShadowRes, m_directionalShadowRes));
+        GLCall(glDrawBuffer(GL_NONE));
+        GLCall(glReadBuffer(GL_NONE));
+        GLCall(glClear(GL_DEPTH_BUFFER_BIT));
 
         const auto& cam = directionalLight->getShadowCams()[cascade];
         if (!cam)

@@ -13,30 +13,30 @@ Shader::Shader(const char* vertexShaderPath, const char* fragmentShaderPath)
     assert(fragmentShaderText && "[ERROR] in Shader::Shader: fragmentShader is falsy.");
 
     printf("[Shader] Create vertex shader\n");
-    m_VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(m_VertexShaderID, 1, &vertexShaderText, NULL);
-    glCompileShader(m_VertexShaderID);
+    GLCall(m_VertexShaderID = glCreateShader(GL_VERTEX_SHADER));
+    GLCall(glShaderSource(m_VertexShaderID, 1, &vertexShaderText, NULL));
+    GLCall(glCompileShader(m_VertexShaderID));
     checkShaderCompilation(m_VertexShaderID);
 
     printf("[Shader] Create fragment shader\n");
-    m_FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(m_FragmentShaderID, 1, &fragmentShaderText, NULL);
-    glCompileShader(m_FragmentShaderID);
+    GLCall(m_FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER));
+    GLCall(glShaderSource(m_FragmentShaderID, 1, &fragmentShaderText, NULL));
+    GLCall(glCompileShader(m_FragmentShaderID));
     checkShaderCompilation(m_FragmentShaderID);
 
     printf("[Shader] Link shader\n");
-    glAttachShader(m_ProgramID, m_VertexShaderID);
-    glAttachShader(m_ProgramID, m_FragmentShaderID);
-    glLinkProgram(m_ProgramID);
+    GLCall(glAttachShader(m_ProgramID, m_VertexShaderID));
+    GLCall(glAttachShader(m_ProgramID, m_FragmentShaderID));
+    GLCall(glLinkProgram(m_ProgramID));
     checkProgramLinking(m_ProgramID);
 }
 
 Shader::~Shader()
 {
     unbind();
-    glDeleteShader(m_FragmentShaderID);
-    glDeleteShader(m_VertexShaderID);
-    glDeleteProgram(m_ProgramID);
+    GLCall(glDeleteShader(m_FragmentShaderID));
+    GLCall(glDeleteShader(m_VertexShaderID));
+    GLCall(glDeleteProgram(m_ProgramID));
 }
 
 std::optional<ShaderSource> Shader::readShaderFiles(const char* vertexShaderPath, const char* fragmentShaderPath)
@@ -72,24 +72,25 @@ std::optional<ShaderSource> Shader::readShaderFiles(const char* vertexShaderPath
 
 void Shader::bind()
 {
-    glUseProgram(m_ProgramID);
+    GLCall(glUseProgram(m_ProgramID));
 }
 void Shader::unbind()
 {
-    glUseProgram(0);
+    GLCall(glUseProgram(0));
 }
 
 void Shader::setVertexAttribute(const char* name, GLint size, GLenum type, GLboolean normalized, GLsizei stride,
                                 const void* pointer)
 {
-    GLint location = glGetAttribLocation(m_ProgramID, name);
+    GLint location;
+    GLCall(location = glGetAttribLocation(m_ProgramID, name));
     if (location == -1)
         std::cerr << "[Shader] ERROR: (" << shaderNames.vertex << "): Attribute '" << name
                   << "' not found in shader program." << std::endl;
     else
     {
-        glEnableVertexAttribArray(location);
-        glVertexAttribPointer(location, size, type, normalized, stride, pointer);
+        GLCall(glEnableVertexAttribArray(location));
+        GLCall(glVertexAttribPointer(location, size, type, normalized, stride, pointer));
     }
 }
 
@@ -97,70 +98,70 @@ void Shader::setUniformFloat(const char* name, const float value)
 {
     auto location = getCachedLocation(name);
     if (location >= 0)
-        glUniform1f(location, value);
+        GLCall(glUniform1f(location, value));
 }
 
 void Shader::setUniformMatrix4fv(const char* name, const glm::mat4 value)
 {
     auto location = getCachedLocation(name);
     if (location >= 0)
-        glUniformMatrix4fv(location, 1, GL_FALSE, (const GLfloat*)&value);
+        GLCall(glUniformMatrix4fv(location, 1, GL_FALSE, (const GLfloat*)&value));
 }
 
 void Shader::setUniformMatrix4fvArray(const char* name, const int count, glm::f32* pointer)
 {
     auto location = getCachedLocation(name);
     if (location >= 0)
-        glUniformMatrix4fv(location, count, GL_FALSE, pointer);
+        GLCall(glUniformMatrix4fv(location, count, GL_FALSE, pointer));
 }
 
 void Shader::setUniformMatrix3fv(const char* name, const glm::mat3 value)
 {
     auto location = getCachedLocation(name);
     if (location >= 0)
-        glUniformMatrix3fv(location, 1, GL_FALSE, (const GLfloat*)&value);
+        GLCall(glUniformMatrix3fv(location, 1, GL_FALSE, (const GLfloat*)&value));
 }
 
 void Shader::setUniform3fv(const char* name, const glm::vec3 value)
 {
     auto location = getCachedLocation(name);
     if (location >= 0)
-        glUniform3fv(location, 1, (const GLfloat*)&value);
+        GLCall(glUniform3fv(location, 1, (const GLfloat*)&value));
 }
 
 void Shader::setUniform4fv(const char* name, const glm::vec4 value)
 {
     auto location = getCachedLocation(name);
     if (location >= 0)
-        glUniform4fv(location, 1, (const GLfloat*)&value);
+        GLCall(glUniform4fv(location, 1, (const GLfloat*)&value));
 }
 
 void Shader::setUniform1i(const char* name, GLint value)
 {
     auto location = getCachedLocation(name);
     if (location >= 0)
-        glUniform1i(location, value);
+        GLCall(glUniform1i(location, value));
 }
 
 void Shader::setUniform1f(const char* name, float value)
 {
     auto location = getCachedLocation(name);
     if (location >= 0)
-        glUniform1f(location, value);
+        GLCall(glUniform1f(location, value));
 }
 
 void Shader::setUniform1iv(const char* name, GLint samplerIDs[16])
 {
     auto location = getCachedLocation(name);
     if (location >= 0)
-        glUniform1iv(location, 16, samplerIDs);
+        GLCall(glUniform1iv(location, 16, samplerIDs));
 }
 
 void Shader::setIntArray(const char* name, GLint* values, GLsizei count)
 {
     GLint location = getCachedLocation(name);
     if (location >= 0)
-        glUniform1iv(location, count, values);
+        GLCall(glUniform1iv(location, count, values));
 }
 
 GLint Shader::getCachedLocation(const char* name)
@@ -169,7 +170,8 @@ GLint Shader::getCachedLocation(const char* name)
     if (it != m_UniformLocationCache.end())
         return it->second;
 
-    GLint location = glGetUniformLocation(m_ProgramID, name);
+    GLint location;
+    GLCall(location = glGetUniformLocation(m_ProgramID, name));
     // Cache exact name; for arrays, callers must pass "name[index]" or "name[0]"
     m_UniformLocationCache[name] = location;
     return location;
@@ -178,11 +180,11 @@ GLint Shader::getCachedLocation(const char* name)
 void Shader::checkShaderCompilation(GLuint shader)
 {
     GLint success;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    GLCall(glGetShaderiv(shader, GL_COMPILE_STATUS, &success));
     if (!success)
     {
         GLchar infoLog[1024];
-        glGetShaderInfoLog(shader, 1024, NULL, infoLog);
+        GLCall(glGetShaderInfoLog(shader, 1024, NULL, infoLog));
         fprintf(stderr, "[ERROR] Error compiling shader: %s\n", infoLog);
     }
 }
@@ -190,11 +192,11 @@ void Shader::checkShaderCompilation(GLuint shader)
 void Shader::checkProgramLinking(GLuint program)
 {
     GLint success;
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    GLCall(glGetProgramiv(program, GL_LINK_STATUS, &success));
     if (!success)
     {
         GLchar infoLog[1024];
-        glGetProgramInfoLog(program, 1024, NULL, infoLog);
+        GLCall(glGetProgramInfoLog(program, 1024, NULL, infoLog));
         fprintf(stderr, "[ERROR] Error linking program: %s\n", infoLog);
     }
 }

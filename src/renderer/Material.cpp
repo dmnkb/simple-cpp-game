@@ -3,17 +3,18 @@
 #include "core/Window.h"
 #include "pch.h"
 #include "renderer/Material.h"
+#include "renderer/GLDebug.h"
 
 namespace Engine
 {
 
 Material::Material(Ref<Shader>& shader, MaterialProps props) : m_shader(shader), m_props(props)
 {
-    glGenBuffers(1, &m_uboMaterial);
-    glBindBuffer(GL_UNIFORM_BUFFER, m_uboMaterial);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(MaterialProps), nullptr, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_uboMaterial); // binding = 1 for MaterialPropsBlock
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    GLCall(glGenBuffers(1, &m_uboMaterial));
+    GLCall(glBindBuffer(GL_UNIFORM_BUFFER, m_uboMaterial));
+    GLCall(glBufferData(GL_UNIFORM_BUFFER, sizeof(MaterialProps), nullptr, GL_DYNAMIC_DRAW));
+    GLCall(glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_uboMaterial)); // binding = 1 for MaterialPropsBlock
+    GLCall(glBindBuffer(GL_UNIFORM_BUFFER, 0));
 }
 
 void Material::bind()
@@ -30,15 +31,16 @@ void Material::bind()
     // FIXME: Fuck this, the binding points need to be aligned somehow. Too much randomness
     GLuint uboBindingPoint = 3;
     GLuint prog = m_shader->getProgramID();
-    GLuint blockIndex = glGetUniformBlockIndex(prog, "MaterialPropsBlock");
+    GLuint blockIndex;
+    GLCall(blockIndex = glGetUniformBlockIndex(prog, "MaterialPropsBlock"));
     if (blockIndex != GL_INVALID_INDEX)
     {
-        glUniformBlockBinding(prog, blockIndex, uboBindingPoint);
-        glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, m_uboMaterial);
+        GLCall(glUniformBlockBinding(prog, blockIndex, uboBindingPoint));
+        GLCall(glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, m_uboMaterial));
 
-        glBindBuffer(GL_UNIFORM_BUFFER, m_uboMaterial);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(MaterialProps), &m_props);
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        GLCall(glBindBuffer(GL_UNIFORM_BUFFER, m_uboMaterial));
+        GLCall(glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(MaterialProps), &m_props));
+        GLCall(glBindBuffer(GL_UNIFORM_BUFFER, 0));
     }
 }
 

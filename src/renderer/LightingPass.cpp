@@ -10,6 +10,7 @@
 #include "renderer/Framebuffer.h"
 #include "renderer/LightingPass.h"
 #include "renderer/RendererAPI.h"
+#include "renderer/GLDebug.h"
 #include "scene/Scene.h"
 
 namespace Engine
@@ -19,25 +20,25 @@ LightingPass::LightingPass()
 {
     // MARK: Shadow UBO binding
     // Spot UBO (binding = 0)
-    glGenBuffers(1, &m_spotLightsUBO);
-    glBindBuffer(GL_UNIFORM_BUFFER, m_spotLightsUBO);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(SpotLightsUBO), nullptr, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_spotLightsUBO);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    GLCall(glGenBuffers(1, &m_spotLightsUBO));
+    GLCall(glBindBuffer(GL_UNIFORM_BUFFER, m_spotLightsUBO));
+    GLCall(glBufferData(GL_UNIFORM_BUFFER, sizeof(SpotLightsUBO), nullptr, GL_DYNAMIC_DRAW));
+    GLCall(glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_spotLightsUBO));
+    GLCall(glBindBuffer(GL_UNIFORM_BUFFER, 0));
 
     // Point UBO (binding = 1)
-    glGenBuffers(1, &m_pointLightsUBO);
-    glBindBuffer(GL_UNIFORM_BUFFER, m_pointLightsUBO);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(PointLightsUBO), nullptr, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_pointLightsUBO);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    GLCall(glGenBuffers(1, &m_pointLightsUBO));
+    GLCall(glBindBuffer(GL_UNIFORM_BUFFER, m_pointLightsUBO));
+    GLCall(glBufferData(GL_UNIFORM_BUFFER, sizeof(PointLightsUBO), nullptr, GL_DYNAMIC_DRAW));
+    GLCall(glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_pointLightsUBO));
+    GLCall(glBindBuffer(GL_UNIFORM_BUFFER, 0));
 
     // Directional UBO (binding = 2)
-    glGenBuffers(1, &m_directionalLightUBO);
-    glBindBuffer(GL_UNIFORM_BUFFER, m_directionalLightUBO);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(DirectionalLightUBO), nullptr, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 2, m_directionalLightUBO);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    GLCall(glGenBuffers(1, &m_directionalLightUBO));
+    GLCall(glBindBuffer(GL_UNIFORM_BUFFER, m_directionalLightUBO));
+    GLCall(glBufferData(GL_UNIFORM_BUFFER, sizeof(DirectionalLightUBO), nullptr, GL_DYNAMIC_DRAW));
+    GLCall(glBindBufferBase(GL_UNIFORM_BUFFER, 2, m_directionalLightUBO));
+    GLCall(glBindBuffer(GL_UNIFORM_BUFFER, 0));
 
     // MARK: Framebuffers
     m_frameBuffer = CreateRef<Framebuffer>();
@@ -80,9 +81,9 @@ LightingPass::LightingPass()
 
 LightingPass::~LightingPass()
 {
-    glDeleteBuffers(1, &m_spotLightsUBO);
-    glDeleteBuffers(1, &m_pointLightsUBO);
-    glDeleteBuffers(1, &m_directionalLightUBO);
+    GLCall(glDeleteBuffers(1, &m_spotLightsUBO));
+    GLCall(glDeleteBuffers(1, &m_pointLightsUBO));
+    GLCall(glDeleteBuffers(1, &m_directionalLightUBO));
 }
 
 // MARK: Execute
@@ -100,12 +101,12 @@ LightingOutputs LightingPass::execute(const Ref<Scene>& scene, const LightingInp
 
         if (material->isDoubleSided)
         {
-            glDisable(GL_CULL_FACE);
+            GLCall(glDisable(GL_CULL_FACE));
         }
         else
         {
-            glEnable(GL_CULL_FACE);
-            glCullFace(GL_BACK);
+            GLCall(glEnable(GL_CULL_FACE));
+            GLCall(glCullFace(GL_BACK));
         }
 
         for (const auto& [mesh, transforms] : meshMap)
@@ -114,7 +115,7 @@ LightingOutputs LightingPass::execute(const Ref<Scene>& scene, const LightingInp
             Profiler::registerDrawCall("Lighting Pass");
         }
 
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        GLCall(glBindBuffer(GL_UNIFORM_BUFFER, 0));
         material->unbind();
     }
 
@@ -162,13 +163,15 @@ void LightingPass::uploadUniforms(const Ref<Scene>& scene, const Ref<Material>& 
         // UBO (binding = 0) TODO: Binding point should be configured somewhere, this is too random
         {
             GLuint prog = material->getShader()->getProgramID();
-            if (GLuint blockIndex = glGetUniformBlockIndex(prog, "SpotLights"); blockIndex != GL_INVALID_INDEX)
+            GLuint blockIndex;
+            GLCall(blockIndex = glGetUniformBlockIndex(prog, "SpotLights"));
+            if (blockIndex != GL_INVALID_INDEX)
             {
-                glUniformBlockBinding(prog, blockIndex, 0);
-                glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_spotLightsUBO);
-                glBindBuffer(GL_UNIFORM_BUFFER, m_spotLightsUBO);
-                glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SpotLightsUBO), &m_spotLightsCPU);
-                glBindBuffer(GL_UNIFORM_BUFFER, 0);
+                GLCall(glUniformBlockBinding(prog, blockIndex, 0));
+                GLCall(glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_spotLightsUBO));
+                GLCall(glBindBuffer(GL_UNIFORM_BUFFER, m_spotLightsUBO));
+                GLCall(glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SpotLightsUBO), &m_spotLightsCPU));
+                GLCall(glBindBuffer(GL_UNIFORM_BUFFER, 0));
             }
         }
 
@@ -180,8 +183,8 @@ void LightingPass::uploadUniforms(const Ref<Scene>& scene, const Ref<Material>& 
             // Ensure linear filtering
             // TODO: Check, why this needs to be activated "again" (Should be during creation)
             // glActiveTexture(GL_TEXTURE0 + SPOT_SHADOW_TU);
-            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            GLCall(glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+            GLCall(glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
             if (material->hasUniform("uSpotLightShadowMapArray"))
                 material->setUniform1i("uSpotLightShadowMapArray", SPOT_SHADOW_TU);
         }
@@ -223,13 +226,15 @@ void LightingPass::uploadUniforms(const Ref<Scene>& scene, const Ref<Material>& 
         // UBO (binding = 0) TODO: Binding point should be configured somewhere, this is too random
         {
             GLuint prog = material->getShader()->getProgramID();
-            if (GLuint blockIndex = glGetUniformBlockIndex(prog, "PointLights"); blockIndex != GL_INVALID_INDEX)
+            GLuint blockIndex;
+            GLCall(blockIndex = glGetUniformBlockIndex(prog, "PointLights"));
+            if (blockIndex != GL_INVALID_INDEX)
             {
-                glUniformBlockBinding(prog, blockIndex, 1);
-                glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_pointLightsUBO);
-                glBindBuffer(GL_UNIFORM_BUFFER, m_pointLightsUBO);
-                glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PointLightsUBO), &m_pointLightsCPU);
-                glBindBuffer(GL_UNIFORM_BUFFER, 0);
+                GLCall(glUniformBlockBinding(prog, blockIndex, 1));
+                GLCall(glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_pointLightsUBO));
+                GLCall(glBindBuffer(GL_UNIFORM_BUFFER, m_pointLightsUBO));
+                GLCall(glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PointLightsUBO), &m_pointLightsCPU));
+                GLCall(glBindBuffer(GL_UNIFORM_BUFFER, 0));
             }
         }
 
@@ -262,13 +267,15 @@ void LightingPass::uploadUniforms(const Ref<Scene>& scene, const Ref<Material>& 
         // UBO (binding = 2) TODO: Binding point should be configured somewhere, this is too random
         {
             GLuint prog = material->getShader()->getProgramID();
-            if (GLuint blockIndex = glGetUniformBlockIndex(prog, "DirectionalLight"); blockIndex != GL_INVALID_INDEX)
+            GLuint blockIndex;
+            GLCall(blockIndex = glGetUniformBlockIndex(prog, "DirectionalLight"));
+            if (blockIndex != GL_INVALID_INDEX)
             {
-                glUniformBlockBinding(prog, blockIndex, 2);
-                glBindBufferBase(GL_UNIFORM_BUFFER, 2, m_directionalLightUBO);
-                glBindBuffer(GL_UNIFORM_BUFFER, m_directionalLightUBO);
-                glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(DirectionalLightUBO), &m_directionalLightCPU);
-                glBindBuffer(GL_UNIFORM_BUFFER, 0);
+                GLCall(glUniformBlockBinding(prog, blockIndex, 2));
+                GLCall(glBindBufferBase(GL_UNIFORM_BUFFER, 2, m_directionalLightUBO));
+                GLCall(glBindBuffer(GL_UNIFORM_BUFFER, m_directionalLightUBO));
+                GLCall(glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(DirectionalLightUBO), &m_directionalLightCPU));
+                GLCall(glBindBuffer(GL_UNIFORM_BUFFER, 0));
             }
         }
 
@@ -280,8 +287,8 @@ void LightingPass::uploadUniforms(const Ref<Scene>& scene, const Ref<Material>& 
             // Ensure linear filtering
             // TODO: Check, why this needs to be activated "again" (Should be during creation)
             // glActiveTexture(GL_TEXTURE0 + DIRECTIONAL_SHADOW_TU);
-            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            GLCall(glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+            GLCall(glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
             if (material->hasUniform("uDirectionalLightShadowMapArray"))
                 material->setUniform1i("uDirectionalLightShadowMapArray", DIRECTIONAL_SHADOW_TU);
         }

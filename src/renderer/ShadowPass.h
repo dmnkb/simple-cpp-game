@@ -2,6 +2,7 @@
 
 #include "renderer/DirectionalLight.h"
 #include "renderer/Framebuffer.h"
+#include "renderer/GLDebug.h"
 #include "renderer/PassIO.h"
 #include "renderer/PointLight.h"
 #include "renderer/Shader.h"

@@ -1,5 +1,6 @@
 #include "core/Window.h"
 #include "core/Core.h"
+#include "renderer/GLDebug.h"
 
 namespace Engine
 {
@@ -119,7 +120,7 @@ void framebufferSizeCallback(GLFWwindow* window, int fbW, int fbH)
 
     frameBufferDimensions = {float(fbW), float(fbH)};
 
-    glViewport(0, 0, fbW, fbH);
+    GLCall(glViewport(0, 0, fbW, fbH));
 
     auto ev = CreateRef<WindowReziseEvent>(fbW, fbH);
     EventManager::queueEvent(ev);
