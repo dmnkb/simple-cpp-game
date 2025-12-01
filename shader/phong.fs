@@ -65,7 +65,7 @@ layout(std140) uniform MaterialPropsBlock
 // MARK: Tunables
 const float ALPHA_CUTOFF = 0.5;
 
-// Bias tuning (keep as before)
+// Bias tuning
 const float MIN_BIAS = 0.00012;
 const float SLOPE_BIAS = 0.0025;
 const float RPDB_SCALE = 0.75;
@@ -85,8 +85,9 @@ const int PCSS_SAMPLES_PCF = 12;
 const float PCSS_MAX_FILTER = 15.0;
 const float PCSS_MIN_FILTER = 1.0;
 
-// Optional: tiny world-space normal offset ONLY for the spot shadow test
-const float SPOT_NORMAL_OFFSET_WS = 0.015; // ~mm scale; tune per scene
+// Optional: tiny world-space normal offsets
+const float SPOT_NORMAL_OFFSET_WS = 0.015; // spot
+const float DIR_NORMAL_OFFSET_WS = 0.010;  // directional
 
 // MARK: Helpers (unchanged)
 float attenuation(int i, float dist)
@@ -118,13 +119,6 @@ float slopeBias(vec3 N, vec3 L)
 {
     float nl = max(dot(N, L), 0.0);
     return MIN_BIAS + SLOPE_BIAS * (1.0 - nl);
-}
-
-float rpdbFromNdc(vec3 ndc)
-{
-    float ref = ndc.z * 0.5 + 0.5;
-    vec2 d = vec2(dFdx(ref), dFdy(ref));
-    return RPDB_SCALE * length(d);
 }
 
 // ------------------------
@@ -267,14 +261,75 @@ float pcfCube(samplerCubeArray shad, vec3 dir, float layer, float refDepth, floa
     return sum / max(wsum, 1e-6);
 }
 
-// ---------------------------
-// Directional light PCSS (unchanged)
-// ---------------------------
+// =====================================================
+// DIRECTIONAL LIGHT — PCSS with base + slope bias
+// =====================================================
+
+// Helper for directional shadow sampling (no RPDB → avoids cascade seams)
+float sampleCascadePCSS(int cascadeIndex, vec3 worldPos, vec3 N, vec3 L, float seedOffset)
+{
+    vec4 clip = uDirectionalLightSpaceMatrix[cascadeIndex] * vec4(worldPos, 1.0);
+    vec3 ndc = clip.xyz / clip.w;
+
+    vec2 uv = ndc.xy * 0.5 + 0.5;
+    float ref = ndc.z * 0.5 + 0.5;
+
+    // 1. Calculate World Space Texel Size (orthographic)
+    float scaleX = length(uDirectionalLightSpaceMatrix[cascadeIndex][0].xyz);
+    float texelSizeWS = (2.0 / scaleX) / 1024.0; // Assuming 1024 map size
+
+    // 2. Calculate World Space Z Range
+    float scaleZ = length(uDirectionalLightSpaceMatrix[cascadeIndex][2].xyz);
+    float zRangeWS = 2.0 / scaleZ;
+
+    // --- Bias: base + slope only (same across cascades) ---
+    float baseBias = MIN_BIAS * 0.5;
+    float slope = slopeBias(N, L) * 0.7; // slightly scaled
+    float bias = baseBias + slope;
+
+    float r = clamp(ref - bias, 0.0, 1.0);
+
+    float ang = hash12(gl_FragCoord.xy + vec2(seedOffset)) * 6.2831853;
+    mat2 R = rot2(ang);
+
+    // 3. WS-consistent search radius
+    float targetSearchRadiusWS = uDirLightRadiusWS * 2.0 * 10.0;
+    float searchRadiusTexels = targetSearchRadiusWS / texelSizeWS;
+    searchRadiusTexels = clamp(searchRadiusTexels, 1.0, 25.0);
+
+    float avgBlocker;
+    bool hasBlocker = findBlocker2D(uDirectionalLightShadowMapArray, uv, float(cascadeIndex), r, uDirShadowTexel,
+                                    searchRadiusTexels, avgBlocker, R);
+
+    if (!hasBlocker)
+        return 1.0;
+
+    // 4. Penumbra in World Space
+    float depthDiff = r - avgBlocker;
+    float distWS = depthDiff * zRangeWS;
+    float penumbraWS = distWS * uDirLightRadiusWS;
+
+    // 5. Convert Penumbra to Texels
+    float penumbraTexels = penumbraWS / texelSizeWS;
+    penumbraTexels = clamp(penumbraTexels, PCSS_MIN_FILTER, PCSS_MAX_FILTER);
+
+    return pcf2D(uDirectionalLightShadowMapArray, uv, float(cascadeIndex), r, uDirShadowTexel, penumbraTexels, R);
+}
+
 float shadowFactorDirectional(vec3 worldPos, vec3 N, vec3 L)
 {
+    const float BLEND_RANGE = 0.20; // 20% blend zone near cascade edges
+
+    // Small WS normal offset to reduce self-occlusion
+    vec3 wsOffsetPos = worldPos + N * DIR_NORMAL_OFFSET_WS;
+
+    // 1. Find the best cascade
+    int primaryCascade = -1;
+    float ndcDist = 0.0;
+
     for (int c = 0; c < DIRECTIONAL_LIGHT_CASCADES; ++c)
     {
-        vec4 clip = uDirectionalLightSpaceMatrix[c] * vec4(worldPos, 1.0);
+        vec4 clip = uDirectionalLightSpaceMatrix[c] * vec4(wsOffsetPos, 1.0);
         if (clip.w <= 0.0)
             continue;
 
@@ -282,32 +337,42 @@ float shadowFactorDirectional(vec3 worldPos, vec3 N, vec3 L)
         if (ndc.x < -1.0 || ndc.x > 1.0 || ndc.y < -1.0 || ndc.y > 1.0 || ndc.z < -1.0 || ndc.z > 1.0)
             continue;
 
-        vec2 uv = ndc.xy * 0.5 + 0.5;
-        float ref = ndc.z * 0.5 + 0.5;
-
-        float bias = slopeBias(N, L) + rpdbFromNdc(ndc);
-        float r = ref - bias;
-
-        float ang = hash12(gl_FragCoord.xy) * 6.2831853;
-        mat2 R = rot2(ang);
-
-        float searchRadius = clamp(uDirLightRadiusWS * 150.0, 1.0, 25.0);
-        float avgBlocker;
-        bool hasBlocker = findBlocker2D(uDirectionalLightShadowMapArray, uv, float(c), r, uDirShadowTexel, searchRadius,
-                                        avgBlocker, R);
-        if (!hasBlocker)
-            return 1.0;
-
-        float penumbra = clamp(((r - avgBlocker) / max(avgBlocker, 1e-4)) * 150.0 * uDirLightRadiusWS, PCSS_MIN_FILTER,
-                               PCSS_MAX_FILTER);
-
-        return pcf2D(uDirectionalLightShadowMapArray, uv, float(c), r, uDirShadowTexel, penumbra, R);
+        primaryCascade = c;
+        ndcDist = max(max(abs(ndc.x), abs(ndc.y)), abs(ndc.z));
+        break;
     }
-    return 1.0;
+
+    if (primaryCascade == -1)
+        return 1.0; // outside all cascades
+
+    // 2. Sample the primary cascade
+    float shadow = sampleCascadePCSS(primaryCascade, wsOffsetPos, N, L, 0.0);
+
+    // 3. Blend with the next cascade near edges
+    int nextCascade = primaryCascade + 1;
+    if (nextCascade < DIRECTIONAL_LIGHT_CASCADES && ndcDist > (1.0 - BLEND_RANGE))
+    {
+        vec4 clip1 = uDirectionalLightSpaceMatrix[nextCascade] * vec4(wsOffsetPos, 1.0);
+        if (clip1.w > 0.0)
+        {
+            vec3 ndc1 = clip1.xyz / clip1.w;
+            if (ndc1.x >= -1.0 && ndc1.x <= 1.0 && ndc1.y >= -1.0 && ndc1.y <= 1.0 && ndc1.z >= -1.0 && ndc1.z <= 1.0)
+            {
+                float shadowNext = sampleCascadePCSS(nextCascade, wsOffsetPos, N, L, 1.0);
+
+                float blendFactor = (ndcDist - (1.0 - BLEND_RANGE)) / BLEND_RANGE;
+                blendFactor = clamp(blendFactor, 0.0, 1.0);
+
+                shadow = mix(shadow, shadowNext, blendFactor);
+            }
+        }
+    }
+
+    return shadow;
 }
 
 // =====================================================
-// SPOT LIGHT — linearized PCSS + RPDB to fix peter-panning
+// SPOT LIGHT — linearized PCSS + RPDB
 // =====================================================
 
 // Light's near plane used for the spot shadow camera (matches your C++)
@@ -421,11 +486,11 @@ float shadowFactorSpot(int i, vec3 worldPos, vec3 N, vec3 L)
     // Use your light's far from UBO (conesRange[i].z)
     float farP = max(conesRange[i].z, SPOT_NEAR + 1e-4);
 
-    // --- New: receiver-plane depth bias (computed in non-linear depth space) ---
+    // Receiver-plane depth bias
     float rpdb = rpdbSpot(clip, uSpotShadowTexel);
 
     // Gentler base & slope bias; RPDB does the heavy lifting
-    float bias = MIN_BIAS * 0.1 + slopeBias(N, L) * 0.005;
+    float bias = MIN_BIAS * 0.1 + slopeBias(N, L) * 0.005 + rpdb;
 
     // Apply bias in the same space as the shadow map value
     float r = clamp(ref - bias, 0.0, 1.0);
@@ -436,9 +501,9 @@ float shadowFactorSpot(int i, vec3 worldPos, vec3 N, vec3 L)
     float ang = hash12(gl_FragCoord.xy) * 6.2831853;
     mat2 R = rot2(ang);
 
-    // Make search/filter grow with distance (simple distance scale)
+    // Make search/filter grow with distance
     float distScale = clamp(refLin / farP, 0.0, 1.0); // 0 near .. 1 far
-    float searchRadius = clamp(uSpotLightRadiusWS * (120.0) * (0.75 + 0.75 * distScale), 1.0, 25.0);
+    float searchRadius = clamp(uSpotLightRadiusWS * 120.0 * (0.75 + 0.75 * distScale), 1.0, 25.0);
 
     float avgBlockerLin;
     bool hasBlocker = findBlocker2D_linear(uSpotLightShadowMapArray, uv, float(i), refLin, uSpotShadowTexel,
@@ -446,8 +511,8 @@ float shadowFactorSpot(int i, vec3 worldPos, vec3 N, vec3 L)
     if (!hasBlocker)
         return 1.0;
 
-    float penumbraRaw = ((refLin - avgBlockerLin) / max(avgBlockerLin, 1e-4)) * uSpotLightRadiusWS * (120.0) *
-                        (0.75 + 0.75 * distScale);
+    float penumbraRaw =
+        ((refLin - avgBlockerLin) / max(avgBlockerLin, 1e-4)) * uSpotLightRadiusWS * 120.0 * (0.75 + 0.75 * distScale);
     float penumbra = clamp(penumbraRaw, PCSS_MIN_FILTER, PCSS_MAX_FILTER);
 
     return pcf2D_linear(uSpotLightShadowMapArray, uv, float(i), refLin, uSpotShadowTexel, penumbra, R, SPOT_NEAR, farP);
