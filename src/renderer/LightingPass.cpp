@@ -77,6 +77,29 @@ LightingPass::LightingPass()
     m_frameBuffer->attachTexture(m_renderTargetTexture);
     m_frameBuffer->attachTexture(depthTexture);
     m_frameBuffer->dynamicSize = true;
+
+    // MARK: Create Samplers
+    // Regular sampler (no comparison)
+    GLCall(glGenSamplers(1, &m_samplerRegular));
+    GLCall(glSamplerParameteri(m_samplerRegular, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    GLCall(glSamplerParameteri(m_samplerRegular, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+    GLCall(glSamplerParameteri(m_samplerRegular, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER));
+    GLCall(glSamplerParameteri(m_samplerRegular, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER));
+    GLCall(glSamplerParameteri(m_samplerRegular, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER));
+    GLCall(glSamplerParameteri(m_samplerRegular, GL_TEXTURE_COMPARE_MODE, GL_NONE));
+    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    GLCall(glSamplerParameterfv(m_samplerRegular, GL_TEXTURE_BORDER_COLOR, borderColor));
+
+    // Comparison sampler (hardware PCF)
+    GLCall(glGenSamplers(1, &m_samplerCompare));
+    GLCall(glSamplerParameteri(m_samplerCompare, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    GLCall(glSamplerParameteri(m_samplerCompare, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+    GLCall(glSamplerParameteri(m_samplerCompare, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER));
+    GLCall(glSamplerParameteri(m_samplerCompare, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER));
+    GLCall(glSamplerParameteri(m_samplerCompare, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER));
+    GLCall(glSamplerParameteri(m_samplerCompare, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE));
+    GLCall(glSamplerParameteri(m_samplerCompare, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL));
+    GLCall(glSamplerParameterfv(m_samplerCompare, GL_TEXTURE_BORDER_COLOR, borderColor));
 }
 
 LightingPass::~LightingPass()
@@ -84,6 +107,8 @@ LightingPass::~LightingPass()
     GLCall(glDeleteBuffers(1, &m_spotLightsUBO));
     GLCall(glDeleteBuffers(1, &m_pointLightsUBO));
     GLCall(glDeleteBuffers(1, &m_directionalLightUBO));
+    GLCall(glDeleteSamplers(1, &m_samplerRegular));
+    GLCall(glDeleteSamplers(1, &m_samplerCompare));
 }
 
 // MARK: Execute
@@ -177,16 +202,20 @@ void LightingPass::uploadUniforms(const Ref<Scene>& scene, const Ref<Material>& 
 
         // Shadow array
         constexpr GLint SPOT_SHADOW_TU = 5; // Texture Unit is arbitrary. Needs to be a free one
+        constexpr GLint SPOT_SHADOW_CMP_TU = 8; // Comparison sampler for hardware PCF
         if (lightInputs.spotShadowArray)
         {
+            // Regular sampler (for blocker search - needs depth values)
             lightInputs.spotShadowArray->bind(SPOT_SHADOW_TU);
-            // Ensure linear filtering
-            // TODO: Check, why this needs to be activated "again" (Should be during creation)
-            // glActiveTexture(GL_TEXTURE0 + SPOT_SHADOW_TU);
-            GLCall(glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-            GLCall(glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+            GLCall(glBindSampler(SPOT_SHADOW_TU, m_samplerRegular));
             if (material->hasUniform("uSpotLightShadowMapArray"))
                 material->setUniform1i("uSpotLightShadowMapArray", SPOT_SHADOW_TU);
+            
+            // Comparison sampler (for PCF filtering - hardware accelerated)
+            lightInputs.spotShadowArray->bind(SPOT_SHADOW_CMP_TU);
+            GLCall(glBindSampler(SPOT_SHADOW_CMP_TU, m_samplerCompare));
+            if (material->hasUniform("uSpotLightShadowMapArrayCmp"))
+                material->setUniform1i("uSpotLightShadowMapArrayCmp", SPOT_SHADOW_CMP_TU);
         }
 
         // Matrices
@@ -240,14 +269,21 @@ void LightingPass::uploadUniforms(const Ref<Scene>& scene, const Ref<Material>& 
 
         // Shadow array
         {
-            // TODO: Should be configured somewhere, this is too random
-            constexpr GLint POINT_SHADOW_TU = 6;
+            constexpr GLint POINT_SHADOW_TU = 6; // Regular sampler
+            constexpr GLint POINT_SHADOW_CMP_TU = 9; // Comparison sampler for hardware PCF
             if (lightInputs.pointShadowCubeArray)
             {
+                // Regular sampler (for blocker search - needs depth values)
                 lightInputs.pointShadowCubeArray->bind(POINT_SHADOW_TU);
-
+                GLCall(glBindSampler(POINT_SHADOW_TU, m_samplerRegular));
                 if (material->hasUniform("uPointLightShadowCubeArray"))
                     material->setUniform1i("uPointLightShadowCubeArray", POINT_SHADOW_TU);
+                
+                // Comparison sampler (for PCF filtering - hardware accelerated)
+                lightInputs.pointShadowCubeArray->bind(POINT_SHADOW_CMP_TU);
+                GLCall(glBindSampler(POINT_SHADOW_CMP_TU, m_samplerCompare));
+                if (material->hasUniform("uPointLightShadowCubeArrayCmp"))
+                    material->setUniform1i("uPointLightShadowCubeArrayCmp", POINT_SHADOW_CMP_TU);
             }
 
             if (material->hasUniform("uPointLightCount"))
@@ -280,17 +316,21 @@ void LightingPass::uploadUniforms(const Ref<Scene>& scene, const Ref<Material>& 
         }
 
         // Shadow array
-        constexpr GLint DIRECTIONAL_SHADOW_TU = 7; // Texture Unit is arbitrary. Needs to be a free one
+        constexpr GLint DIRECTIONAL_SHADOW_TU = 7; // Regular sampler
+        constexpr GLint DIRECTIONAL_SHADOW_CMP_TU = 10; // Comparison sampler for hardware PCF
         if (lightInputs.directionalShadowArray)
         {
+            // Regular sampler (for blocker search - needs depth values)
             lightInputs.directionalShadowArray->bind(DIRECTIONAL_SHADOW_TU);
-            // Ensure linear filtering
-            // TODO: Check, why this needs to be activated "again" (Should be during creation)
-            // glActiveTexture(GL_TEXTURE0 + DIRECTIONAL_SHADOW_TU);
-            GLCall(glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-            GLCall(glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+            GLCall(glBindSampler(DIRECTIONAL_SHADOW_TU, m_samplerRegular));
             if (material->hasUniform("uDirectionalLightShadowMapArray"))
                 material->setUniform1i("uDirectionalLightShadowMapArray", DIRECTIONAL_SHADOW_TU);
+            
+            // Comparison sampler (for PCF filtering - hardware accelerated)
+            lightInputs.directionalShadowArray->bind(DIRECTIONAL_SHADOW_CMP_TU);
+            GLCall(glBindSampler(DIRECTIONAL_SHADOW_CMP_TU, m_samplerCompare));
+            if (material->hasUniform("uDirectionalLightShadowMapArrayCmp"))
+                material->setUniform1i("uDirectionalLightShadowMapArrayCmp", DIRECTIONAL_SHADOW_CMP_TU);
         }
 
         // Matrices

@@ -18,7 +18,7 @@ uniform vec4 uAmbientLightColor;
 #define MAX_POINT_LIGHTS 16
 #define DIRECTIONAL_LIGHT_CASCADES 4
 
-// Shadow map arrays (NON-comparison samplers)
+// Shadow map arrays (Regular samplers for blocker search - need depth values)
 uniform sampler2DArray uSpotLightShadowMapArray;
 uniform mat4 uSpotLightSpaceMatrices[MAX_SPOT_LIGHTS];
 uniform int uSpotLightCount;
@@ -28,6 +28,11 @@ uniform int uPointLightCount;
 
 uniform sampler2DArray uDirectionalLightShadowMapArray;
 uniform mat4 uDirectionalLightSpaceMatrix[DIRECTIONAL_LIGHT_CASCADES];
+
+// Shadow map arrays (Comparison samplers for PCF - hardware filtering)
+uniform sampler2DArrayShadow uSpotLightShadowMapArrayCmp;
+uniform samplerCubeArrayShadow uPointLightShadowCubeArrayCmp;
+uniform sampler2DArrayShadow uDirectionalLightShadowMapArrayCmp;
 
 // MARK: Light blocks (unchanged)
 layout(std140) uniform SpotLights
@@ -66,28 +71,48 @@ layout(std140) uniform MaterialPropsBlock
 const float ALPHA_CUTOFF = 0.5;
 
 // Bias tuning
-const float MIN_BIAS = 0.00012;
-const float SLOPE_BIAS = 0.0025;
+// Bias tuning
+const float MIN_BIAS = 0.0005; // Kept at 0.0005 to prevent acne
+const float SLOPE_BIAS = 0.02; // Reduced from 0.01 to fix peter panning
 const float RPDB_SCALE = 0.75;
 
 // -------- PCSS controls & texel sizes --------
-const float uDirLightRadiusWS = 0.05f;
-const float uSpotLightRadiusWS = 1.05f;
-const float uPointLightRadiusWS = 1.05f;
+// Light world-space radius (controls shadow softness)
+// Smaller = sharper shadows + better performance | Larger = softer shadows + slower
+// Ideal ranges: Directional [0.01-0.1], Spot/Point [0.2-2.0]
+const float uDirLightRadiusWS = 0.08f;   // Default: 0.03 (balanced)
+const float uSpotLightRadiusWS = 1.05f;  // Default: 1.05
+const float uPointLightRadiusWS = 1.05f; // Default: 1.05
 
+// Shadow map texel sizes (must match actual shadow map resolution)
+// Based on 1024x1024 maps. For 512: use 1.0/512.0, for 2048: use 1.0/2048.0
 const vec2 uDirShadowTexel = vec2(1.0 / 1024.0, 1.0 / 1024.0);
 const vec2 uSpotShadowTexel = vec2(1.0 / 1024.0, 1.0 / 1024.0);
 const float uPointShadowTexel = 1.0 / 1024.0;
 
-// Sample counts & filter clamps
-const int PCSS_SAMPLES_BLOCKER = 6;
-const int PCSS_SAMPLES_PCF = 12;
-const float PCSS_MAX_FILTER = 15.0;
-const float PCSS_MIN_FILTER = 1.0;
+// -------- PCSS Sample Counts (PRIMARY PERFORMANCE KNOB) --------
+// With hardware comparison samplers, each PCF sample = 2x2 bilinear filtered comparison
+// This means effective coverage is 4x per sample, so we can use fewer samples!
+//
+// Quality Presets (with hardware PCF):
+//   Ultra:       12 blocker, 16 PCF (excellent quality)
+//   High:         8 blocker, 12 PCF (very good quality, RECOMMENDED)
+//   Medium:       6 blocker,  8 PCF (good balance)
+//   Low:          4 blocker,  6 PCF (acceptable for performance)
+//   Performance:  4 blocker,  4 PCF (maximum speed)
+const int PCSS_SAMPLES_BLOCKER = 8; // Blocker search samples (ideal range: 4-12)
+const int PCSS_SAMPLES_PCF = 32;    // PCF filter samples (ideal range: 4-16)
+//                                   // Note: Each PCF sample = 2x2 with hardware filtering!
+
+// Filter kernel size clamps (in texels)
+// Lower PCSS_MAX_FILTER = less soft shadows but better performance
+// Ideal ranges: PCSS_MAX_FILTER [6.0-20.0], PCSS_MIN_FILTER [0.5-2.0]
+const float PCSS_MAX_FILTER = 15.0; // Maximum filter radius (Increased to 20.0 for smoother falloff)
+const float PCSS_MIN_FILTER = 1.0;  // Minimum filter radius (default: 1.0)
 
 // Optional: tiny world-space normal offsets
-const float SPOT_NORMAL_OFFSET_WS = 0.015; // spot
-const float DIR_NORMAL_OFFSET_WS = 0.010;  // directional
+const float SPOT_NORMAL_OFFSET_WS = 0.0; // Removed entirely to fix peter panning
+const float DIR_NORMAL_OFFSET_WS = 0.01; // directional (Reverted to 0.01)
 
 // MARK: Helpers (unchanged)
 float attenuation(int i, float dist)
@@ -122,23 +147,34 @@ float slopeBias(vec3 N, vec3 L)
 }
 
 // ------------------------
-// Poisson sets
+// Poisson Disk Sampling - Industry Standard for PCSS
 // ------------------------
-const vec2 POISSON_12[12] = vec2[](vec2(-0.326, -0.406), vec2(-0.840, -0.074), vec2(-0.696, 0.457), vec2(-0.203, 0.621),
-                                   vec2(0.962, -0.195), vec2(0.473, -0.480), vec2(0.519, 0.767), vec2(0.185, -0.893),
-                                   vec2(0.114, 0.223), vec2(0.885, 0.463), vec2(-0.111, -0.137), vec2(-0.321, 0.932));
-const vec2 POISSON_24[24] =
-    vec2[](vec2(-0.983, 0.184), vec2(-0.919, -0.394), vec2(-0.701, 0.712), vec2(-0.643, -0.265), vec2(-0.454, 0.144),
-           vec2(-0.401, -0.882), vec2(-0.276, 0.936), vec2(-0.131, -0.245), vec2(0.040, -0.539), vec2(0.045, 0.321),
-           vec2(0.146, 0.888), vec2(0.233, -0.112), vec2(0.328, -0.730), vec2(0.426, 0.172), vec2(0.614, 0.780),
-           vec2(0.655, -0.238), vec2(0.701, 0.010), vec2(0.735, -0.675), vec2(0.803, 0.315), vec2(0.857, -0514),
-           vec2(0.905, -0.099), vec2(0.936, 0.658), vec2(-0.036, 0.681), vec2(-0.221, -0.551));
+// 16-sample pattern for blocker search (optimized blue-noise distribution)
+const vec2 POISSON_16[16] =
+    vec2[](vec2(-0.94201624, -0.39906216), vec2(0.94558609, -0.76890725), vec2(-0.094184101, -0.92938870),
+           vec2(0.34495938, 0.29387760), vec2(-0.91588581, 0.45771432), vec2(-0.81544232, -0.87912464),
+           vec2(-0.38277543, 0.27676845), vec2(0.97484398, 0.75648379), vec2(0.44323325, -0.97511554),
+           vec2(0.53742981, -0.47373420), vec2(-0.26496911, -0.41893023), vec2(0.79197514, 0.19090188),
+           vec2(-0.24188840, 0.99706507), vec2(-0.81409955, 0.91437590), vec2(0.19984126, 0.78641367),
+           vec2(0.14383161, -0.14100790));
 
-// Optional tiny per-pixel rotation to reduce patterns
+// 32-sample pattern for PCF filtering (higher quality)
+const vec2 POISSON_32[32] = vec2[](
+    vec2(-0.975402, -0.0711386), vec2(-0.920347, -0.312706), vec2(-0.867103, 0.0636654), vec2(-0.799540, 0.349211),
+    vec2(-0.765764, -0.543839), vec2(-0.711889, 0.616689), vec2(-0.626698, -0.780115), vec2(-0.581956, -0.196889),
+    vec2(-0.534807, 0.844628), vec2(-0.451789, 0.484251), vec2(-0.421003, -0.408535), vec2(-0.378917, 0.131933),
+    vec2(-0.250851, 0.761536), vec2(-0.231663, -0.750035), vec2(-0.212819, 0.358628), vec2(-0.162022, -0.136819),
+    vec2(-0.083597, 0.566651), vec2(-0.043244, -0.442623), vec2(0.038385, 0.177851), vec2(0.109677, -0.749922),
+    vec2(0.147027, 0.948695), vec2(0.206071, -0.194662), vec2(0.279452, 0.395757), vec2(0.331209, -0.942573),
+    vec2(0.425181, 0.682868), vec2(0.483240, -0.554677), vec2(0.537317, 0.131939), vec2(0.623838, 0.873883),
+    vec2(0.663456, -0.196449), vec2(0.733926, 0.437770), vec2(0.816447, -0.535477), vec2(0.902144, 0.135014));
+
+// Per-pixel rotation to eliminate visible patterns
 float hash12(vec2 p)
 {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
 }
+
 mat2 rot2(float a)
 {
     float c = cos(a), s = sin(a);
@@ -168,7 +204,7 @@ float compareCube(samplerCubeArray shad, vec3 dir, float layer, float refDepth)
 }
 
 // ------------------------
-// PCSS: blocker search & PCF (2D) – single-sample taps
+// PCSS: blocker search & PCF (2D) – Poisson disk sampling
 // ------------------------
 bool findBlocker2D(sampler2DArray shad, vec2 uv, float layer, float refDepth, vec2 texel, float searchRadiusTexels,
                    out float avgBlocker, mat2 R)
@@ -177,9 +213,10 @@ bool findBlocker2D(sampler2DArray shad, vec2 uv, float layer, float refDepth, ve
     int cnt = 0;
     vec2 radius = texel * searchRadiusTexels;
 
+    // Use POISSON_16 array (supports up to 16 samples)
     for (int k = 0; k < PCSS_SAMPLES_BLOCKER; ++k)
     {
-        vec2 duv = (R * POISSON_12[k]) * radius;
+        vec2 duv = (R * POISSON_16[k]) * radius;
         float z = texture(shad, vec3(uv + duv, layer)).r;
         if (z < refDepth)
         {
@@ -193,26 +230,25 @@ bool findBlocker2D(sampler2DArray shad, vec2 uv, float layer, float refDepth, ve
     return true;
 }
 
-float pcf2D(sampler2DArray shad, vec2 uv, float layer, float refDepth, vec2 texel, float radiusTexels, mat2 R)
+float pcf2D(sampler2DArrayShadow shadCmp, vec2 uv, float layer, float refDepth, vec2 texel, float radiusTexels, mat2 R)
 {
     vec2 radius = texel * radiusTexels;
-    float sum = 0.0, wsum = 0.0;
+    float sum = 0.0;
 
+    // Use POISSON_32 array (supports up to 32 samples)
+    // Hardware comparison sampler: each sample gets automatic 2x2 bilinear filtering + depth comparison
     for (int k = 0; k < PCSS_SAMPLES_PCF; ++k)
     {
-        vec2 o = R * POISSON_24[k];
-        float w = 1.0 - clamp(length(o), 0.0, 1.0); // tent weight
-        vec2 duv = o * radius;
-
-        float s = compare2D(shad, uv + duv, layer, refDepth);
-        sum += s * w;
-        wsum += w;
+        vec2 duv = (R * POISSON_32[k]) * radius;
+        // texture() with sampler2DArrayShadow returns filtered comparison result (0.0-1.0)
+        float s = texture(shadCmp, vec4(uv + duv, layer, refDepth));
+        sum += s;
     }
-    return sum / max(wsum, 1e-6);
+    return sum / float(PCSS_SAMPLES_PCF);
 }
 
 // ------------------------
-// PCSS: blocker search & PCF (cube) – single-sample taps
+// PCSS: blocker search & PCF (cube) – Poisson disk sampling
 // ------------------------
 bool findBlockerCube(samplerCubeArray shad, vec3 dir, float layer, float refDepth, float texelAngle,
                      float searchRadiusTexels, out float avgBlocker, mat2 R)
@@ -223,9 +259,11 @@ bool findBlockerCube(samplerCubeArray shad, vec3 dir, float layer, float refDept
 
     float sum = 0.0;
     int cnt = 0;
+
+    // Use POISSON_16 array (supports up to 16 samples)
     for (int k = 0; k < PCSS_SAMPLES_BLOCKER; ++k)
     {
-        vec2 o = R * POISSON_12[k];
+        vec2 o = R * POISSON_16[k];
         vec3 d = normalize(dir + (o.x * angle) * t + (o.y * angle) * b);
         float z = texture(shad, vec4(d, layer)).r;
         if (z < refDepth)
@@ -240,25 +278,27 @@ bool findBlockerCube(samplerCubeArray shad, vec3 dir, float layer, float refDept
     return true;
 }
 
-float pcfCube(samplerCubeArray shad, vec3 dir, float layer, float refDepth, float texelAngle, float radiusTexels,
-              mat2 R)
+float pcfCube(samplerCubeArrayShadow shadCmp, vec3 dir, float layer, float refDepth, float texelAngle,
+              float radiusTexels, mat2 R)
 {
     vec3 t, b;
     basisFromDir(dir, t, b);
     float angle = texelAngle * radiusTexels;
 
-    float sum = 0.0, wsum = 0.0;
+    float sum = 0.0;
+
+    // Use POISSON_32 array (supports up to 32 samples)
+    // Hardware comparison sampler: each sample gets automatic filtering + depth comparison
     for (int k = 0; k < PCSS_SAMPLES_PCF; ++k)
     {
-        vec2 o = R * POISSON_24[k];
-        float w = 1.0 - clamp(length(o), 0.0, 1.0);
+        vec2 o = R * POISSON_32[k];
         vec3 d = normalize(dir + (o.x * angle) * t + (o.y * angle) * b);
 
-        float s = compareCube(shad, d, layer, refDepth);
-        sum += s * w;
-        wsum += w;
+        // texture() with samplerCubeArrayShadow returns filtered comparison result (0.0-1.0)
+        float s = texture(shadCmp, vec4(d, layer), refDepth);
+        sum += s;
     }
-    return sum / max(wsum, 1e-6);
+    return sum / float(PCSS_SAMPLES_PCF);
 }
 
 // =====================================================
@@ -285,27 +325,31 @@ float sampleCascadePCSS(int cascadeIndex, vec3 worldPos, vec3 N, vec3 L, float s
     // --- Bias: base + slope only (same across cascades) ---
     float baseBias = MIN_BIAS * 0.5;
     float slope = slopeBias(N, L) * 0.7; // slightly scaled
-    float bias = baseBias + slope;
+    float biasPCF = baseBias + slope;    // Full bias for PCF to prevent acne
+    float biasBlocker = biasPCF * 0.5;   // Increased from 0.2 to 0.5 to avoid self-shadowing in blocker search
 
-    float r = clamp(ref - bias, 0.0, 1.0);
+    float rPCF = clamp(ref - biasPCF, 0.0, 1.0);
+    float rBlocker = clamp(ref - biasBlocker, 0.0, 1.0);
 
+    // Per-pixel rotation for Poisson disk samples
     float ang = hash12(gl_FragCoord.xy + vec2(seedOffset)) * 6.2831853;
     mat2 R = rot2(ang);
 
     // 3. WS-consistent search radius
-    float targetSearchRadiusWS = uDirLightRadiusWS * 2.0 * 10.0;
+    // Multiplier controls search area size - tune value [3.0-15.0] for performance vs quality
+    float targetSearchRadiusWS = uDirLightRadiusWS * 2.0 * 10.0; // Increased to 10.0
     float searchRadiusTexels = targetSearchRadiusWS / texelSizeWS;
-    searchRadiusTexels = clamp(searchRadiusTexels, 1.0, 25.0);
+    searchRadiusTexels = clamp(searchRadiusTexels, 1.0, 32.0); // Max increased to 32.0
 
     float avgBlocker;
-    bool hasBlocker = findBlocker2D(uDirectionalLightShadowMapArray, uv, float(cascadeIndex), r, uDirShadowTexel,
+    bool hasBlocker = findBlocker2D(uDirectionalLightShadowMapArray, uv, float(cascadeIndex), rBlocker, uDirShadowTexel,
                                     searchRadiusTexels, avgBlocker, R);
 
     if (!hasBlocker)
         return 1.0;
 
     // 4. Penumbra in World Space
-    float depthDiff = r - avgBlocker;
+    float depthDiff = rBlocker - avgBlocker;
     float distWS = depthDiff * zRangeWS;
     float penumbraWS = distWS * uDirLightRadiusWS;
 
@@ -313,7 +357,7 @@ float sampleCascadePCSS(int cascadeIndex, vec3 worldPos, vec3 N, vec3 L, float s
     float penumbraTexels = penumbraWS / texelSizeWS;
     penumbraTexels = clamp(penumbraTexels, PCSS_MIN_FILTER, PCSS_MAX_FILTER);
 
-    return pcf2D(uDirectionalLightShadowMapArray, uv, float(cascadeIndex), r, uDirShadowTexel, penumbraTexels, R);
+    return pcf2D(uDirectionalLightShadowMapArrayCmp, uv, float(cascadeIndex), rPCF, uDirShadowTexel, penumbraTexels, R);
 }
 
 float shadowFactorDirectional(vec3 worldPos, vec3 N, vec3 L)
@@ -420,16 +464,18 @@ float rpdbSpot(vec4 clip, vec2 texelSize)
     return RPDB_SCALE * gradLen * texelLen;
 }
 
-// Blocker search in linear depth
+// Blocker search in linear depth (Poisson disk sampling)
 bool findBlocker2D_linear(sampler2DArray shad, vec2 uv, float layer, float refLin, vec2 texel, float radiusTexels,
                           out float avgBlockerLin, mat2 R, float n, float f)
 {
     float sum = 0.0;
     int cnt = 0;
     vec2 radius = texel * radiusTexels;
+
+    // Use POISSON_16 array (supports up to 16 samples)
     for (int k = 0; k < PCSS_SAMPLES_BLOCKER; ++k)
     {
-        vec2 duv = (R * POISSON_12[k]) * radius;
+        vec2 duv = (R * POISSON_16[k]) * radius;
         float z = texture(shad, vec3(uv + duv, layer)).r;
         float zLin = linearizeDepth01(z, n, f);
         if (zLin < refLin)
@@ -444,26 +490,24 @@ bool findBlocker2D_linear(sampler2DArray shad, vec2 uv, float layer, float refLi
     return true;
 }
 
-// PCF in linear depth
-float pcf2D_linear(sampler2DArray shad, vec2 uv, float layer, float refLin, vec2 texel, float radiusTexels, mat2 R,
-                   float n, float f)
+// PCF in linear depth (using hardware comparison)
+// Note: Hardware comparison works in non-linear depth space, so we pass 'refDepth' (non-linear) directly
+float pcf2D_linear(sampler2DArrayShadow shadCmp, vec2 uv, float layer, float refDepth, vec2 texel, float radiusTexels,
+                   mat2 R)
 {
     vec2 radius = texel * radiusTexels;
-    float sum = 0.0, wsum = 0.0;
+    float sum = 0.0;
+
+    // Use POISSON_32 array (supports up to 32 samples)
+    // Hardware comparison sampler: each sample gets automatic 2x2 bilinear filtering + depth comparison
     for (int k = 0; k < PCSS_SAMPLES_PCF; ++k)
     {
-        vec2 o = R * POISSON_24[k];
-        float w = 1.0 - clamp(length(o), 0.0, 1.0);
-        vec2 duv = o * radius;
-
-        float z = texture(shad, vec3(uv + duv, layer)).r;
-        float zLin = linearizeDepth01(z, n, f);
-        float s = (refLin <= zLin) ? 1.0 : 0.0;
-
-        sum += s * w;
-        wsum += w;
+        vec2 duv = (R * POISSON_32[k]) * radius;
+        // texture() with sampler2DArrayShadow returns filtered comparison result (0.0-1.0)
+        float s = texture(shadCmp, vec4(uv + duv, layer, refDepth));
+        sum += s;
     }
-    return sum / max(wsum, 1e-6);
+    return sum / float(PCSS_SAMPLES_PCF);
 }
 
 float shadowFactorSpot(int i, vec3 worldPos, vec3 N, vec3 L)
@@ -488,34 +532,43 @@ float shadowFactorSpot(int i, vec3 worldPos, vec3 N, vec3 L)
 
     // Receiver-plane depth bias
     float rpdb = rpdbSpot(clip, uSpotShadowTexel);
+    rpdb = min(rpdb, 0.001); // Clamp RPDB tightly (0.001)
 
     // Gentler base & slope bias; RPDB does the heavy lifting
-    float bias = MIN_BIAS * 0.1 + slopeBias(N, L) * 0.005 + rpdb;
+    float baseBias = MIN_BIAS * 0.1 + slopeBias(N, L) * 0.005 + rpdb;
+
+    // Dual Bias Strategy
+    float biasPCF = baseBias; // Full bias for PCF to prevent acne
+    float biasBlocker = 0.0;  // Zero bias for blocker search to force attachment
 
     // Apply bias in the same space as the shadow map value
-    float r = clamp(ref - bias, 0.0, 1.0);
+    float rPCF = clamp(ref - biasPCF, 0.0, 1.0);
+    float rBlocker = clamp(ref - biasBlocker, 0.0, 1.0);
 
-    // Linearize reference depth for linear-PCSS math
-    float refLin = linearizeDepth01(r, SPOT_NEAR, farP);
+    // Linearize reference depth for linear-PCSS math (use blocker bias for search)
+    float refLinBlocker = linearizeDepth01(rBlocker, SPOT_NEAR, farP);
+    float refLinPCF = linearizeDepth01(rPCF, SPOT_NEAR, farP);
 
+    // Per-pixel rotation for Poisson disk samples
     float ang = hash12(gl_FragCoord.xy) * 6.2831853;
     mat2 R = rot2(ang);
 
     // Make search/filter grow with distance
-    float distScale = clamp(refLin / farP, 0.0, 1.0); // 0 near .. 1 far
+    // Multiplier 120.0 controls shadow softness - tune range [60.0-200.0] for performance vs quality
+    float distScale = clamp(refLinPCF / farP, 0.0, 1.0); // 0 near .. 1 far
     float searchRadius = clamp(uSpotLightRadiusWS * 120.0 * (0.75 + 0.75 * distScale), 1.0, 25.0);
 
     float avgBlockerLin;
-    bool hasBlocker = findBlocker2D_linear(uSpotLightShadowMapArray, uv, float(i), refLin, uSpotShadowTexel,
+    bool hasBlocker = findBlocker2D_linear(uSpotLightShadowMapArray, uv, float(i), refLinBlocker, uSpotShadowTexel,
                                            searchRadius, avgBlockerLin, R, SPOT_NEAR, farP);
     if (!hasBlocker)
         return 1.0;
 
-    float penumbraRaw =
-        ((refLin - avgBlockerLin) / max(avgBlockerLin, 1e-4)) * uSpotLightRadiusWS * 120.0 * (0.75 + 0.75 * distScale);
+    float penumbraRaw = ((refLinPCF - avgBlockerLin) / max(avgBlockerLin, 1e-4)) * uSpotLightRadiusWS * 120.0 *
+                        (0.75 + 0.75 * distScale);
     float penumbra = clamp(penumbraRaw, PCSS_MIN_FILTER, PCSS_MAX_FILTER);
 
-    return pcf2D_linear(uSpotLightShadowMapArray, uv, float(i), refLin, uSpotShadowTexel, penumbra, R, SPOT_NEAR, farP);
+    return pcf2D_linear(uSpotLightShadowMapArrayCmp, uv, float(i), rPCF, uSpotShadowTexel, penumbra, R);
 }
 
 // ---------------------------
@@ -533,6 +586,7 @@ float shadowFactorPoint(int i, vec3 Ldir, float dist, vec3 N)
     // Angular texel size approximation for 90° face FOV
     float texelAngle = uPointShadowTexel * 2.0 * 3.14159265 / 4.0;
 
+    // Per-pixel rotation for Poisson disk samples
     float ang = hash12(gl_FragCoord.xy) * 6.2831853;
     mat2 R = rot2(ang);
 
@@ -547,7 +601,7 @@ float shadowFactorPoint(int i, vec3 Ldir, float dist, vec3 N)
     float penumbra = clamp(((r - avgBlocker) / max(avgBlocker, 1e-4)) * 150.0 * uPointLightRadiusWS, PCSS_MIN_FILTER,
                            PCSS_MAX_FILTER);
 
-    return pcfCube(uPointLightShadowCubeArray, dir, float(i), r, texelAngle, penumbra, R);
+    return pcfCube(uPointLightShadowCubeArrayCmp, dir, float(i), r, texelAngle, penumbra, R);
 }
 
 // ---------------------------

@@ -68,6 +68,10 @@ class LightingPass
 
     Ref<Framebuffer> m_frameBuffer;
     Ref<Texture> m_renderTargetTexture;
+
+    // Sampler objects for hybrid shadow sampling
+    GLuint m_samplerRegular = 0; // GL_TEXTURE_COMPARE_MODE = GL_NONE
+    GLuint m_samplerCompare = 0; // GL_TEXTURE_COMPARE_MODE = GL_COMPARE_REF_TO_TEXTURE
 };
 
 } // namespace Engine
