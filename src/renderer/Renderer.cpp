@@ -62,17 +62,26 @@ Renderer::~Renderer()
 
 void Renderer::render(const Ref<Scene>& scene)
 {
-    Engine::Profiler::beginRegion("Shadow Pass");
+    Engine::Profiler::beginGPURegion("Shadow Pass");
+    Engine::Profiler::beginCPURegion("Shadow Pass");
     ShadowOutputs shadowOutputs = m_shadowPass.execute(scene);
-    Engine::Profiler::endRegion("Shadow Pass");
+    Engine::Profiler::endCPURegion("Shadow Pass");
+    Engine::Profiler::endGPURegion("Shadow Pass");
 
-    Engine::Profiler::beginRegion("Lighting Pass");
+    Engine::Profiler::beginGPURegion("Lighting Pass");
+    Engine::Profiler::beginCPURegion("Lighting Pass");
     LightingOutputs lightingOutputs = m_lightingPass.execute(scene, shadowOutputs);
-    Engine::Profiler::endRegion("Lighting Pass");
+    Engine::Profiler::endCPURegion("Lighting Pass");
+    Engine::Profiler::endGPURegion("Lighting Pass");
 
-    Engine::Profiler::beginRegion("PostFX Pass");
+    Engine::Profiler::beginGPURegion("PostFX Pass");
+    Engine::Profiler::beginCPURegion("PostFX Pass");
     m_postProcessingPass.execute(lightingOutputs);
-    Engine::Profiler::endRegion("PostFX Pass");
+    Engine::Profiler::endCPURegion("PostFX Pass");
+    Engine::Profiler::endGPURegion("PostFX Pass");
+
+    // Swap GPU timer buffers to retrieve results for next frame
+    Engine::Profiler::swapGPUTimerBuffers();
 }
 
 } // namespace Engine

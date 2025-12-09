@@ -47,16 +47,11 @@ void Editor::onImGuiRender(float fps, const Ref<Scene>& activeScene, const doubl
 // TODO: remove once scene loading is in place
 void Editor::throwAwayDemoScene(const Ref<Scene>& activeScene)
 {
-    SpotLight::SpotLightProperties sp{};
-    sp.position = {-20, 5.0, 15.0};
-    sp.direction = {0, 0, -1.0};
-    sp.colorIntensity = {1.0f, 1.0f, 1.0f, 5.0f};
-    activeScene->addSpotLight(CreateRef<SpotLight>(sp));
-
-    PointLight::PointLightProperties p1{};
-    p1.position = {0, 5.0, 5};
-    p1.colorIntensity = {1.0f, 1.0f, 1.0f, 1.0f};
-    activeScene->addPointLight(CreateRef<PointLight>(p1));
+    SpotLight::SpotLightProperties sp2{};
+    sp2.position = {-45, 10.0, 5.0};
+    sp2.direction = {1.8, 0, -.65};
+    sp2.colorIntensity = {1.0f, 1.0f, 1.0f, 25.0f};
+    activeScene->addSpotLight(CreateRef<SpotLight>(sp2));
 
     PointLight::PointLightProperties p2{};
     p2.position = {20, 5.0, 5};

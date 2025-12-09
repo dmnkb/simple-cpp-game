@@ -5,7 +5,8 @@ namespace Engine
 {
 static ProfilerData s_profilerData = {};
 
-void Profiler::beginRegion(const std::string& regionName)
+// MARK: CPU Timing
+void Profiler::beginCPURegion(const std::string& regionName)
 {
     auto it = s_profilerData.frameTimeTimers_.find(regionName);
     if (it == s_profilerData.frameTimeTimers_.end())
@@ -21,7 +22,7 @@ void Profiler::beginRegion(const std::string& regionName)
     }
 }
 
-void Profiler::endRegion(const std::string& regionName)
+void Profiler::endCPURegion(const std::string& regionName)
 {
     auto it = s_profilerData.frameTimeTimers_.find(regionName);
     if (it == s_profilerData.frameTimeTimers_.end())
@@ -31,16 +32,6 @@ void Profiler::endRegion(const std::string& regionName)
     }
 
     it->second->stop();
-}
-
-void Profiler::registerDrawCall(const std::string& passName)
-{
-    s_profilerData.drawCallsPerPass[passName]++;
-}
-
-void Profiler::resetStats()
-{
-    s_profilerData.drawCallsPerPass.clear();
 }
 
 FrameTimePerRegion Profiler::getFrameTimeList()
@@ -57,6 +48,39 @@ FrameTimePerRegion Profiler::getFrameTimeList()
     return regions;
 }
 
+// MARK: GPU Timing
+void Profiler::beginGPURegion(const std::string& regionName)
+{
+    s_profilerData.gpuTimer_.begin(regionName);
+}
+
+void Profiler::endGPURegion(const std::string& regionName)
+{
+    s_profilerData.gpuTimer_.end(regionName);
+}
+
+void Profiler::swapGPUTimerBuffers()
+{
+    s_profilerData.gpuTimer_.swapBuffers();
+}
+
+GPUTimePerRegion Profiler::getGPUTimeList()
+{
+    const auto& results = s_profilerData.gpuTimer_.getResults();
+    return GPUTimePerRegion(results.begin(), results.end());
+}
+
+void Profiler::registerDrawCall(const std::string& passName)
+{
+    s_profilerData.drawCallsPerPass[passName]++;
+}
+
+void Profiler::resetStats()
+{
+    s_profilerData.drawCallsPerPass.clear();
+}
+
+// MARK: Draw Call Stats
 DrawCallsPerPass Profiler::getDrawCallList()
 {
     return s_profilerData.drawCallsPerPass;

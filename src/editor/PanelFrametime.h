@@ -22,63 +22,111 @@ struct PanelFrametime
         static bool open = true;
         ImGui::Begin("Profiler", &open);
 
-        // Suppose this returns std::map<std::string, int> (per your errors)
-        const auto timingsMap = Engine::Profiler::getFrameTimeList();
-
-        // Copy to a vector so we can sort
-        std::vector<std::pair<std::string, double>> cpuTimings;
-        cpuTimings.reserve(timingsMap.size());
-        for (const auto& [name, t] : timingsMap)
-            cpuTimings.emplace_back(name, static_cast<double>(t));
-
-        // Sort descending by time (note: const refs in comparator)
-        std::sort(cpuTimings.begin(), cpuTimings.end(),
-                  [](const auto& a, const auto& b) { return a.second > b.second; });
-
-        double longestDuration = cpuTimings.empty() ? 0.0 : cpuTimings.front().second;
-
-        // Total
-        double cpuTotal = 0.0;
-        for (const auto& it : cpuTimings)
-            cpuTotal += it.second;
-
+        const float maxFrameBudget = 16.67f; // 60 FPS target
         float availableWidth = std::min(ImGui::GetContentRegionAvail().x, 800.0f);
-        float availableHeight = std::min(ImGui::GetContentRegionAvail().y, 200.0f);
-        const float barHeight = 22.0f;
-        ImVec2 basePos = ImGui::GetCursorScreenPos();
+        const float barHeight = 20.0f;
+        const float sectionGap = 0.0f;
         ImDrawList* drawList = ImGui::GetWindowDrawList();
 
-        for (size_t i = 0; i < cpuTimings.size(); ++i)
+        // Get CPU timings
+        const auto cpuTimings = Engine::Profiler::getFrameTimeList();
+        double cpuTotal = 0.0;
+        for (const auto& [name, t] : cpuTimings)
+            cpuTotal += t;
+
+        // Get GPU timings
+        const auto gpuTimings = Engine::Profiler::getGPUTimeList();
+        double gpuTotal = 0.0;
+        for (const auto& [name, t] : gpuTimings)
+            gpuTotal += t;
+
+        // Build color map for pass names (consistent colors across CPU/GPU)
+        std::map<std::string, size_t> colorIndex;
+        size_t idx = 0;
+        for (const auto& [name, t] : cpuTimings)
         {
-            const auto& [name, time] = cpuTimings[i];
+            if (colorIndex.find(name) == colorIndex.end())
+                colorIndex[name] = idx++;
+        }
+        for (const auto& [name, t] : gpuTimings)
+        {
+            if (colorIndex.find(name) == colorIndex.end())
+                colorIndex[name] = idx++;
+        }
 
-            float minWidth = 2.0f;
+        // Helper to draw a timing bar row
+        auto drawTimingRow = [&](const char* label, double total, const auto& timings, float yOffset)
+        {
+            ImVec2 basePos = ImGui::GetCursorScreenPos();
+            basePos.y += yOffset;
 
-            const float maxFrameBudget = 16.67f;
-            // 60 FPS = 100%.
-            float widthPercentage = (100.f / maxFrameBudget) * static_cast<float>(time);
-            float calculatedWidth = availableWidth / 100.f * widthPercentage;
-            float width = std::max(minWidth, calculatedWidth);
-
-            ImVec2 p0 = ImVec2(basePos.x, basePos.y + (i * barHeight));
-            ImVec2 p1 = ImVec2(basePos.x + width, basePos.y + (i * barHeight) + barHeight);
-
-            bool isHovering = ImGui::IsMouseHoveringRect(p0, ImVec2(p1.x + availableWidth, p1.y));
-
-            float alpha = ((calculatedWidth < minWidth) && !isHovering) ? .35f : 1.0f;
-            ImVec4 c = colors[i % colors.size()];
-            c.w = alpha; // set alpha
-            ImU32 col = ImGui::GetColorU32(c);
-            drawList->AddRectFilled(p0, p1, col);
-
-            if (isHovering)
-                ImGui::SetTooltip("%.2f ms", static_cast<float>(time));
-
+            // Draw label
             char labelBuf[64];
-            snprintf(labelBuf, sizeof(labelBuf), "%s %.1fms", name.c_str(), static_cast<float>(time));
-            drawList->PushClipRect(p0, ImVec2(availableWidth + basePos.x, availableHeight + basePos.y), true);
-            drawList->AddText(ImVec2(basePos.x + 8.0f, p0.y + 3.0f), IM_COL32(255, 255, 255, 255), labelBuf);
-            drawList->PopClipRect();
+            snprintf(labelBuf, sizeof(labelBuf), "%s: %.2fms", label, total);
+            drawList->AddText(ImVec2(basePos.x, basePos.y), IM_COL32(255, 255, 255, 255), labelBuf);
+
+            float barY = basePos.y + 18.0f;
+            float xOffset = 0.0f;
+
+            for (const auto& [name, time] : timings)
+            {
+                float widthPercentage = (100.f / maxFrameBudget) * static_cast<float>(time);
+                float width = std::max(2.0f, availableWidth / 100.f * widthPercentage);
+
+                ImVec2 p0 = ImVec2(basePos.x + xOffset, barY);
+                ImVec2 p1 = ImVec2(basePos.x + xOffset + width, barY + barHeight);
+
+                size_t cIdx = colorIndex.count(name) ? colorIndex.at(name) : 0;
+                ImU32 col = colors[cIdx % colors.size()];
+                drawList->AddRectFilled(p0, p1, col);
+
+                // Tooltip on hover
+                if (ImGui::IsMouseHoveringRect(p0, p1))
+                    ImGui::SetTooltip("%s: %.2f ms", name.c_str(), time);
+
+                xOffset += width;
+            }
+
+            // Draw budget line at 16.67ms
+            float budgetX = basePos.x + availableWidth;
+            drawList->AddLine(ImVec2(budgetX, barY), ImVec2(budgetX, barY + barHeight), IM_COL32(255, 100, 100, 180),
+                              2.0f);
+        };
+
+        // Draw CPU row
+        drawTimingRow("CPU", cpuTotal, cpuTimings, 0.0f);
+
+        // Draw GPU row
+        drawTimingRow("GPU", gpuTotal, gpuTimings, barHeight + 26.0f + sectionGap);
+
+        // Bottleneck indicator
+        float indicatorY = (barHeight + 26.0f) * 2 + sectionGap * 2;
+        ImVec2 basePos = ImGui::GetCursorScreenPos();
+        const char* bottleneckText = nullptr;
+        ImU32 bottleneckColor = IM_COL32(200, 200, 200, 255);
+
+        if (gpuTotal > 0.01 && cpuTotal > 0.01)
+        {
+            if (gpuTotal > cpuTotal * 1.2)
+            {
+                bottleneckText = "GPU-BOUND";
+                bottleneckColor = IM_COL32(255, 150, 100, 255);
+            }
+            else if (cpuTotal > gpuTotal * 1.2)
+            {
+                bottleneckText = "CPU-BOUND";
+                bottleneckColor = IM_COL32(100, 180, 255, 255);
+            }
+            else
+            {
+                bottleneckText = "BALANCED";
+                bottleneckColor = IM_COL32(150, 255, 150, 255);
+            }
+        }
+
+        if (bottleneckText)
+        {
+            drawList->AddText(ImVec2(basePos.x, basePos.y + indicatorY), bottleneckColor, bottleneckText);
         }
 
         ImGui::End();

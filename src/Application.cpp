@@ -52,11 +52,11 @@ void Application::run()
 
         EventManager::processEvents();
 
+        m_renderer->render(m_activeScene);
+
         m_imguiLayer->beginFrame();
 
         m_editorLayer->onUpdate(float(fps), m_activeScene, m_DeltaTime);
-
-        m_renderer->render(m_activeScene);
 
         m_imguiLayer->endFrame();
 

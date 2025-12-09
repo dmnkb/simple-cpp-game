@@ -2,7 +2,6 @@
 #include "core/Profiler.h"
 #include "core/Window.h"
 #include "pch.h"
-#include "scene/Scene.h"
 #include "renderer/GLDebug.h"
 
 namespace Engine
@@ -10,23 +9,8 @@ namespace Engine
 
 PostProcessingPass::PostProcessingPass() : m_postProcessShader("shader/postProcessing.vs", "shader/postProcessing.fs")
 {
-    initQuad();
-}
-
-void PostProcessingPass::initQuad()
-{
-    // clang-format off
-        float quadVertices[] = {
-            // positions   // texCoords
-            -1.0f,  1.0f,  0.0f, 1.0f,
-            -1.0f, -1.0f,  0.0f, 0.0f,
-             1.0f, -1.0f,  1.0f, 0.0f,
-    
-            -1.0f,  1.0f,  0.0f, 1.0f,
-             1.0f, -1.0f,  1.0f, 0.0f,
-             1.0f,  1.0f,  1.0f, 1.0f
-        };
-    // clang-format on
+    float quadVertices[] = {-1.0f, 1.0f, 0.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, 0.0f,
+                            -1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  -1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  1.0f, 1.0f};
 
     GLCall(glGenVertexArrays(1, &m_quadVAO));
     GLCall(glGenBuffers(1, &m_quadVBO));
@@ -45,6 +29,7 @@ void PostProcessingPass::initQuad()
 
 void PostProcessingPass::execute(const PostProcessingInputs& postProcessingInputs)
 {
+    Profiler::beginCPURegion("[PostProcessing] OpenGL Setup");
     GLCall(glColorMask(true, true, true, true));
     GLCall(glBindFramebuffer(GL_FRAMEBUFFER, 0));
     GLCall(glViewport(0, 0, Window::frameBufferDimensions.x, Window::frameBufferDimensions.y));
@@ -62,6 +47,7 @@ void PostProcessingPass::execute(const PostProcessingInputs& postProcessingInput
     GLCall(glBindVertexArray(0));
 
     m_postProcessShader.unbind();
+    Profiler::endCPURegion("[PostProcessing] OpenGL Setup");
 }
 
 } // namespace Engine
