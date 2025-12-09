@@ -1,24 +1,23 @@
-#version 330 core
+#version 410 core
 
-layout(location = 0) in vec3 a_Position;
-layout(location = 1) in vec3 a_Normal;
-layout(location = 2) in vec2 a_UV;
-layout(location = 3) in mat4 a_InstanceTransform;
+layout(location = 0) in vec3 aPosition;
+layout(location = 1) in vec3 aNormal;
+layout(location = 2) in vec2 aUV;
+layout(location = 3) in mat4 aInstanceTransform;
 
-uniform mat4 u_Time;
-uniform mat4 u_ViewProjection;
+uniform mat4 uTime;
+uniform mat4 uViewProjection;
 
-out vec2 v_UV;
-out vec3 FragPos;
-out vec3 v_Normal;
+out vec2 vUV;
+out vec3 vNormal;
+out vec3 vFragPos;
 
 void main()
 {
-    v_UV = a_UV;
+    vUV = aUV;
 
-    v_Normal = mat3(a_InstanceTransform) * a_Normal;
+    vNormal = mat3(aInstanceTransform) * aNormal;
 
-    // Calculate the fragment position in world space
-    FragPos = vec3(a_InstanceTransform * vec4(a_Position, 1.0));
-    gl_Position = u_ViewProjection * vec4(FragPos, 1.0);
+    vFragPos = vec3(aInstanceTransform * vec4(aPosition, 1.0));
+    gl_Position = uViewProjection * vec4(vFragPos, 1.0);
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "renderer/LightSceneNode.h"
+#include "renderer/PassIO.h"
 #include "renderer/Shader.h"
 #include "renderer/Texture.h"
 #include "scene/Scene.h"
@@ -12,12 +12,9 @@ class PostProcessingPass
 {
   public:
     PostProcessingPass();
-    void execute(Scene& scene, const Ref<Texture>& renderTargetTexture);
+    void execute(const PostProcessingInputs& postProcessingInputs);
 
   private:
-    void initQuad();
-    void updateUniforms(Scene& scene, const Ref<Material>& material);
-
     Shader m_postProcessShader;
 
     unsigned int m_quadVAO = 0;

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Shader.h"
-#include "Texture.h"
 #include "core/Core.h"
+#include "renderer/Shader.h"
+#include "renderer/Texture.h"
 
 namespace Engine
 {
@@ -11,7 +11,7 @@ namespace Engine
 struct MaterialProps
 {
     float textureRepeat = 1;
-    float shininess = 32.0f;
+    float shininess = 16.0f;
     float specularIntensity = 0.5f;
 };
 
@@ -34,13 +34,15 @@ class Material
 
     void setUniformMatrix4fv(const char* name, const glm::mat4 value);
     void setUniform3fv(const char* name, const glm::vec3 value);
+    void setUniform4fv(const char* name, const glm::vec4 value);
     void setUniform1i(const char* name, GLint value);
+    void setUniform1f(const char* name, float value);
+    void setIntArray(const char* name, GLint* values, GLsizei count);
 
     Ref<Shader> getShader() const;
+    [[nodiscard]] float getTextureRepeat() const;
 
     const bool hasUniform(const char* name);
-
-    static const Ref<Material> getDefaultMaterial();
 
   private:
     Ref<Shader> m_shader = nullptr;

@@ -1,28 +1,49 @@
 #pragma once
 
-#include "Timer.h"
 #include "core/Core.h"
+#include "core/GPUTimer.h"
+#include "core/Timer.h"
 
 namespace Engine
 {
 
+using FrameTimePerRegion = std::vector<std::pair<std::string, double>>;
+using GPUTimePerRegion = std::vector<std::pair<std::string, double>>;
+using DrawCallsPerPass = std::map<std::string, int>;
+
 struct ProfilerData
 {
-    std::map<std::string, Ref<Timer>> timers = {};
-    std::vector<std::string> order;
-    std::map<std::string, int> drawCallsPerPass = {};
+    // CPU Frametime
+    std::map<std::string, Ref<Timer>> frameTimeTimers_ = {};
+    std::vector<std::string> frameTimeOrder_;
+
+    // GPU Frametime
+    GPUTimer gpuTimer_;
+
+    // Draw calls
+    DrawCallsPerPass drawCallsPerPass = {};
 };
 
 class Profiler
 {
   public:
-    static void beginRegion(const std::string& regionName);
-    static void endRegion(const std::string& regionName);
+    // CPU timing
+    static void beginCPURegion(const std::string& regionName);
+    static void endCPURegion(const std::string& regionName);
 
+    // GPU timing
+    static void beginGPURegion(const std::string& regionName);
+    static void endGPURegion(const std::string& regionName);
+    static void swapGPUTimerBuffers();
+
+    // Draw call tracking
     static void registerDrawCall(const std::string& passName);
     static void resetStats();
 
-    static std::vector<std::pair<std::string, double>> getAll();
+    // Getters
+    static FrameTimePerRegion getFrameTimeList();
+    static GPUTimePerRegion getGPUTimeList();
+    static DrawCallsPerPass getDrawCallList();
 
   private:
 };

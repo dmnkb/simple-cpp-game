@@ -1,7 +1,6 @@
 #pragma once
 
-#include "EventManager.h"
-#include "pch.h"
+#include "core/EventManager.h"
 // DON'T CHANGE – INCLUDE ORDER MATTERS HERE
 // clang-format off
 #include <glad/glad.h>
@@ -23,7 +22,8 @@ struct WindowProps
 };
 
 void init(const WindowProps& props);
-void update();
+void pollEvents();
+void swapBuffers();
 void shutdown();
 double getElapsedTime();
 void toggleCursorLock();
@@ -38,7 +38,7 @@ extern glm::vec2 dimensions;
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void mousePosCallback(GLFWwindow* window, double xpos, double ypos);
-void resizeCallback(GLFWwindow* window, int width, int height);
+void framebufferSizeCallback(GLFWwindow* window, int fbW, int fbH);
 
 }; // namespace Window
 

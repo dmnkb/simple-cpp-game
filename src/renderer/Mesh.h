@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Material.h"
-#include "Shader.h"
+#include "renderer/Material.h"
+#include "renderer/Shader.h"
 
 namespace Engine
 {

@@ -1,27 +1,15 @@
-#version 330 core
+#version 410 core
 
-in vec2 v_UV;
+in vec2 vUV;
 
-uniform sampler2D diffuseMap;
+uniform sampler2D uDiffuseMap;
+uniform float uTextureRepeat;
 
-layout(location = 0) out vec4 FragColor;
+const float ALPHA_CUTOFF = 0.5;
 
 void main()
 {
-    vec4 baseColor = texture(diffuseMap, v_UV);
-
-    if (baseColor.a < .5)
-    {
+    vec4 tex = texture(uDiffuseMap, vUV * uTextureRepeat);
+    if (tex.a < ALPHA_CUTOFF)
         discard;
-    }
-
-    float depth = gl_FragCoord.z;
-
-    // Linear depth
-    const float nearPlane = 0.1f;
-    const float farPlane = 1000.0f; // (Not accurate, but clamps the colors to something more visible)
-    float linearDepth = (2.0 * nearPlane * farPlane) / (farPlane + nearPlane - depth * (farPlane - nearPlane));
-    linearDepth = linearDepth / farPlane;
-
-    FragColor = vec4(baseColor);
 }

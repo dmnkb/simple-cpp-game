@@ -1,59 +1,60 @@
-#include "Material.h"
+#include <fmt/core.h>
+
 #include "core/Window.h"
 #include "pch.h"
-#include <fmt/core.h>
+#include "renderer/Material.h"
+#include "renderer/GLDebug.h"
 
 namespace Engine
 {
 
 Material::Material(Ref<Shader>& shader, MaterialProps props) : m_shader(shader), m_props(props)
 {
-    // Create and bind the Uniform Buffer Object
-    glGenBuffers(1, &m_uboMaterial);
-    glBindBuffer(GL_UNIFORM_BUFFER, m_uboMaterial);
-
-    // Allocate memory for the UBO (empty for now)
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(MaterialProps), nullptr, GL_DYNAMIC_DRAW);
-
-    // Bind the UBO to the binding point
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uboMaterial); // Binding point 0
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    GLCall(glGenBuffers(1, &m_uboMaterial));
+    GLCall(glBindBuffer(GL_UNIFORM_BUFFER, m_uboMaterial));
+    GLCall(glBufferData(GL_UNIFORM_BUFFER, sizeof(MaterialProps), nullptr, GL_DYNAMIC_DRAW));
+    GLCall(glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_uboMaterial)); // binding = 1 for MaterialPropsBlock
+    GLCall(glBindBuffer(GL_UNIFORM_BUFFER, 0));
 }
 
 void Material::bind()
 {
     m_shader->bind();
 
-    // Bind the diffuse map sampler
-    // 0 = Default color layer across all fragment shaders
-    m_diffuseMap->bind(0);
-    m_shader->setUniform1i("diffuseMap", 0);
+    if (m_diffuseMap)
+    {
+        m_diffuseMap->bind(0);
+        m_shader->setUniform1i("uDiffuseMap", 0);
+    }
 
-    // Bind the material's properties
-    GLuint uboBindingPoint = 1; // 0 = LightsBlock, 1 = MaterialPropsBlock
-    GLuint blockIndex = glGetUniformBlockIndex(m_shader->getProgramID(), "MaterialPropsBlock");
+    // Bind & upload material UBO to binding point 1
+    // FIXME: Fuck this, the binding points need to be aligned somehow. Too much randomness
+    GLuint uboBindingPoint = 3;
+    GLuint prog = m_shader->getProgramID();
+    GLuint blockIndex;
+    GLCall(blockIndex = glGetUniformBlockIndex(prog, "MaterialPropsBlock"));
     if (blockIndex != GL_INVALID_INDEX)
     {
-        glUniformBlockBinding(m_shader->getProgramID(), blockIndex, uboBindingPoint);
-        glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, m_uboMaterial);
+        GLCall(glUniformBlockBinding(prog, blockIndex, uboBindingPoint));
+        GLCall(glBindBufferBase(GL_UNIFORM_BUFFER, uboBindingPoint, m_uboMaterial));
 
-        glBindBuffer(GL_UNIFORM_BUFFER, m_uboMaterial);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(MaterialProps), &m_props);
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        GLCall(glBindBuffer(GL_UNIFORM_BUFFER, m_uboMaterial));
+        GLCall(glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(MaterialProps), &m_props));
+        GLCall(glBindBuffer(GL_UNIFORM_BUFFER, 0));
     }
 }
 
 void Material::unbind()
 {
     m_shader->unbind();
-    m_diffuseMap->unbind();
+    if (m_diffuseMap)
+        m_diffuseMap->unbind(0);
 }
 
 void Material::update()
 {
-    // FIXME: dependency inversion violation. Resolve dependency to Window
     float time = Window::getElapsedTime();
-    m_shader->setUniform1f("u_Time", time);
+    m_shader->setUniform1f("uTime", time);
 }
 
 void Material::setDiffuseMap(Ref<Texture>& texture)
@@ -81,9 +82,24 @@ void Material::setUniform3fv(const char* name, const glm::vec3 value)
     m_shader->setUniform3fv(name, value);
 }
 
+void Material::setUniform4fv(const char* name, const glm::vec4 value)
+{
+    m_shader->setUniform4fv(name, value);
+}
+
 void Material::setUniform1i(const char* name, GLint value)
 {
     m_shader->setUniform1i(name, value);
+}
+
+void Material::setUniform1f(const char* name, float value)
+{
+    m_shader->setUniform1f(name, value);
+}
+
+void Material::setIntArray(const char* name, GLint* values, GLsizei count)
+{
+    m_shader->setIntArray(name, values, count);
 }
 
 Ref<Shader> Material::getShader() const
@@ -91,9 +107,15 @@ Ref<Shader> Material::getShader() const
     return m_shader;
 }
 
+float Material::getTextureRepeat() const
+{
+    return m_props.textureRepeat;
+}
+
 const bool Material::hasUniform(const char* name)
 {
-    return m_shader->hasUniform(name);
+    // True only if the uniform exists (location >= 0)
+    return m_shader->getCachedLocation(name) >= 0;
 }
 
 } // namespace Engine

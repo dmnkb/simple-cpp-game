@@ -1,35 +1,45 @@
-#include "Scene.h"
+#include "scene/Scene.h"
 #include "core/Profiler.h"
 #include "pch.h"
 
 namespace Engine
 {
 
-void Scene::init(const CameraProps& cameraProps)
+Scene::Scene()
 {
-    m_DefaultCamera = CreateRef<Camera>(cameraProps);
-    setActiveCamera(m_DefaultCamera);
+    m_activeCamera = Camera(Camera::CameraProps{.fov = glm::radians(45.0f),
+                                                .aspect = 16.f / 9.f, // TODO: change onViewportResize
+                                                .near = 0.1f,
+                                                .far = 1000.0f,
+                                                .isMainCamera = true});
 }
 
 void Scene::addModel(const Model& model)
 {
-    m_Models.push_back(model);
+    m_models.push_back(model);
     m_renderablesDirty = true;
 }
 
-void Scene::addLightSceneNode(const Ref<LightSceneNode>& node)
+void Scene::addSpotLight(const Ref<SpotLight>& light)
 {
-    m_LightSceneNodes.push_back(node);
+    m_spotLights.push_back(light);
+}
+
+void Scene::addPointLight(const Ref<PointLight>& light)
+{
+    m_pointLights.push_back(light);
+}
+
+void Scene::setDirectionalLight(const Ref<DirectionalLight>& light)
+{
+    m_directionalLight = light;
 }
 
 // TODO: Sort transparent renderables back-to-front
 RenderQueue Scene::getRenderQueue(const std::string& passName)
 {
-    Engine::Profiler::beginRegion("Prepare Render Queue (" + passName + ")");
-
     if (!m_renderablesDirty)
     {
-        Engine::Profiler::endRegion("Prepare Render Queue (" + passName + ")");
         return m_cachedRenderQueue;
     }
 
@@ -37,7 +47,7 @@ RenderQueue Scene::getRenderQueue(const std::string& passName)
 
     // Group renderables by their name to ensure identical meshes are processed together
     std::unordered_map<std::string, std::vector<Renderable>> sortedRenderables = {};
-    for (const auto& model : m_Models)
+    for (const auto& model : m_models)
     {
         for (const auto& renderable : model.renderables)
         {
@@ -66,28 +76,42 @@ RenderQueue Scene::getRenderQueue(const std::string& passName)
     m_renderablesDirty = false;
     m_cachedRenderQueue = renderQueue;
 
-    Engine::Profiler::endRegion("Prepare Render Queue (" + passName + ")");
     return renderQueue;
 }
 
-std::vector<Ref<LightSceneNode>> Scene::getLightSceneNodes() const
+std::vector<Ref<SpotLight>> Scene::getSpotLights() const
 {
-    return m_LightSceneNodes;
+    return m_spotLights;
 }
 
-void Scene::setActiveCamera(const Ref<Camera>& camera)
+std::vector<Ref<PointLight>> Scene::getPointLights() const
 {
-    m_ActiveCamera = camera;
+    return m_pointLights;
 }
 
-Ref<Camera> Scene::getActiveCamera() const
+Ref<DirectionalLight> Scene::getDirectionalLight() const
 {
-    return m_ActiveCamera;
+    return m_directionalLight;
 }
 
-Ref<Camera> Scene::getDefaultCamera() const
+void Scene::setAmbientLightColor(const glm::vec4& color)
 {
-    return m_DefaultCamera;
+    m_ambientLightColor = color;
+}
+
+glm::vec4 Scene::getAmbientLightColor() const
+{
+    return m_ambientLightColor;
+}
+
+void Scene::setActiveCamera(const Camera& camera)
+{
+    m_activeCamera = camera;
+}
+
+Camera& Scene::getActiveCamera()
+{
+    return m_activeCamera;
 }
 
 } // namespace Engine

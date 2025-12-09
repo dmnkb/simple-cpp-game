@@ -1,23 +1,24 @@
 #pragma once
 
+#include <glm/glm.hpp>
+#include <vector>
+
 #include "core/Core.h"
 #include "core/EventManager.h"
 #include "renderer/Camera.h"
-#include "scene/Scene.h"
-#include <glm/glm.hpp>
+#include "util/SmoothDamp.h"
 
-// TODO: Part of gameplay logic, will go into game/
 namespace Engine
 {
 
-class Player
+class FlySpectatorCtrl
 {
   public:
-    Player();
+    FlySpectatorCtrl();
 
     void onKeyEvent(const Ref<Event> event);
     void onMouseMoveEvent(const Ref<Event> event);
-    void update(const Scene& scene, double deltaTime);
+    void update(Camera& camera, double deltaTime);
     bool isKeyPressed(unsigned int key);
 
     glm::vec3 getPosition()
@@ -31,16 +32,18 @@ class Player
 
   private:
     // Core player attributes
-    glm::vec3 m_Position = glm::vec3({-50, 30, -50});
-    glm::vec2 m_Rotation = glm::vec2({45, -15});
+    glm::vec3 m_Position = glm::vec3({-85, 50, -80});
+    glm::vec2 m_Rotation = glm::vec2({45, -15}); // yaw (x), pitch (y)
     glm::vec3 m_Direction = glm::vec3(0.f);
     float m_verticalVelocity = 0;
+
+    glm::vec3 m_TargetPosition = m_Position; // where gameplay wants us to be
+    glm::vec3 m_PositionVel = glm::vec3(0);  // SmoothDamp velocity accumulator
 
     // Camera
     glm::vec2 m_camChange = glm::vec2(0, 0);
     glm::vec2 m_cursorPositionOld;
 
-    // TODO: Hashset
     // Input handling
     std::vector<unsigned int> m_PressedKeys;
 

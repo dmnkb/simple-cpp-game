@@ -1,6 +1,8 @@
-#include "ClearColor.h"
-#include "Mesh.h"
+#pragma once
+
 #include "core/Core.h"
+#include "renderer/ClearColor.h"
+#include "renderer/Mesh.h"
 
 namespace Engine
 {
@@ -8,7 +10,7 @@ namespace Engine
 struct RendererAPIData
 {
     GLuint instanceBuffer = -1;
-    SClearColor clearColor = clearColorValues[static_cast<int>(EClearColor::CharcoalGray)];
+    SClearColor clearColor = clearColorValues[0];
     int drawCallCount = 0;
 };
 

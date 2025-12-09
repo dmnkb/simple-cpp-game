@@ -1,23 +1,42 @@
 #pragma once
 
-#include "Core.h"
-#include "Event.h"
-#include "pch.h"
+#include "core/Core.h"
+#include "core/Event.h"
 
 namespace Engine
 {
 
 using EventCallback = std::function<void(const Ref<Event>)>;
+
+struct EventHandle
+{
+    std::string eventType;
+    std::uint64_t id = 0;
+    explicit operator bool() const
+    {
+        return id != 0;
+    }
+};
+
+struct EventListener
+{
+    std::uint64_t id;
+    EventCallback cb;
+};
+
 struct EventData
 {
-    std::unordered_map<std::string, std::vector<EventCallback>> listeners;
+    std::unordered_map<std::string, std::vector<EventListener>> listeners;
     std::vector<Ref<Event>> eventQueue;
+    std::uint64_t nextId = 1;
 };
 
 class EventManager
 {
   public:
-    static void registerListeners(const std::string& eventType, EventCallback callback);
+    static EventHandle registerListeners(const std::string& eventType, EventCallback callback);
+    static void unregister(const EventHandle& handle);
+
     static void queueEvent(const Ref<Event> event);
     static void processEvents();
 
