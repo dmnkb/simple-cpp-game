@@ -21,16 +21,16 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [x] Profiler
 - [x] Window & Framebuffer rezising
 - [x] Refactor lights
-- [ ] Cascaded shadow maps 
-- [ ] Change debug to editor
-- [ ] ImGUI Gimbal controls
+- [x] Cascaded shadow maps 
+- [x] Change debug to editor
 - [ ] ECS
+- [ ] ImGUI Gimbal controls
 - [x] Display frametime (CPU)
+- [ ] Mip chain bloom
 - [ ] Split architecture into engine and game
 - [ ] Layer architecture (Or scene stack?)
 - [ ] SSAO
 - [ ] Debug view (Wireframe, per instance coloring)
-- [ ] Mip chain bloom
 - [ ] Integrate Bullet Physics (Pull and throw objects)
 - [ ] Audio using [miniaudio](https://github.com/mackron/miniaudio)
 - [ ] UI using [RmlUi](https://github.com/mikke89/RmlUi)

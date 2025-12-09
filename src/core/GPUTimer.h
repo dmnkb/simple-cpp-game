@@ -43,6 +43,8 @@ class GPUTimer
      */
     void end(const std::string& regionName)
     {
+        auto& query = m_queries[regionName];
+        query.used[m_writeBuffer] = true; // Mark this buffer as having valid data
         GLCall(glEndQuery(GL_TIME_ELAPSED));
     }
 
@@ -63,12 +65,15 @@ class GPUTimer
             auto& query = it->second;
             GLuint64 elapsed = 0;
 
-            // Check if result is available (non-blocking)
-            GLint available = 0;
-            GLCall(glGetQueryObjectiv(query.ids[m_readBuffer], GL_QUERY_RESULT_AVAILABLE, &available));
-            if (available)
+            // Only read if this buffer has been used (avoid GL_INVALID_OPERATION on first frames)
+            if (query.used[m_readBuffer])
             {
-                GLCall(glGetQueryObjectui64v(query.ids[m_readBuffer], GL_QUERY_RESULT, &elapsed));
+                GLint available = 0;
+                GLCall(glGetQueryObjectiv(query.ids[m_readBuffer], GL_QUERY_RESULT_AVAILABLE, &available));
+                if (available)
+                {
+                    GLCall(glGetQueryObjectui64v(query.ids[m_readBuffer], GL_QUERY_RESULT, &elapsed));
+                }
             }
 
             // Convert nanoseconds to milliseconds
@@ -92,7 +97,8 @@ class GPUTimer
   private:
     struct QueryPair
     {
-        GLuint ids[2] = {0, 0}; // Double-buffered query objects
+        GLuint ids[2] = {0, 0};     // Double-buffered query objects
+        bool used[2] = {false, false}; // Track if each buffer has valid data
     };
 
     void ensureQuery(const std::string& name)

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <entt/entt.hpp>
+
 #include "core/Core.h"
 #include "renderer/Camera.h"
 #include "renderer/DirectionalLight.h"
@@ -62,8 +64,7 @@ class Scene
     Camera& getActiveCamera();
 
   private:
-    // TODO:
-    // entt::registry m_registry;
+    entt::registry m_registry;
 
     std::vector<Ref<SpotLight>> m_spotLights;
     std::vector<Ref<PointLight>> m_pointLights;

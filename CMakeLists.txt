@@ -17,6 +17,7 @@ add_subdirectory(vendor/glad EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/glm EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/imgui)
 add_subdirectory(vendor/fmt)
+add_subdirectory(vendor/entt)
 
 # Assimp local include + lib
 set(ASSIMP_DIR "${CMAKE_SOURCE_DIR}/vendor/assimp")
@@ -29,6 +30,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${ASSIMP_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/vendor/stduuid/include
+    ${CMAKE_SOURCE_DIR}/vendor/entt/src
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -38,6 +40,7 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE imgui
     PRIVATE fmt::fmt
     PRIVATE ${ASSIMP_LIBRARY}
+    PRIVATE EnTT::EnTT
 )
 
 # Copy runtime assets
