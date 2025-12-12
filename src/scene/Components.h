@@ -4,6 +4,7 @@
 #include <string>
 
 #include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 #include "renderer/Material.h"
 #include "renderer/Mesh.h"
 
@@ -17,6 +18,8 @@ struct TransformComponent
     TransformComponent() = default;
     TransformComponent(const TransformComponent&) = default;
     TransformComponent(const glm::mat4 transform) : transform(transform) {}
+
+    void translate(const glm::vec3& delta) { transform = glm::translate(transform, delta); }
 
     operator glm::mat4&() { return transform; }
     operator const glm::mat4&() const { return transform; }
@@ -81,8 +84,7 @@ struct DirectionalLightComponent
 
 // Concept to constrain light component types
 template <typename T>
-concept LightComponent = std::same_as<T, PointLightComponent> ||
-                         std::same_as<T, SpotLightComponent> ||
+concept LightComponent = std::same_as<T, PointLightComponent> || std::same_as<T, SpotLightComponent> ||
                          std::same_as<T, DirectionalLightComponent>;
 
 } // namespace Engine

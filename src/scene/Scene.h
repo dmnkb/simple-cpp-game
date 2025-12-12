@@ -25,6 +25,14 @@ class Scene
 
     void destroyEntity(entt::entity entity);
 
+    template <typename Func>
+    void forEachHierarchyEntity(Func&& fn)
+    {
+        auto view = m_registry.view<TagComponent>();
+        for (auto e : view)
+            fn(e);
+    }
+
     // Update
     // void onUpdate(float deltaTime);
 

@@ -74,6 +74,27 @@ void Editor::throwAwayDemoScene(const Ref<Scene>& activeScene)
         submeshIndex++;
     }
 
+    submeshIndex = (*loadedSubmeshes).size();
+    for (auto& submesh : *loadedSubmeshes)
+    {
+        std::println("Loaded submesh {} with {} vertices and {} indices.", submeshIndex, submesh.mesh->vertices.size(),
+                     submesh.mesh->indices.size());
+
+        // Create a new entity for each submesh
+        auto entity = activeScene->createEntity("Ground_" + std::to_string(submeshIndex));
+
+        entity.getComponent<TransformComponent>().translate({0.0f, 5.0f, 0.0f});
+
+        auto& meshComp = entity.addComponent<MeshComponent>();
+        meshComp.mesh = submesh.mesh;
+
+        Ref<Material> material = CreateRef<Material>(Shader::getStandardShader());
+        material->assignTexture(submesh.materialData.albedo, TextureType::Albedo);
+        meshComp.material = material;
+
+        submeshIndex++;
+    }
+
     // SpotLight::SpotLightProperties sp2{};
     // sp2.position = {-45, 10.0, 5.0};
     // sp2.direction = {1.8, 0, -.65};

@@ -42,7 +42,9 @@ class Entity
         m_scene->m_registry.remove<T>(m_handle);
     }
 
-    inline glm::mat4 getTransformMatrix() { return getComponent<TransformComponent>(); }
+    entt::entity getHandle() const { return m_handle; }
+
+    glm::mat4 getTransformMatrix() { return getComponent<TransformComponent>(); }
 
     operator bool() const { return m_handle != entt::null; }
 

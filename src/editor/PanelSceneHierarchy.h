@@ -17,59 +17,67 @@ namespace Engine
 
 struct PanelSceneHierarchy
 {
+    // Keep selection state here for now
+    inline static entt::entity s_selected = entt::null;
+
+    static void DrawEntityNode(Entity entity)
+    {
+        auto& tag = entity.getComponent<TagComponent>().tag;
+
+        const entt::entity id = entity.getHandle();
+
+        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnArrow;
+
+        // If you don't have children yet, make it a leaf:
+        flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+        if (s_selected == id) flags |= ImGuiTreeNodeFlags_Selected;
+
+        // Stable unique ID for ImGui
+        ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)id, flags, "%s", tag.c_str());
+
+        if (ImGui::IsItemClicked()) s_selected = id;
+
+        // Context menu (optional)
+        if (ImGui::BeginPopupContextItem())
+        {
+            if (ImGui::MenuItem("Delete"))
+            {
+                // Usually you'd queue this instead of immediate delete while iterating
+                // entity.getScene()->destroyEntity(id);
+            }
+            ImGui::EndPopup();
+        }
+
+        // Later, when you have a RelationshipComponent:
+        // if (opened) { for (child : children) DrawEntityNode(childEntity); ImGui::TreePop(); }
+    }
+
     static void render(const Ref<Scene>& scene)
     {
-        // ImGui::ShowDemoWindow();
-        // ImGui::ShowStyleEditor();
-        constexpr float footerHeight = 220.0f;
-        const float availableWidth = ImGui::GetContentRegionAvail().x;
-
         static bool open = true;
-        static int itemClicked = -1;
-        static std::unordered_map<int, UUID> lightDict = {};
-
         ImGui::Begin("Hierarchy", &open);
-        ImGui::BeginChild("##hier_tree", ImVec2(0, -footerHeight));
+
+        ImGui::BeginChild("##hier_tree", ImVec2(0, 0));
         {
             if (!scene)
             {
-                ImGui::Text("No scene loaded.");
+                ImGui::TextUnformatted("No scene loaded.");
                 ImGui::EndChild();
                 ImGui::End();
                 return;
             }
 
-            ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-            if (ImGui::TreeNode("Entities"))
-            {
-                // scene->eachEntity(
-                //     [&](Entity entity)
-                //     {
-                //         const auto& tag = entity.getComponent<TagComponent>().tag;
-                //         ImGuiTreeNodeFlags nodeFlags =
-                //             ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-                //         if (itemClicked == static_cast<int>(entity)) nodeFlags |= ImGuiTreeNodeFlags_Selected;
+            // Click empty space to clear selection
+            if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()) s_selected = entt::null;
 
-                //         bool isNodeOpen = ImGui::TreeNodeEx((void*)(uintptr_t)(static_cast<uint32_t>(entity)),
-                //                                             nodeFlags, "%s", tag.c_str());
-                //         if (ImGui::IsItemClicked())
-                //         {
-                //             itemClicked = static_cast<int>(entity);
-                //         }
-
-                //         if (isNodeOpen)
-                //         {
-                //             ImGui::TreePop();
-                //         }
-                //     });
-                ImGui::TreePop();
-            }
+            scene->forEachHierarchyEntity([&](entt::entity entityID)
+                                          { DrawEntityNode(Entity{entityID, scene.get()}); });
         }
         ImGui::EndChild();
-
-        ImGui::Separator();
 
         ImGui::End();
     }
 };
+
 } // namespace Engine
