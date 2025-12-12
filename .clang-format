@@ -1,8 +1,16 @@
-Language:                           Cpp
-BasedOnStyle:                       LLVM
-AllowShortFunctionsOnASingleLine:   Empty
-BreakBeforeBraces:                  Allman
-ColumnLimit:                        120
-IndentWidth:                        4
-UseTab:                             Never
-PointerAlignment:                   Left
+Language:                             Cpp
+BasedOnStyle:                         LLVM
+AllowShortFunctionsOnASingleLine:     Inline
+BreakBeforeBraces:                    Allman
+ColumnLimit:                          120
+IndentWidth:                          4
+UseTab:                               Never
+PointerAlignment:                     Left
+AlwaysBreakTemplateDeclarations:      Yes
+AllowShortCaseLabelsOnASingleLine:    true
+AllowShortIfStatementsOnASingleLine:  AllIfsAndElse
+IndentCaseLabels:                     true
+
+
+
+

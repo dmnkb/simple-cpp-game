@@ -55,7 +55,7 @@ struct CustomProperties
 struct Texture
 {
     GLuint id = 0;
-    bool isLoaded = 0;
+    bool isLoaded = false;
 
     Texture() = default;
     Texture(const std::string& path);
@@ -68,14 +68,8 @@ struct Texture
     void resize(int w, int h);
 
     // Convenience: dimensions at mip (clamped)
-    inline int widthAtLevel(int level) const
-    {
-        return std::max(1, properties.width >> level);
-    }
-    inline int heightAtLevel(int level) const
-    {
-        return std::max(1, properties.height >> level);
-    }
+    inline int widthAtLevel(int level) const { return std::max(1, properties.width >> level); }
+    inline int heightAtLevel(int level) const { return std::max(1, properties.height >> level); }
 
     ~Texture();
 

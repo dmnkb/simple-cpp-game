@@ -1,6 +1,10 @@
 #include "renderer/Shader.h"
+#include "core/Core.h"
 #include "pch.h"
 #include "renderer/GLDebug.h"
+
+namespace Engine
+{
 
 Shader::Shader(const char* vertexShaderPath, const char* fragmentShaderPath)
 {
@@ -205,3 +209,11 @@ const bool Shader::hasUniform(const char* name)
 {
     return getCachedLocation(name) >= 0;
 }
+
+Ref<Shader> Shader::getStandardShader()
+{
+    static Ref<Shader> standardShader = CreateRef<Shader>("shader/phong.vs", "shader/phong.fs");
+    return standardShader;
+}
+
+} // namespace Engine

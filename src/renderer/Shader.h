@@ -3,6 +3,11 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
+#include "core/Core.h"
+
+namespace Engine
+{
+
 struct ShaderSource
 {
     std::string vertexShader;
@@ -26,10 +31,7 @@ class Shader
     void bind();
     void unbind();
 
-    GLuint getProgramID()
-    {
-        return m_ProgramID;
-    }
+    GLuint getProgramID() { return m_ProgramID; }
 
     void setVertexAttribute(const char* name, GLint size, GLenum type, GLboolean normalized, GLsizei stride,
                             const void* pointer);
@@ -48,6 +50,8 @@ class Shader
     GLint getCachedLocation(const char* name);
     const bool hasUniform(const char* name);
 
+    static Ref<Shader> getStandardShader();
+
   private:
     GLuint m_ProgramID;
     GLuint m_VertexShaderID;
@@ -58,3 +62,5 @@ class Shader
 
     std::unordered_map<const char*, GLint> m_UniformLocationCache;
 };
+
+} // namespace Engine

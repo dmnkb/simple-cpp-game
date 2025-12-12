@@ -1,8 +1,6 @@
 #pragma once
 
 #include "renderer/LightingPass.h"
-#include "renderer/PostProcessingPass.h"
-#include "renderer/ShadowPass.h"
 #include "scene/Scene.h"
 
 namespace Engine
@@ -17,9 +15,9 @@ class Renderer
     void render(const Ref<Scene>& scene);
 
   private:
-    ShadowPass m_shadowPass;
+    // ShadowPass m_shadowPass;
     LightingPass m_lightingPass;
-    PostProcessingPass m_postProcessingPass;
+    // PostProcessingPass m_postProcessingPass;
 };
 
 } // namespace Engine

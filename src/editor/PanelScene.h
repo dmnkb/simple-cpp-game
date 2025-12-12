@@ -114,103 +114,107 @@ struct PanelScene
                 }
 
                 // Environment Lighting
-                ImGui::SeparatorText("Environment Lighting");
+                // ImGui::SeparatorText("Environment Lighting");
 
-                ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
-                if (ImGui::BeginTabBar("EnvironmentLightingMyTabBar", tab_bar_flags))
-                {
-                    if (ImGui::BeginTabItem("Config"))
-                    {
-                        Ref<DirectionalLight> sunLight = scene->getDirectionalLight();
-                        static DirectionalLight::DirectionalLightProperties sunLightProps =
-                            sunLight->getDirectionalLightProperties();
+                // ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
+                // if (ImGui::BeginTabBar("EnvironmentLightingMyTabBar", tab_bar_flags))
+                // {
+                //     if (ImGui::BeginTabItem("Config"))
+                //     {
+                //         Ref<DirectionalLight> sunLight = scene->getDirectionalLight();
+                //         static DirectionalLight::DirectionalLightProperties sunLightProps =
+                //             sunLight->getDirectionalLightProperties();
 
-                        if (sunLight)
-                        {
-                            if (ImGui::BeginTable("tex_props", 2,
-                                                  ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoBordersInBody))
-                            {
-                                ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed,
-                                                        availableWidth * 0.3f);
-                                ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
+                //         if (sunLight)
+                //         {
+                //             if (ImGui::BeginTable("tex_props", 2,
+                //                                   ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoBordersInBody))
+                //             {
+                //                 ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed,
+                //                                         availableWidth * 0.3f);
+                //                 ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
 
-                                // Sun Color
-                                static glm::vec4 intensity = sunLightProps.colorIntensity;
-                                static float sunColor[4] = {intensity.r, intensity.g, intensity.b, intensity.a};
+                //                 // Sun Color
+                //                 static glm::vec4 intensity = sunLightProps.colorIntensity;
+                //                 static float sunColor[4] = {intensity.r, intensity.g, intensity.b, intensity.a};
 
-                                ImGui::TableNextRow();
-                                ImGui::TableSetColumnIndex(0);
-                                ImGui::TextUnformatted("Sun Color");
-                                ImGui::TableSetColumnIndex(1);
+                //                 ImGui::TableNextRow();
+                //                 ImGui::TableSetColumnIndex(0);
+                //                 ImGui::TextUnformatted("Sun Color");
+                //                 ImGui::TableSetColumnIndex(1);
 
-                                if (ImGui::ColorButton(
-                                        "##sunColorBtn", ImVec4(sunColor[0], sunColor[1], sunColor[2], sunColor[3]),
-                                        ImGuiColorEditFlags_NoTooltip, ImVec2(ImGui::GetContentRegionAvail().x, 24.0f)))
-                                {
-                                    ImGui::OpenPopup("##sunColorPopup");
-                                }
-                                if (ImGui::BeginPopup("##sunColorPopup"))
-                                {
-                                    ImGui::ColorPicker4("##sunColorPicker", sunColor,
-                                                        ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB |
-                                                            ImGuiColorEditFlags_AlphaBar |
-                                                            ImGuiColorEditFlags_PickerHueBar |
-                                                            ImGuiColorEditFlags_NoSidePreview);
-                                    ImGui::EndPopup();
-                                }
-                                sunLight->setColor(sunColor[0], sunColor[1], sunColor[2], sunColor[3]);
+                //                 if (ImGui::ColorButton(
+                //                         "##sunColorBtn", ImVec4(sunColor[0], sunColor[1], sunColor[2], sunColor[3]),
+                //                         ImGuiColorEditFlags_NoTooltip,
+                //                         ImVec2(ImGui::GetContentRegionAvail().x, 24.0f)))
+                //                 {
+                //                     ImGui::OpenPopup("##sunColorPopup");
+                //                 }
+                //                 if (ImGui::BeginPopup("##sunColorPopup"))
+                //                 {
+                //                     ImGui::ColorPicker4("##sunColorPicker", sunColor,
+                //                                         ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB
+                //                                         |
+                //                                             ImGuiColorEditFlags_AlphaBar |
+                //                                             ImGuiColorEditFlags_PickerHueBar |
+                //                                             ImGuiColorEditFlags_NoSidePreview);
+                //                     ImGui::EndPopup();
+                //                 }
+                //                 sunLight->setColor(sunColor[0], sunColor[1], sunColor[2], sunColor[3]);
 
-                                // Ambient  Light Color
-                                ImGui::TableNextRow();
-                                ImGui::TableSetColumnIndex(0);
-                                ImGui::TextUnformatted("Ambient Color");
-                                ImGui::TableSetColumnIndex(1);
+                //                 // Ambient  Light Color
+                //                 ImGui::TableNextRow();
+                //                 ImGui::TableSetColumnIndex(0);
+                //                 ImGui::TextUnformatted("Ambient Color");
+                //                 ImGui::TableSetColumnIndex(1);
 
-                                static glm::vec4 ambientColor = scene->getAmbientLightColor();
-                                if (ImGui::ColorButton(
-                                        "##ambientColorBtn",
-                                        ImVec4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a),
-                                        ImGuiColorEditFlags_NoTooltip, ImVec2(ImGui::GetContentRegionAvail().x, 24.0f)))
-                                {
-                                    ImGui::OpenPopup("##ambientColorPopup");
-                                }
-                                if (ImGui::BeginPopup("##ambientColorPopup"))
-                                {
-                                    ImGui::ColorPicker4("##ambientColorPicker", (float*)&ambientColor,
-                                                        ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB |
-                                                            ImGuiColorEditFlags_AlphaBar |
-                                                            ImGuiColorEditFlags_PickerHueBar |
-                                                            ImGuiColorEditFlags_NoSidePreview);
-                                    ImGui::EndPopup();
-                                }
-                                scene->setAmbientLightColor(ambientColor);
+                //                 static glm::vec4 ambientColor = scene->getAmbientLightColor();
+                //                 if (ImGui::ColorButton(
+                //                         "##ambientColorBtn",
+                //                         ImVec4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a),
+                //                         ImGuiColorEditFlags_NoTooltip,
+                //                         ImVec2(ImGui::GetContentRegionAvail().x, 24.0f)))
+                //                 {
+                //                     ImGui::OpenPopup("##ambientColorPopup");
+                //                 }
+                //                 if (ImGui::BeginPopup("##ambientColorPopup"))
+                //                 {
+                //                     ImGui::ColorPicker4("##ambientColorPicker", (float*)&ambientColor,
+                //                                         ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB
+                //                                         |
+                //                                             ImGuiColorEditFlags_AlphaBar |
+                //                                             ImGuiColorEditFlags_PickerHueBar |
+                //                                             ImGuiColorEditFlags_NoSidePreview);
+                //                     ImGui::EndPopup();
+                //                 }
+                //                 scene->setAmbientLightColor(ambientColor);
 
-                                // Sun Direction
-                                ImGui::TableNextRow();
-                                ImGui::TableSetColumnIndex(0);
-                                ImGui::TextUnformatted("Sun Direction");
-                                ImGui::TableSetColumnIndex(1);
+                //                 // Sun Direction
+                //                 ImGui::TableNextRow();
+                //                 ImGui::TableSetColumnIndex(0);
+                //                 ImGui::TextUnformatted("Sun Direction");
+                //                 ImGui::TableSetColumnIndex(1);
 
-                                static glm::vec3 direction = sunLightProps.direction;
-                                if (DragVec3Row("direction", direction, 0.1f))
-                                    sunLight->setDirection(direction);
+                //                 static glm::vec3 direction = sunLightProps.direction;
+                //                 if (DragVec3Row("direction", direction, 0.1f))
+                //                     sunLight->setDirection(direction);
 
-                                ImGui::EndTable();
-                            }
-                        }
-                        ImGui::EndTabItem();
-                    }
+                //                 ImGui::EndTable();
+                //             }
+                //         }
+                //         ImGui::EndTabItem();
+                //     }
 
-                    if (ImGui::BeginTabItem("Debug"))
-                    {
-                        // ImGui::Checkbox("Visualize Cascades", &g_debugState.visualizeCascades);
+                //     if (ImGui::BeginTabItem("Debug"))
+                //     {
+                //         // ImGui::Checkbox("Visualize Cascades", &g_debugState.visualizeCascades);
 
-                        ImGui::EndTabItem();
-                    }
-                    ImGui::EndTabBar();
-                }
+                //         ImGui::EndTabItem();
+                //     }
+                //     ImGui::EndTabBar();
+                // }
 
-                ImGui::EndTabItem();
+                // ImGui::EndTabItem();
             }
 
             if (ImGui::BeginTabItem("Inspector"))

@@ -1,6 +1,7 @@
 #include "scene/Scene.h"
 #include "core/Profiler.h"
 #include "pch.h"
+#include "scene/Entity.h"
 
 namespace Engine
 {
@@ -14,84 +15,43 @@ Scene::Scene()
                                                 .isMainCamera = true});
 }
 
-void Scene::addModel(const Model& model)
+Scene::~Scene() {}
+
+Entity Scene::createEntity(std::string const& name)
 {
-    m_models.push_back(model);
-    m_renderablesDirty = true;
+    Entity entity = {m_registry.create(), this};
+    entity.addComponent<TransformComponent>();
+    auto& tag = entity.addComponent<TagComponent>();
+    tag.tag = name.empty() ? "Entity" : name;
+
+    return entity;
 }
 
-void Scene::addSpotLight(const Ref<SpotLight>& light)
+void Scene::destroyEntity(entt::entity entity)
 {
-    m_spotLights.push_back(light);
+    m_registry.destroy(entity);
 }
 
-void Scene::addPointLight(const Ref<PointLight>& light)
-{
-    m_pointLights.push_back(light);
-}
 
-void Scene::setDirectionalLight(const Ref<DirectionalLight>& light)
-{
-    m_directionalLight = light;
-}
 
 // TODO: Sort transparent renderables back-to-front
+// TODO: Maybe consider submitting instanced meshes to the rendererAPI directly so we don't have to loop twice
 RenderQueue Scene::getRenderQueue(const std::string& passName)
 {
-    if (!m_renderablesDirty)
-    {
-        return m_cachedRenderQueue;
-    }
-
     RenderQueue renderQueue = {};
 
-    // Group renderables by their name to ensure identical meshes are processed together
-    std::unordered_map<std::string, std::vector<Renderable>> sortedRenderables = {};
-    for (const auto& model : m_models)
+    auto group = m_registry.group<TransformComponent>(entt::get<MeshComponent>);
+
+    for (auto entity : group)
     {
-        for (const auto& renderable : model.renderables)
-        {
-            sortedRenderables[renderable.name].push_back(renderable);
-        }
+        const auto& [transformComp, meshComp] = group.get<TransformComponent, MeshComponent>(entity);
+        const Ref<Mesh>& mesh = meshComp.mesh;
+        const Ref<Material>& material = meshComp.material;
+
+        renderQueue[material][mesh].emplace_back(transformComp.transform);
     }
-
-    // Process each group of renderables, collecting transforms and associating materials and meshes
-    for (const auto& [meshName, renderables] : sortedRenderables)
-    {
-        std::vector<glm::mat4> transforms = {};
-        Ref<Material> material = nullptr;
-        Ref<Mesh> mesh = nullptr;
-        for (const auto& renderable : renderables)
-        {
-            transforms.push_back(renderable.transform);
-            if (!material)
-                material = renderable.material;
-
-            if (!mesh)
-                mesh = renderable.mesh;
-        }
-        renderQueue[material][mesh] = transforms;
-    }
-
-    m_renderablesDirty = false;
-    m_cachedRenderQueue = renderQueue;
 
     return renderQueue;
-}
-
-std::vector<Ref<SpotLight>> Scene::getSpotLights() const
-{
-    return m_spotLights;
-}
-
-std::vector<Ref<PointLight>> Scene::getPointLights() const
-{
-    return m_pointLights;
-}
-
-Ref<DirectionalLight> Scene::getDirectionalLight() const
-{
-    return m_directionalLight;
 }
 
 void Scene::setAmbientLightColor(const glm::vec4& color)

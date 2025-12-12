@@ -1,0 +1,88 @@
+#pragma once
+
+#include <concepts>
+#include <string>
+
+#include "glm/glm.hpp"
+#include "renderer/Material.h"
+#include "renderer/Mesh.h"
+
+namespace Engine
+{
+
+struct TransformComponent
+{
+    glm::mat4 transform = glm::mat4(1.0f);
+
+    TransformComponent() = default;
+    TransformComponent(const TransformComponent&) = default;
+    TransformComponent(const glm::mat4 transform) : transform(transform) {}
+
+    operator glm::mat4&() { return transform; }
+    operator const glm::mat4&() const { return transform; }
+};
+
+struct TagComponent
+{
+    std::string tag;
+
+    TagComponent() = default;
+    TagComponent(const TagComponent&) = default;
+    TagComponent(const std::string& tag) : tag(tag) {}
+};
+
+struct MeshComponent
+{
+    Ref<Mesh> mesh;
+    Ref<Material> material;
+
+    MeshComponent() = default;
+    MeshComponent(const MeshComponent&) = default;
+    MeshComponent(const Ref<Mesh>& mesh, const Ref<Material>& material) : mesh(mesh), material(material) {}
+};
+
+struct PointLightComponent
+{
+    glm::vec3 color = glm::vec3(1.0f);
+    float intensity = 1.0f;
+    float radius = 10.0f;
+    // Attenuation factors
+    float constant = 1.0f;
+    float linear = 0.09f;
+    float quadratic = 0.032f;
+
+    PointLightComponent() = default;
+    PointLightComponent(const PointLightComponent&) = default;
+};
+
+struct SpotLightComponent
+{
+    glm::vec3 color = glm::vec3(1.0f);
+    float intensity = 1.0f;
+    float innerConeAngle = glm::radians(15.0f);
+    float outerConeAngle = glm::radians(25.0f);
+    // Attenuation factors
+    float constant = 1.0f;
+    float linear = 0.09f;
+    float quadratic = 0.032f;
+
+    SpotLightComponent() = default;
+    SpotLightComponent(const SpotLightComponent&) = default;
+};
+
+struct DirectionalLightComponent
+{
+    glm::vec3 color = glm::vec3(1.0f);
+    float intensity = 1.0f;
+
+    DirectionalLightComponent() = default;
+    DirectionalLightComponent(const DirectionalLightComponent&) = default;
+};
+
+// Concept to constrain light component types
+template <typename T>
+concept LightComponent = std::same_as<T, PointLightComponent> ||
+                         std::same_as<T, SpotLightComponent> ||
+                         std::same_as<T, DirectionalLightComponent>;
+
+} // namespace Engine
