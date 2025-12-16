@@ -2,6 +2,8 @@
 
 #include "glm/glm.hpp"
 #include "imgui.h"
+#include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <imgui_internal.h>
 
 #include "editor/EditorState.h"
@@ -68,6 +70,30 @@ static void renderTagComponen(Entity entity, const Ref<Scene>& scene)
     }
 }
 
+static void renderTransformComponent(Entity entity, const Ref<Scene>& scene)
+{
+    auto& transform = entity.getComponent<TransformComponent>();
+
+    glm::vec3 translation, scale, skew;
+    glm::vec4 perspective;
+    glm::quat rotation;
+    glm::decompose(transform.transform, scale, rotation, translation, skew, perspective);
+
+    glm::vec3 eulerRotation = glm::degrees(glm::eulerAngles(rotation));
+
+    bool changed = false;
+    changed |= DragVec3Row("Translation", translation);
+    changed |= DragVec3Row("Rotation", eulerRotation);
+    changed |= DragVec3Row("Scale", scale);
+
+    if (changed)
+    {
+        rotation = glm::quat(glm::radians(eulerRotation));
+        transform.transform =
+            glm::translate(glm::mat4(1.0f), translation) * glm::toMat4(rotation) * glm::scale(glm::mat4(1.0f), scale);
+    }
+}
+
 struct PanelComponents
 {
     static void render(const Ref<Scene>& scene)
@@ -89,6 +115,13 @@ struct PanelComponents
             ImGui::Separator();
             ImGui::Text("Tag Component");
             renderTagComponen(entity, scene);
+        }
+
+        if (entity.hasComponent<TransformComponent>())
+        {
+            ImGui::Separator();
+            ImGui::Text("Transform Component");
+            renderTransformComponent(entity, scene);
         }
 
         ImGui::End();

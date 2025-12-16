@@ -11,6 +11,15 @@
 namespace Engine
 {
 
+struct TagComponent
+{
+    std::string tag;
+
+    TagComponent() = default;
+    TagComponent(const TagComponent&) = default;
+    TagComponent(const std::string& tag) : tag(tag) {}
+};
+
 struct TransformComponent
 {
     glm::mat4 transform = glm::mat4(1.0f);
@@ -23,15 +32,6 @@ struct TransformComponent
 
     operator glm::mat4&() { return transform; }
     operator const glm::mat4&() const { return transform; }
-};
-
-struct TagComponent
-{
-    std::string tag;
-
-    TagComponent() = default;
-    TagComponent(const TagComponent&) = default;
-    TagComponent(const std::string& tag) : tag(tag) {}
 };
 
 struct MeshComponent
