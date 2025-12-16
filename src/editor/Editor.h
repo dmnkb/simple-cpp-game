@@ -6,21 +6,6 @@
 namespace Engine
 {
 
-struct DebugState
-{
-    // General
-    bool showWireframe = false;
-    bool showBoundingBoxes = false;
-    bool pauseTime = false;
-
-    // std::variant<OrbitPanCtrl, FlySpectatorCtrl> viewportCamController;
-
-    // Cascade Shadow Maps
-    bool csmDebugEnabled = false;
-
-    int selectedCascade = 0;
-} static g_debugState;
-
 class Editor
 {
   public:

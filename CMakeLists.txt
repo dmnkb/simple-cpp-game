@@ -15,9 +15,9 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.h)
 add_subdirectory(vendor/glfw EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/glad EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/glm EXCLUDE_FROM_ALL)
-add_subdirectory(vendor/imgui)
 add_subdirectory(vendor/fmt)
 add_subdirectory(vendor/entt)
+add_subdirectory(vendor/imgui)
 
 # Assimp local include + lib
 set(ASSIMP_DIR "${CMAKE_SOURCE_DIR}/vendor/assimp")
@@ -38,6 +38,8 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE glad 
     PRIVATE glm
     PRIVATE imgui
+    PRIVATE imgui_impl_glfw
+    PRIVATE imgui_impl_opengl3
     PRIVATE fmt::fmt
     PRIVATE ${ASSIMP_LIBRARY}
     PRIVATE EnTT::EnTT

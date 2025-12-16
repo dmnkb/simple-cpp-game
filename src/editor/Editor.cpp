@@ -5,6 +5,7 @@
 #include "assets/MeshLoader.h"
 #include "core/Window.h"
 #include "editor/Editor.h"
+#include "editor/PanelComponents.h"
 #include "editor/PanelFrametime.h"
 #include "editor/PanelScene.h"
 #include "editor/PanelSceneHierarchy.h"
@@ -36,9 +37,12 @@ void Editor::onUpdate(float fps, const Ref<Scene>& activeScene, const double del
 
 void Editor::onImGuiRender(float fps, const Ref<Scene>& activeScene, const double deltaTime)
 {
+    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+
     PanelStats::render(fps);
     PanelFrametime::render();
     PanelSceneHierarchy::render(activeScene);
+    PanelComponents::render(activeScene);
     // PanelScene::render(activeScene);
     // PanelStatsHighlights::render(fps, activeScene);
 }

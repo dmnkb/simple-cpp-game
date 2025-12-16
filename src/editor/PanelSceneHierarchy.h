@@ -4,7 +4,7 @@
 #include <imgui_internal.h>
 
 #include "core/Profiler.h"
-#include "editor/Shared.h"
+#include "editor/EditorState.h"
 #include "renderer/ClearColor.h"
 #include "renderer/RendererAPI.h"
 #include "scene/Entity.h"
@@ -17,40 +17,52 @@ namespace Engine
 
 struct PanelSceneHierarchy
 {
-    // Keep selection state here for now
     inline static entt::entity s_selected = entt::null;
 
     static void DrawEntityNode(Entity entity)
     {
         auto& tag = entity.getComponent<TagComponent>().tag;
 
+        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnArrow |
+                                   ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_Leaf;
+
         const entt::entity id = entity.getHandle();
-
-        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnArrow;
-
-        // If you don't have children yet, make it a leaf:
-        flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-
         if (s_selected == id) flags |= ImGuiTreeNodeFlags_Selected;
 
-        // Stable unique ID for ImGui
         ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)id, flags, "%s", tag.c_str());
 
-        if (ImGui::IsItemClicked()) s_selected = id;
-
-        // Context menu (optional)
-        if (ImGui::BeginPopupContextItem())
+        if (ImGui::IsItemClicked())
         {
-            if (ImGui::MenuItem("Delete"))
-            {
-                // Usually you'd queue this instead of immediate delete while iterating
-                // entity.getScene()->destroyEntity(id);
-            }
-            ImGui::EndPopup();
+            s_selected = id;
+            g_editorState.selectedEntity = entity;
+        }
+    }
+
+    static void drawNewEntityPopup(const Ref<Scene>& scene)
+    {
+        if (ImGui::Button("Add Entity"))
+        {
+            ImGui::OpenPopup("AddEntityPopup");
         }
 
-        // Later, when you have a RelationshipComponent:
-        // if (opened) { for (child : children) DrawEntityNode(childEntity); ImGui::TreePop(); }
+        if (ImGui::BeginPopup("AddEntityPopup"))
+        {
+            static char nameBuffer[128] = "New Entity";
+            ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer));
+
+            if (ImGui::Button("Create"))
+            {
+                scene->createEntity(std::string(nameBuffer));
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel"))
+            {
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
     }
 
     static void render(const Ref<Scene>& scene)
@@ -69,7 +81,14 @@ struct PanelSceneHierarchy
             }
 
             // Click empty space to clear selection
-            if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()) s_selected = entt::null;
+            if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
+            {
+                s_selected = entt::null;
+                g_editorState.selectedEntity = {};
+            }
+
+            // Open popup to enter entity name
+            drawNewEntityPopup(scene);
 
             scene->forEachHierarchyEntity([&](entt::entity entityID)
                                           { DrawEntityNode(Entity{entityID, scene.get()}); });

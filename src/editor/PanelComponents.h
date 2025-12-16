@@ -3,7 +3,10 @@
 #include "glm/glm.hpp"
 #include "imgui.h"
 #include <imgui_internal.h>
-#include <string>
+
+#include "editor/EditorState.h"
+#include "scene/Entity.h"
+#include "scene/Scene.h"
 
 namespace Engine
 {
@@ -50,5 +53,46 @@ static bool DragVec3Row(const char* id, glm::vec3& v, float speed = 0.1f)
     ImGui::PopID();
     return changed;
 }
+
+static void renderTagComponen(Entity entity, const Ref<Scene>& scene)
+{
+    auto& tag = entity.getComponent<TagComponent>().tag;
+
+    char buffer[256];
+    std::strncpy(buffer, tag.c_str(), sizeof(buffer));
+    buffer[sizeof(buffer) - 1] = 0;
+
+    if (ImGui::InputText("##Tag", buffer, sizeof(buffer)))
+    {
+        tag = std::string(buffer);
+    }
+}
+
+struct PanelComponents
+{
+    static void render(const Ref<Scene>& scene)
+    {
+        static bool open = true;
+        ImGui::Begin("Components", &open);
+
+        if (!g_editorState.selectedEntity)
+        {
+            ImGui::TextUnformatted("No entity selected.");
+            ImGui::End();
+            return;
+        }
+
+        const auto& entity = g_editorState.selectedEntity;
+
+        if (entity.hasComponent<TagComponent>())
+        {
+            ImGui::Separator();
+            ImGui::Text("Tag Component");
+            renderTagComponen(entity, scene);
+        }
+
+        ImGui::End();
+    }
+};
 
 } // namespace Engine

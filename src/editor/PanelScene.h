@@ -1,6 +1,5 @@
 #pragma once
 
-#include "editor/Shared.h"
 #include "renderer/ClearColor.h"
 #include "renderer/RendererAPI.h"
 #include "scene/Scene.h"
@@ -52,8 +51,7 @@ struct PanelScene
                                 selected = i;
                                 reapplyPreset = true;
                             }
-                            if (isSelected)
-                                ImGui::SetItemDefaultFocus();
+                            if (isSelected) ImGui::SetItemDefaultFocus();
                         }
                         ImGui::EndCombo();
                     }

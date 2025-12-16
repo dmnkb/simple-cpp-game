@@ -10,8 +10,7 @@ namespace Engine
 
 void ImGuiLayer::onAttach(GLFWwindow* window)
 {
-    if (m_initialized || !window)
-        return;
+    if (m_initialized || !window) return;
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -21,7 +20,7 @@ void ImGuiLayer::onAttach(GLFWwindow* window)
 
     // Enable docking if you like; you can toggle this later if needed
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable keyboard controls
-    // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;     // Enable docking TODO:
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;     // Enable docking TODO:
 
     // Setup Dear ImGui style
     // Fonts (optional)
@@ -120,8 +119,7 @@ void ImGuiLayer::onAttach(GLFWwindow* window)
 
 void ImGuiLayer::onDetach()
 {
-    if (!m_initialized)
-        return;
+    if (!m_initialized) return;
 
     // Shutdown backends
     ImGui_ImplOpenGL3_Shutdown();
@@ -135,8 +133,7 @@ void ImGuiLayer::onDetach()
 
 void ImGuiLayer::beginFrame()
 {
-    if (!m_initialized || !m_enabled)
-        return;
+    if (!m_initialized || !m_enabled) return;
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -145,8 +142,7 @@ void ImGuiLayer::beginFrame()
 
 void ImGuiLayer::endFrame()
 {
-    if (!m_initialized || !m_enabled)
-        return;
+    if (!m_initialized || !m_enabled) return;
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

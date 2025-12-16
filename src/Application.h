@@ -28,6 +28,9 @@ class Application
 
     // AssetSystem m_assets; TODO: Implement asset system
 
+    // TODO: Think about how to best handle editor vs. runtime mode
+    bool m_isEditorMode = true;
+
     double m_DeltaTime = 0.0;
     double m_FPSUpdateTime = 0.0;
     int m_FrameCount = 0;

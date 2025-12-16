@@ -77,6 +77,7 @@ struct DirectionalLightComponent
 {
     glm::vec3 color = glm::vec3(1.0f);
     float intensity = 1.0f;
+    bool isMainLight = false;
 
     DirectionalLightComponent() = default;
     DirectionalLightComponent(const DirectionalLightComponent&) = default;

@@ -24,7 +24,14 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [x] Cascaded shadow maps 
 - [x] Change debug to editor
 - [ ] ECS
-- [ ] ImGUI Gimbal controls
+    - [ ] Add entities
+    - [ ] Remove entities
+    - [ ] Scene hierarchy panel
+        - [ ] Display associated components
+        - [ ] Add / remove components
+        - [ ] Modify components
+    - [ ] (De)serialize scene
+- [ ] ImGUI Gizmo controls
 - [x] Display frametime (CPU)
 - [ ] Mip chain bloom
 - [ ] Split architecture into engine and game
