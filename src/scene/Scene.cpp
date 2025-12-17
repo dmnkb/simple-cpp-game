@@ -32,8 +32,6 @@ void Scene::destroyEntity(entt::entity entity)
     m_registry.destroy(entity);
 }
 
-
-
 // TODO: Sort transparent renderables back-to-front
 // TODO: Maybe consider submitting instanced meshes to the rendererAPI directly so we don't have to loop twice
 RenderQueue Scene::getRenderQueue(const std::string& passName)
@@ -47,6 +45,8 @@ RenderQueue Scene::getRenderQueue(const std::string& passName)
         const auto& [transformComp, meshComp] = group.get<TransformComponent, MeshComponent>(entity);
         const Ref<Mesh>& mesh = meshComp.mesh;
         const Ref<Material>& material = meshComp.material;
+
+        if (!mesh || !material) continue;
 
         renderQueue[material][mesh].emplace_back(transformComp.getTransform());
     }

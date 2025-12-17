@@ -14,6 +14,49 @@
 namespace Engine
 {
 
+template <typename T>
+void drawComponentUI(const char* name, Entity entity, std::function<void(T&)> uiFunction)
+{
+    if (!entity.hasComponent<T>()) return;
+
+    ImGui::PushID((int)typeid(T).hash_code());
+
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
+                               ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding |
+                               ImGuiTreeNodeFlags_AllowOverlap;
+
+    bool opened = ImGui::TreeNodeEx("##component_header", flags, "%s", name);
+
+    float buttonWidth = ImGui::CalcTextSize("Edit").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+    float rightEdge = ImGui::GetWindowContentRegionMax().x;
+
+    ImGui::SameLine();
+    ImGui::SetCursorPosX(rightEdge - buttonWidth);
+
+    if (ImGui::Button("Edit")) ImGui::OpenPopup("ComponentSettings");
+
+    if (ImGui::BeginPopup("ComponentSettings"))
+    {
+        if (ImGui::MenuItem("Remove Component")) entity.removeComponent<T>();
+        ImGui::EndPopup();
+    }
+
+    if (opened)
+    {
+        if (!entity.hasComponent<T>())
+        {
+            ImGui::TreePop();
+            ImGui::PopID();
+            return;
+        }
+        auto& component = entity.getComponent<T>();
+        uiFunction(component);
+        ImGui::TreePop();
+    }
+
+    ImGui::PopID();
+}
+
 static bool DragVec3Row(const char* id, glm::vec3& v, bool allowNegative = true, bool allowZero = true,
                         float speed = 0.1f)
 {
@@ -70,9 +113,20 @@ static void renderTagComponen(Entity entity, const Ref<Scene>& scene)
     std::strncpy(buffer, tag.c_str(), sizeof(buffer));
     buffer[sizeof(buffer) - 1] = 0;
 
-    if (ImGui::InputText("##Tag", buffer, sizeof(buffer)))
+    if (ImGui::BeginTable("TransformTable", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoBordersInBody))
     {
-        tag = std::string(buffer);
+        const float availableWidth = ImGui::GetContentRegionAvail().x;
+        ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, availableWidth * 0.3f);
+        ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted("Tag");
+        ImGui::TableSetColumnIndex(1);
+        const float avail = ImGui::GetContentRegionAvail().x;
+        ImGui::PushItemWidth(avail);
+        if (ImGui::InputText("##Tag", buffer, sizeof(buffer))) tag = std::string(buffer);
+        ImGui::PopItemWidth();
+        ImGui::EndTable();
     }
 }
 
@@ -105,7 +159,7 @@ static void renderTransformComponent(Entity entity, const Ref<Scene>& scene)
     }
 }
 
-static void drawNewComponentPopup(Entity entity, const Ref<Scene>& scene)
+static void renderComponentSelectionPopup(Entity entity, const Ref<Scene>& scene)
 {
     if (ImGui::Button("Add Component"))
     {
@@ -186,23 +240,18 @@ struct PanelComponents
             return;
         }
 
-        drawNewComponentPopup(g_editorState.selectedEntity, scene);
-
         const auto& entity = g_editorState.selectedEntity;
 
-        if (entity.hasComponent<TagComponent>())
-        {
-            ImGui::Separator();
-            ImGui::Text("Tag Component");
+        // clang-format off
+        drawComponentUI<TagComponent>("Tag Component", entity, [&](TagComponent& component) {
             renderTagComponen(entity, scene);
-        }
-
-        if (entity.hasComponent<TransformComponent>())
-        {
-            ImGui::Separator();
-            ImGui::Text("Transform Component");
+        });
+        drawComponentUI<TransformComponent>("Transform Component", entity, [&](TransformComponent& component) {
             renderTransformComponent(entity, scene);
-        }
+        });
+        // clang-format on
+
+        renderComponentSelectionPopup(g_editorState.selectedEntity, scene);
 
         ImGui::End();
     }
