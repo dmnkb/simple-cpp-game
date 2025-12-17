@@ -48,7 +48,7 @@ RenderQueue Scene::getRenderQueue(const std::string& passName)
         const Ref<Mesh>& mesh = meshComp.mesh;
         const Ref<Material>& material = meshComp.material;
 
-        renderQueue[material][mesh].emplace_back(transformComp.transform);
+        renderQueue[material][mesh].emplace_back(transformComp.getTransform());
     }
 
     return renderQueue;

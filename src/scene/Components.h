@@ -4,6 +4,7 @@
 #include <string>
 
 #include "glm/glm.hpp"
+#include <glm/gtx/quaternion.hpp>
 #include "glm/gtc/matrix_transform.hpp"
 #include "renderer/Material.h"
 #include "renderer/Mesh.h"
@@ -22,16 +23,19 @@ struct TagComponent
 
 struct TransformComponent
 {
-    glm::mat4 transform = glm::mat4(1.0f);
+    glm::vec3 translation = {0.0f, 0.0f, 0.0f};
+    glm::vec3 rotation = {0.0f, 0.0f, 0.0f}; // In degrees
+    glm::vec3 scale = {1.0f, 1.0f, 1.0f};
 
     TransformComponent() = default;
     TransformComponent(const TransformComponent&) = default;
-    TransformComponent(const glm::mat4 transform) : transform(transform) {}
+    TransformComponent(const glm::vec3& translation) : translation(translation) {}
 
-    void translate(const glm::vec3& delta) { transform = glm::translate(transform, delta); }
-
-    operator glm::mat4&() { return transform; }
-    operator const glm::mat4&() const { return transform; }
+    glm::mat4 getTransform() const
+    {
+        glm::mat4 rotationMatrix = glm::toMat4(glm::quat(glm::radians(rotation)));
+        return glm::translate(glm::mat4(1.0f), translation) * rotationMatrix * glm::scale(glm::mat4(1.0f), scale);
+    }
 };
 
 struct MeshComponent

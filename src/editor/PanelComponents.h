@@ -2,6 +2,7 @@
 
 #include "glm/glm.hpp"
 #include "imgui.h"
+#include <algorithm>
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <imgui_internal.h>
@@ -13,7 +14,8 @@
 namespace Engine
 {
 
-static bool DragVec3Row(const char* id, glm::vec3& v, float speed = 0.1f)
+static bool DragVec3Row(const char* id, glm::vec3& v, bool allowNegative = true, bool allowZero = true,
+                        float speed = 0.1f)
 {
     bool changed = false;
 
@@ -39,7 +41,11 @@ static bool DragVec3Row(const char* id, glm::vec3& v, float speed = 0.1f)
         ImGui::SameLine(0.0f, style.ItemInnerSpacing.x);
 
         std::string dragLabel = "##" + std::string(id) + std::string(label);
-        bool axisChanged = ImGui::DragFloat(dragLabel.c_str(), &val, speed, 0.0f, 0.0f, "%.2f");
+
+        float min = allowNegative ? -FLT_MAX : allowZero ? 0.0f : 0.01f;
+        float max = FLT_MAX;
+
+        bool axisChanged = ImGui::DragFloat(dragLabel.c_str(), &val, speed, min, max, "%.2f");
 
         ImGui::SameLine(0.0f, style.ItemSpacing.x);
         ImGui::PopItemWidth();
@@ -74,23 +80,95 @@ static void renderTransformComponent(Entity entity, const Ref<Scene>& scene)
 {
     auto& transform = entity.getComponent<TransformComponent>();
 
-    glm::vec3 translation, scale, skew;
-    glm::vec4 perspective;
-    glm::quat rotation;
-    glm::decompose(transform.transform, scale, rotation, translation, skew, perspective);
-
-    glm::vec3 eulerRotation = glm::degrees(glm::eulerAngles(rotation));
-
-    bool changed = false;
-    changed |= DragVec3Row("Translation", translation);
-    changed |= DragVec3Row("Rotation", eulerRotation);
-    changed |= DragVec3Row("Scale", scale);
-
-    if (changed)
+    if (ImGui::BeginTable("TransformTable", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoBordersInBody))
     {
-        rotation = glm::quat(glm::radians(eulerRotation));
-        transform.transform =
-            glm::translate(glm::mat4(1.0f), translation) * glm::toMat4(rotation) * glm::scale(glm::mat4(1.0f), scale);
+        const float availableWidth = ImGui::GetContentRegionAvail().x;
+        ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, availableWidth * 0.3f);
+        ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted("Translation");
+        ImGui::TableSetColumnIndex(1);
+        DragVec3Row("Translation", transform.translation);
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted("Rotation");
+        ImGui::TableSetColumnIndex(1);
+        DragVec3Row("Rotation", transform.rotation);
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted("Scale");
+        ImGui::TableSetColumnIndex(1);
+        // Disable negative scale
+        DragVec3Row("Scale", transform.scale, false, false);
+        ImGui::EndTable();
+    }
+}
+
+static void drawNewComponentPopup(Entity entity, const Ref<Scene>& scene)
+{
+    if (ImGui::Button("Add Component"))
+    {
+        ImGui::OpenPopup("AddComponentPopup");
+    }
+
+    if (ImGui::BeginPopup("AddComponentPopup"))
+    {
+        // Tree View for components
+        if (ImGui::TreeNodeEx("Lights", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            if (!entity.hasComponent<PointLightComponent>())
+            {
+                if (ImGui::MenuItem("Point Light Component"))
+                {
+                    entity.addComponent<PointLightComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            if (!entity.hasComponent<SpotLightComponent>())
+            {
+                if (ImGui::MenuItem("Spot Light Component"))
+                {
+                    entity.addComponent<SpotLightComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            if (!entity.hasComponent<DirectionalLightComponent>())
+            {
+                if (ImGui::MenuItem("Directional Light Component"))
+                {
+                    entity.addComponent<DirectionalLightComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            ImGui::TreePop();
+        }
+        if (ImGui::TreeNodeEx("Rendering", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            if (!entity.hasComponent<MeshComponent>())
+            {
+                if (ImGui::MenuItem("Mesh Component"))
+                {
+                    entity.addComponent<MeshComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            // if (!entity.hasComponent<MaterialComponent>())
+            // {
+            //     if (ImGui::MenuItem("Material Component"))
+            //     {
+            //         entity.addComponent<MaterialComponent>();
+            //         ImGui::CloseCurrentPopup();
+            //     }
+            // }
+            ImGui::TreePop();
+        }
+        if (ImGui::TreeNodeEx("Physics", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::TreePop();
+        }
+
+        ImGui::EndPopup();
     }
 }
 
@@ -107,6 +185,8 @@ struct PanelComponents
             ImGui::End();
             return;
         }
+
+        drawNewComponentPopup(g_editorState.selectedEntity, scene);
 
         const auto& entity = g_editorState.selectedEntity;
 

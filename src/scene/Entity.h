@@ -44,7 +44,7 @@ class Entity
 
     entt::entity getHandle() const { return m_handle; }
 
-    glm::mat4 getTransformMatrix() { return getComponent<TransformComponent>(); }
+    glm::mat4 getTransformMatrix() { return getComponent<TransformComponent>().getTransform(); }
 
     operator bool() const { return m_handle != entt::null; }
 

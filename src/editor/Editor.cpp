@@ -87,7 +87,7 @@ void Editor::throwAwayDemoScene(const Ref<Scene>& activeScene)
         // Create a new entity for each submesh
         auto entity = activeScene->createEntity("Ground_" + std::to_string(submeshIndex));
 
-        entity.getComponent<TransformComponent>().translate({0.0f, 5.0f, 0.0f});
+        entity.getComponent<TransformComponent>().translation += glm::vec3(0.0f, 5.0f, 0.0f);
 
         auto& meshComp = entity.addComponent<MeshComponent>();
         meshComp.mesh = submesh.mesh;
