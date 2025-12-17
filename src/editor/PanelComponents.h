@@ -35,22 +35,43 @@ void drawComponentUI(const char* name, Entity entity, std::function<void(T&)> ui
 
     if (ImGui::Button("Edit")) ImGui::OpenPopup("ComponentSettings");
 
+    bool requestRemove = false;
+    bool requestWarn = false;
+
     if (ImGui::BeginPopup("ComponentSettings"))
     {
-        if (ImGui::MenuItem("Remove Component")) entity.removeComponent<T>();
+        if (ImGui::MenuItem("Remove Component"))
+        {
+            if constexpr (std::is_same_v<T, TransformComponent> || std::is_same_v<T, TagComponent>) requestWarn = true;
+            else requestRemove = true;
+
+            ImGui::CloseCurrentPopup();
+        }
+
         ImGui::EndPopup();
     }
 
+    if (requestWarn) ImGui::OpenPopup("RemoveComponentWarning");
+
+    if (ImGui::BeginPopupModal("RemoveComponentWarning", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::TextUnformatted("Cannot remove essential component!");
+        if (ImGui::Button("OK")) ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+    }
+
+    // Important: remove AFTER popups are handled, and not while drawing UI for it
+    if (requestRemove && entity.hasComponent<T>()) entity.removeComponent<T>();
+
     if (opened)
     {
-        if (!entity.hasComponent<T>())
+        // If it was removed this frame, avoid touching it
+        if (entity.hasComponent<T>())
         {
-            ImGui::TreePop();
-            ImGui::PopID();
-            return;
+            auto& component = entity.getComponent<T>();
+            uiFunction(component);
         }
-        auto& component = entity.getComponent<T>();
-        uiFunction(component);
+
         ImGui::TreePop();
     }
 
