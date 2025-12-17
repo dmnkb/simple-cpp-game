@@ -19,7 +19,7 @@ struct PanelSceneHierarchy
 {
     inline static entt::entity s_selected = entt::null;
 
-    static void DrawEntityNode(Entity entity)
+    static void drawEntityNode(Entity entity)
     {
         auto& tag = entity.getComponent<TagComponent>().tag;
 
@@ -90,8 +90,19 @@ struct PanelSceneHierarchy
             // Open popup to enter entity name
             drawNewEntityPopup(scene);
 
-            scene->forEachHierarchyEntity([&](entt::entity entityID)
-                                          { DrawEntityNode(Entity{entityID, scene.get()}); });
+            // Select first entity by default
+            static bool firstFrame = true;
+            scene->forEachHierarchyEntity(
+                [&](entt::entity entityID)
+                {
+                    if (firstFrame)
+                    {
+                        s_selected = entityID;
+                        g_editorState.selectedEntity = {entityID, scene.get()};
+                        firstFrame = false;
+                    }
+                    drawEntityNode(Entity{entityID, scene.get()});
+                });
         }
         ImGui::EndChild();
 

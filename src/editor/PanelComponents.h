@@ -51,9 +51,9 @@ void drawComponentUI(const char* name, Entity entity, std::function<void(T&)> ui
         ImGui::EndPopup();
     }
 
-    if (requestWarn) ImGui::OpenPopup("RemoveComponentWarning");
+    if (requestWarn) ImGui::OpenPopup("Remove Component Warning");
 
-    if (ImGui::BeginPopupModal("RemoveComponentWarning", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    if (ImGui::BeginPopupModal("Remove Component Warning", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::TextUnformatted("Cannot remove essential component!");
         if (ImGui::Button("OK")) ImGui::CloseCurrentPopup();
