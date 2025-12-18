@@ -87,7 +87,7 @@ void Material::update()
     shader->setUniform1f("uTime", time);
 }
 
-void Material::assignTexture(Ref<Texture>& texture, TextureType type)
+void Material::assignTexture(const Ref<Texture>& texture, TextureType type)
 {
     switch (type)
     {

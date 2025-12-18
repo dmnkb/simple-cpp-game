@@ -4,10 +4,10 @@
 #include <string>
 
 #include "glm/glm.hpp"
-#include <glm/gtx/quaternion.hpp>
 #include "glm/gtc/matrix_transform.hpp"
 #include "renderer/Material.h"
 #include "renderer/Mesh.h"
+#include <glm/gtx/quaternion.hpp>
 
 namespace Engine
 {
@@ -41,11 +41,13 @@ struct TransformComponent
 struct MeshComponent
 {
     Ref<Mesh> mesh;
-    Ref<Material> material;
+    std::vector<Ref<Material>> materials;
 
     MeshComponent() = default;
     MeshComponent(const MeshComponent&) = default;
-    MeshComponent(const Ref<Mesh>& mesh, const Ref<Material>& material) : mesh(mesh), material(material) {}
+    MeshComponent(const Ref<Mesh>& mesh, const std::vector<Ref<Material>>& materials) : mesh(mesh), materials(materials)
+    {
+    }
 };
 
 struct PointLightComponent

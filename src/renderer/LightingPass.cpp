@@ -33,7 +33,7 @@ LightingOutputs LightingPass::execute(const Ref<Scene>& scene, const LightingInp
     GLCall(glEnable(GL_CULL_FACE));
     GLCall(glCullFace(GL_BACK));
 
-    for (const auto& [material, meshMap] : scene->getRenderQueue("Lighting Pass"))
+    for (const auto& [material, submeshBatchMap] : scene->getRenderQueue("Lighting Pass"))
     {
         material->bind();
         material->update();
@@ -47,9 +47,9 @@ LightingOutputs LightingPass::execute(const Ref<Scene>& scene, const LightingInp
         material->setUniform3fv("uViewPos", camPos);
         material->setUniform4fv("uAmbientLightColor", ambientColor);
 
-        for (const auto& [mesh, transforms] : meshMap)
+        for (const auto& [submeshKey, transforms] : submeshBatchMap)
         {
-            RendererAPI::drawInstanced(mesh, transforms);
+            RendererAPI::drawInstanced(submeshKey.mesh, submeshKey.submeshIndex, transforms);
             Profiler::registerDrawCall("Lighting Pass");
         }
 

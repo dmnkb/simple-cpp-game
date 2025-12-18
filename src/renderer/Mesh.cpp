@@ -10,10 +10,11 @@
 namespace Engine
 {
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices)
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Submesh> submeshes)
 {
     this->vertices = vertices;
     this->indices = indices;
+    this->submeshes = submeshes;
 
     setupMesh();
 }

@@ -19,7 +19,7 @@ class RendererAPI
   public:
     static void init();
     static void shutdown();
-    static void drawInstanced(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& transforms);
+    static void drawInstanced(const Ref<Mesh>& mesh, uint32_t submeshIndex, const std::vector<glm::mat4>& transforms);
     static void setClearColor(const SClearColor& color);
     static int getDrawCallCount();
     static void resetDrawCallCount();

@@ -66,7 +66,7 @@ struct Material
     void update();
 
     // Texture management
-    void assignTexture(Ref<Texture>& texture, TextureType type = TextureType::Albedo);
+    void assignTexture(const Ref<Texture>& texture, TextureType type = TextureType::Albedo);
     const Ref<Texture>& getTexture(TextureType type = TextureType::Albedo);
 
     // Uniform setters (pass-through to shader)

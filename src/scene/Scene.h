@@ -10,7 +10,37 @@
 namespace Engine
 {
 
-using RenderQueue = std::unordered_map<Ref<Material>, std::unordered_map<Ref<Mesh>, std::vector<glm::mat4>>>;
+struct SubmeshKey
+{
+    Ref<Mesh> mesh;
+    uint32_t submeshIndex;
+
+    bool operator==(const SubmeshKey& other) const
+    {
+        return mesh == other.mesh && submeshIndex == other.submeshIndex;
+    }
+};
+
+} // namespace Engine
+
+namespace std
+{
+template <>
+struct hash<Engine::SubmeshKey>
+{
+    size_t operator()(const Engine::SubmeshKey& key) const
+    {
+        size_t h1 = hash<Engine::Ref<Engine::Mesh>>()(key.mesh);
+        size_t h2 = hash<uint32_t>()(key.submeshIndex);
+        return h1 ^ (h2 << 1);
+    }
+};
+} // namespace std
+
+namespace Engine
+{
+
+using RenderQueue = std::unordered_map<Ref<Material>, std::unordered_map<SubmeshKey, std::vector<glm::mat4>>>;
 
 class Entity;
 

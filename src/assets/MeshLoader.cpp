@@ -16,13 +16,13 @@
 namespace Engine
 {
 
-std::optional<std::vector<LoadedSubmesh>> MeshLoader::loadMeshFromFile(std::filesystem::path const& path)
+std::optional<ModelData> MeshLoader::loadMeshFromFile(std::filesystem::path const& path)
 {
     std::println("[Model] Loading model: {}", path.c_str());
 
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(path.string(), aiProcess_Triangulate | aiProcess_GenSmoothNormals |
-                                                                aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+                                                                 aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
@@ -32,133 +32,82 @@ std::optional<std::vector<LoadedSubmesh>> MeshLoader::loadMeshFromFile(std::file
 
     const std::filesystem::path directory = path.parent_path();
 
-    return processNode(scene->mRootNode, scene, directory);
-}
+    std::vector<Vertex> allVertices;
+    std::vector<unsigned int> allIndices;
+    std::vector<Submesh> submeshes;
+    std::vector<MeshMaterialData> materials;
 
-std::vector<LoadedSubmesh> MeshLoader::processNode(aiNode* node, const aiScene* scene,
-                                                   std::filesystem::path const& path)
-{
-    std::vector<LoadedSubmesh> subMeshes;
-
-    // Process each mesh located at the current node
-    for (unsigned int i = 0; i < node->mNumMeshes; i++)
+    // We'll iterate through all meshes in the scene and consolidate them
+    for (unsigned int i = 0; i < scene->mNumMeshes; ++i)
     {
-        aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        LoadedSubmesh meshData = processMesh(mesh, scene, path);
+        aiMesh* mesh = scene->mMeshes[i];
 
-        subMeshes.push_back(meshData);
-    }
+        Submesh submesh;
+        submesh.indexOffset = static_cast<uint32_t>(allIndices.size());
+        submesh.indexCount = mesh->mNumFaces * 3;
+        submesh.materialIndex = mesh->mMaterialIndex;
 
-    // After we've processed all of the meshes (if any) we then recursively process each of the children nodes
-    for (unsigned int i = 0; i < node->mNumChildren; i++)
-    {
-        std::vector<LoadedSubmesh> childSubMeshes = processNode(node->mChildren[i], scene, path);
-        subMeshes.insert(subMeshes.end(), childSubMeshes.begin(), childSubMeshes.end());
-    }
+        uint32_t vertexOffset = static_cast<uint32_t>(allVertices.size());
 
-    return subMeshes;
-}
-
-LoadedSubmesh MeshLoader::processMesh(aiMesh* mesh, const aiScene* scene, std::filesystem::path const& directory)
-{
-    std::vector<Vertex> vertices;
-    std::vector<unsigned int> indices;
-
-    for (unsigned int i = 0; i < mesh->mNumVertices; i++)
-    {
-        Vertex vertex;
-        glm::vec3 vector;
-
-        // Positions
-        vector.x = mesh->mVertices[i].x;
-        vector.y = mesh->mVertices[i].y;
-        vector.z = mesh->mVertices[i].z;
-        vertex.Position = vector;
-
-        // Normals
-        if (mesh->HasNormals())
+        // Vertices
+        for (unsigned int v = 0; v < mesh->mNumVertices; v++)
         {
-            vector.x = mesh->mNormals[i].x;
-            vector.y = mesh->mNormals[i].y;
-            vector.z = mesh->mNormals[i].z;
-            vertex.Normal = vector;
+            Vertex vertex;
+            vertex.Position = {mesh->mVertices[v].x, mesh->mVertices[v].y, mesh->mVertices[v].z};
+
+            if (mesh->HasNormals())
+                vertex.Normal = {mesh->mNormals[v].x, mesh->mNormals[v].y, mesh->mNormals[v].z};
+
+            if (mesh->mTextureCoords[0])
+                vertex.TexCoords = {mesh->mTextureCoords[0][v].x, mesh->mTextureCoords[0][v].y};
+            else
+                vertex.TexCoords = {0.0f, 0.0f};
+
+            allVertices.push_back(vertex);
         }
 
-        // Texture coordinates
-        if (mesh->mTextureCoords[0])
+        // Indices
+        for (unsigned int f = 0; f < mesh->mNumFaces; f++)
         {
-            glm::vec2 vec;
-            vec.x = mesh->mTextureCoords[0][i].x;
-            vec.y = mesh->mTextureCoords[0][i].y;
-            vertex.TexCoords = vec;
+            aiFace face = mesh->mFaces[f];
+            for (unsigned int j = 0; j < face.mNumIndices; j++)
+                allIndices.push_back(vertexOffset + face.mIndices[j]);
         }
-        else
-            vertex.TexCoords = glm::vec2(0.0f, 0.0f);
 
-        vertices.push_back(vertex);
+        submeshes.push_back(submesh);
     }
 
-    // Vertex indices
-    for (unsigned int i = 0; i < mesh->mNumFaces; i++)
+    // Process materials
+    for (unsigned int i = 0; i < scene->mNumMaterials; ++i)
     {
-        aiFace face = mesh->mFaces[i];
-        for (unsigned int j = 0; j < face.mNumIndices; j++)
-            indices.push_back(face.mIndices[j]);
+        aiMaterial* assimpMaterial = scene->mMaterials[i];
+        MeshMaterialData materialData;
+
+        auto loadTex = [&](aiTextureType type) -> Ref<Texture>
+        {
+            auto texs = loadMaterialTextures(assimpMaterial, type, directory);
+            return texs.empty() ? nullptr : texs[0];
+        };
+
+        materialData.albedo = loadTex(aiTextureType_DIFFUSE);
+        materialData.normal = loadTex(aiTextureType_NORMALS);
+        materialData.ao = loadTex(aiTextureType_AMBIENT_OCCLUSION);
+        materialData.roughness = loadTex(aiTextureType_SHININESS);
+        materialData.metallic = loadTex(aiTextureType_METALNESS);
+
+        aiColor3D diffuseColor;
+        if (assimpMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor) == AI_SUCCESS)
+            materialData.baseColor = glm::vec3(diffuseColor.r, diffuseColor.g, diffuseColor.b);
+
+        materials.push_back(materialData);
     }
 
-    // Material
-    aiMaterial* assimpMaterial = scene->mMaterials[mesh->mMaterialIndex];
+    Ref<Mesh> consolidatedMesh = CreateRef<Mesh>(allVertices, allIndices, submeshes);
 
-    std::vector<Ref<Texture>> diffuseMaps = loadMaterialTextures(assimpMaterial, aiTextureType_DIFFUSE, directory);
-    Ref<Texture> diffuseMap;
-    if (!diffuseMaps.empty())
-        diffuseMap = diffuseMaps[0];
-
-    std::vector<Ref<Texture>> normalMaps = loadMaterialTextures(assimpMaterial, aiTextureType_NORMALS, directory);
-    Ref<Texture> normalMap = nullptr;
-    if (!normalMaps.empty())
-        normalMap = normalMaps[0];
-
-    std::vector<Ref<Texture>> specularMaps = loadMaterialTextures(assimpMaterial, aiTextureType_SPECULAR, directory);
-    Ref<Texture> specularMap = nullptr;
-    if (!specularMaps.empty())
-        specularMap = specularMaps[0];
-
-    std::vector<Ref<Texture>> aoMaps = loadMaterialTextures(assimpMaterial, aiTextureType_AMBIENT_OCCLUSION, directory);
-    Ref<Texture> aoMap = nullptr;
-    if (!aoMaps.empty())
-        aoMap = aoMaps[0];
-
-    std::vector<Ref<Texture>> roughnessMaps = loadMaterialTextures(assimpMaterial, aiTextureType_SHININESS, directory);
-    Ref<Texture> roughnessMap = nullptr;
-    if (!roughnessMaps.empty())
-        roughnessMap = roughnessMaps[0];
-
-    std::vector<Ref<Texture>> metallicMaps = loadMaterialTextures(assimpMaterial, aiTextureType_METALNESS, directory);
-    Ref<Texture> metallicMap = nullptr;
-    if (!metallicMaps.empty())
-        metallicMap = metallicMaps[0];
-
-    // Extract material properties from Assimp
-    glm::vec3 baseColor(1.0f);
-    aiColor3D diffuseColor;
-    if (assimpMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor) == AI_SUCCESS)
-        baseColor = glm::vec3(diffuseColor.r, diffuseColor.g, diffuseColor.b);
-
-    float shininess = 32.0f;
-    assimpMaterial->Get(AI_MATKEY_SHININESS, shininess);
-
-    Ref<Mesh> newMesh = CreateRef<Mesh>(vertices, indices);
-
-    return {newMesh,
-            {.albedo = diffuseMap,
-             .normal = normalMap,
-             .roughness = roughnessMap,
-             .metallic = metallicMap,
-             .ao = aoMap,
-             .baseColor = baseColor}};
+    return ModelData{consolidatedMesh, materials};
 }
 
+// Material texture loading remains the same
 std::vector<Ref<Texture>> MeshLoader::loadMaterialTextures(aiMaterial* mat, aiTextureType type,
                                                            std::filesystem::path const& path)
 {

@@ -16,15 +16,23 @@ struct Vertex
     glm::vec2 TexCoords;
 };
 
+struct Submesh
+{
+    uint32_t indexOffset;
+    uint32_t indexCount;
+    uint32_t materialIndex;
+};
+
 class Mesh
 {
   public:
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
+    std::vector<Submesh> submeshes;
 
     unsigned int VAO;
 
-    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices);
+    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Submesh> submeshes);
 
     void bind();
     void unbind();

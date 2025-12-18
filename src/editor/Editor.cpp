@@ -51,52 +51,41 @@ void Editor::onImGuiRender(float fps, const Ref<Scene>& activeScene, const doubl
 // TODO: consider the editor owning the scene
 void Editor::throwAwayDemoScene(const Ref<Scene>& activeScene)
 {
-    auto loadedSubmeshes = MeshLoader::loadMeshFromFile("assets/models/ground/ground.gltf");
+    auto groundData = MeshLoader::loadMeshFromFile("assets/models/ground/ground.gltf");
 
-    if (!loadedSubmeshes)
+    if (groundData)
     {
-        std::println("[Editor] Failed to load model!");
-        return;
+        auto entity = activeScene->createEntity("Ground");
+        auto& meshComp = entity.addComponent<MeshComponent>();
+        meshComp.mesh = groundData->mesh;
+
+        for (const auto& matData : groundData->materials)
+        {
+            Ref<Material> material = CreateRef<Material>(Shader::getStandardShader());
+            material->assignTexture(matData.albedo, TextureType::Albedo);
+            meshComp.materials.push_back(material);
+        }
     }
 
-    int submeshIndex = 0;
-    for (auto& submesh : *loadedSubmeshes)
+    auto modelData = MeshLoader::loadMeshFromFile("./assets/models/sponza/glTF/Sponza.gltf");
+    if (modelData)
     {
-        std::println("Loaded submesh {} with {} vertices and {} indices.", submeshIndex, submesh.mesh->vertices.size(),
-                     submesh.mesh->indices.size());
-
-        // Create a new entity for each submesh
-        auto entity = activeScene->createEntity("Ground_" + std::to_string(submeshIndex));
+        auto entity = activeScene->createEntity("Sponza");
+        entity.getComponent<TransformComponent>().translation = {0.0f, 0.0f, 0.0f};
 
         auto& meshComp = entity.addComponent<MeshComponent>();
-        meshComp.mesh = submesh.mesh;
+        meshComp.mesh = modelData->mesh;
 
-        Ref<Material> material = CreateRef<Material>(Shader::getStandardShader());
-        material->assignTexture(submesh.materialData.albedo, TextureType::Albedo);
-        meshComp.material = material;
-
-        submeshIndex++;
-    }
-
-    submeshIndex = (*loadedSubmeshes).size();
-    for (auto& submesh : *loadedSubmeshes)
-    {
-        std::println("Loaded submesh {} with {} vertices and {} indices.", submeshIndex, submesh.mesh->vertices.size(),
-                     submesh.mesh->indices.size());
-
-        // Create a new entity for each submesh
-        auto entity = activeScene->createEntity("Ground_" + std::to_string(submeshIndex));
-
-        entity.getComponent<TransformComponent>().translation += glm::vec3(0.0f, 5.0f, 0.0f);
-
-        auto& meshComp = entity.addComponent<MeshComponent>();
-        meshComp.mesh = submesh.mesh;
-
-        Ref<Material> material = CreateRef<Material>(Shader::getStandardShader());
-        material->assignTexture(submesh.materialData.albedo, TextureType::Albedo);
-        meshComp.material = material;
-
-        submeshIndex++;
+        for (const auto& matData : modelData->materials)
+        {
+            Ref<Material> material = CreateRef<Material>(Shader::getStandardShader());
+            material->assignTexture(matData.albedo, TextureType::Albedo);
+            material->assignTexture(matData.normal, TextureType::Normal);
+            material->assignTexture(matData.roughness, TextureType::Roughness);
+            material->assignTexture(matData.metallic, TextureType::Metallic);
+            material->assignTexture(matData.ao, TextureType::AO);
+            meshComp.materials.push_back(material);
+        }
     }
 
     // SpotLight::SpotLightProperties sp2{};

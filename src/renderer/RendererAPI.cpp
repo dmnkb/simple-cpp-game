@@ -34,13 +34,19 @@ void RendererAPI::shutdown()
     GLCall(glDeleteBuffers(1, &s_Data.instanceBuffer));
 }
 
-void RendererAPI::drawInstanced(const Ref<Mesh>& mesh, const std::vector<glm::mat4>& transforms)
+void RendererAPI::drawInstanced(const Ref<Mesh>& mesh, uint32_t submeshIndex, const std::vector<glm::mat4>& transforms)
 {
     GLCall(glClearColor(s_Data.clearColor.r(), s_Data.clearColor.g(), s_Data.clearColor.b(), s_Data.clearColor.a()));
 
+    if (submeshIndex >= mesh->submeshes.size())
+        return;
+
+    const auto& submesh = mesh->submeshes[submeshIndex];
+
     mesh->bind();
     bindInstanceBuffer(transforms);
-    GLCall(glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndexCount(), GL_UNSIGNED_INT, nullptr, transforms.size()));
+    GLCall(glDrawElementsInstanced(GL_TRIANGLES, submesh.indexCount, GL_UNSIGNED_INT,
+                                   (void*)(uintptr_t)(submesh.indexOffset * sizeof(unsigned int)), transforms.size()));
     unbindInstanceBuffer();
     mesh->unbind();
 }
