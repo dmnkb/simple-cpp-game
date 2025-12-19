@@ -36,10 +36,7 @@ void RendererAPI::shutdown()
 
 void RendererAPI::drawInstanced(const Ref<Mesh>& mesh, uint32_t submeshIndex, const std::vector<glm::mat4>& transforms)
 {
-    GLCall(glClearColor(s_Data.clearColor.r(), s_Data.clearColor.g(), s_Data.clearColor.b(), s_Data.clearColor.a()));
-
-    if (submeshIndex >= mesh->submeshes.size())
-        return;
+    if (submeshIndex >= mesh->submeshes.size()) return;
 
     const auto& submesh = mesh->submeshes[submeshIndex];
 

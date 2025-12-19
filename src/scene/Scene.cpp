@@ -44,14 +44,12 @@ RenderQueue Scene::getRenderQueue(const std::string& passName)
     {
         const auto& [transformComp, meshComp] = group.get<TransformComponent, MeshComponent>(entity);
         const Ref<Mesh>& mesh = meshComp.mesh;
-        if (!mesh)
-            continue;
+        if (!mesh) continue;
 
         const auto& instanceTransform = transformComp.getTransform();
 
         for (uint32_t i = 0; i < mesh->submeshes.size(); ++i)
         {
-            const auto& submesh = mesh->submeshes[i];
             Ref<Material> material;
 
             // Resolve material: try MeshComponent override first
@@ -63,12 +61,10 @@ RenderQueue Scene::getRenderQueue(const std::string& passName)
             {
                 // Fallback (e.g. default material if you had one in Mesh, but here we'll just skip or use a default)
                 // For now, let's assume we expect at least one material in MeshComponent or have a global fallback.
-                if (!meshComp.materials.empty())
-                    material = meshComp.materials[0];
+                if (!meshComp.materials.empty()) material = meshComp.materials[0];
             }
 
-            if (!material)
-                continue;
+            if (!material) continue;
 
             SubmeshKey key{mesh, i};
             renderQueue[material][key].emplace_back(instanceTransform);

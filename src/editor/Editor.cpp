@@ -67,26 +67,26 @@ void Editor::throwAwayDemoScene(const Ref<Scene>& activeScene)
         }
     }
 
-    auto modelData = MeshLoader::loadMeshFromFile("./assets/models/sponza/glTF/Sponza.gltf");
-    if (modelData)
-    {
-        auto entity = activeScene->createEntity("Sponza");
-        entity.getComponent<TransformComponent>().translation = {0.0f, 0.0f, 0.0f};
+    // auto modelData = MeshLoader::loadMeshFromFile("./assets/models/sponza/glTF/Sponza.gltf");
+    // if (modelData)
+    // {
+    //     auto entity = activeScene->createEntity("Sponza");
+    //     entity.getComponent<TransformComponent>().translation = {0.0f, 0.0f, 0.0f};
 
-        auto& meshComp = entity.addComponent<MeshComponent>();
-        meshComp.mesh = modelData->mesh;
+    //     auto& meshComp = entity.addComponent<MeshComponent>();
+    //     meshComp.mesh = modelData->mesh;
 
-        for (const auto& matData : modelData->materials)
-        {
-            Ref<Material> material = CreateRef<Material>(Shader::getStandardShader());
-            material->assignTexture(matData.albedo, TextureType::Albedo);
-            material->assignTexture(matData.normal, TextureType::Normal);
-            material->assignTexture(matData.roughness, TextureType::Roughness);
-            material->assignTexture(matData.metallic, TextureType::Metallic);
-            material->assignTexture(matData.ao, TextureType::AO);
-            meshComp.materials.push_back(material);
-        }
-    }
+    //     for (const auto& matData : modelData->materials)
+    //     {
+    //         Ref<Material> material = CreateRef<Material>(Shader::getStandardShader());
+    //         material->assignTexture(matData.albedo, TextureType::Albedo);
+    //         material->assignTexture(matData.normal, TextureType::Normal);
+    //         material->assignTexture(matData.roughness, TextureType::Roughness);
+    //         material->assignTexture(matData.metallic, TextureType::Metallic);
+    //         material->assignTexture(matData.ao, TextureType::AO);
+    //         meshComp.materials.push_back(material);
+    //     }
+    // }
 
     // SpotLight::SpotLightProperties sp2{};
     // sp2.position = {-45, 10.0, 5.0};

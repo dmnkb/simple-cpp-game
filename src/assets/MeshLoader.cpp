@@ -22,7 +22,7 @@ std::optional<ModelData> MeshLoader::loadMeshFromFile(std::filesystem::path cons
 
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(path.string(), aiProcess_Triangulate | aiProcess_GenSmoothNormals |
-                                                                 aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+                                                                aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
@@ -55,13 +55,11 @@ std::optional<ModelData> MeshLoader::loadMeshFromFile(std::filesystem::path cons
             Vertex vertex;
             vertex.Position = {mesh->mVertices[v].x, mesh->mVertices[v].y, mesh->mVertices[v].z};
 
-            if (mesh->HasNormals())
-                vertex.Normal = {mesh->mNormals[v].x, mesh->mNormals[v].y, mesh->mNormals[v].z};
+            if (mesh->HasNormals()) vertex.Normal = {mesh->mNormals[v].x, mesh->mNormals[v].y, mesh->mNormals[v].z};
 
             if (mesh->mTextureCoords[0])
                 vertex.TexCoords = {mesh->mTextureCoords[0][v].x, mesh->mTextureCoords[0][v].y};
-            else
-                vertex.TexCoords = {0.0f, 0.0f};
+            else vertex.TexCoords = {0.0f, 0.0f};
 
             allVertices.push_back(vertex);
         }

@@ -38,7 +38,7 @@ LightingOutputs LightingPass::execute(const Ref<Scene>& scene, const LightingInp
         material->bind();
         material->update();
 
-        const auto cam = scene->getActiveCamera();
+        const auto& cam = scene->getActiveCamera();
         const auto vp = cam.getProjectionMatrix() * cam.getViewMatrix();
         const auto camPos = cam.getPosition();
         const auto ambientColor = scene->getAmbientLightColor();

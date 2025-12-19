@@ -259,6 +259,7 @@ static void renderMeshComponent(Entity entity, const Ref<Scene>& scene)
 
     ImGui::Text("Mesh: %s", "Loaded Mesh"); // Could add path to Mesh class later
     ImGui::Text("Submeshes: %d", (int)meshComp.mesh->submeshes.size());
+    // TODO: Not all materials are used, Assimp seems to generate an extra one.
     ImGui::Text("Materials: %d", (int)meshComp.materials.size());
 
     if (ImGui::TreeNode("Submesh List"))
