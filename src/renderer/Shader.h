@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 
 #include "core/Core.h"
+#include "renderer/Asset.h"
 
 namespace Engine
 {
@@ -14,7 +15,7 @@ struct ShaderSource
     std::string fragmentShader;
 };
 
-class Shader
+class Shader : public Asset
 {
   public:
     struct ShaderNames
@@ -22,6 +23,9 @@ class Shader
         const char* vertex = "";
         const char* fragment = "";
     } shaderNames;
+
+    // Identity
+    AssetMetadata metadata{.type = AssetType::Shader, .name = "Unnamed Shader"};
 
     Shader(const char* vertexShaderPath, const char* fragmentShaderPath);
     ~Shader();

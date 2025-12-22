@@ -7,10 +7,7 @@
 #include <glm/gtx/norm.hpp>
 
 #include "renderer/Camera.h"
-#include "renderer/Framebuffer.h"
-#include "renderer/Texture.h"
 #include "util/ComputeEffectiveRange.h"
-#include "util/uuid.h"
 
 namespace Engine
 {
@@ -31,10 +28,8 @@ class SpotLight
   public:
     explicit SpotLight(const SpotLightProperties& props) : m_properties(props)
     {
-        if (glm::length2(m_properties.direction) < 1e-12f)
-            m_properties.direction = glm::vec3(0, 0, -1);
-        else
-            m_properties.direction = glm::normalize(m_properties.direction);
+        if (glm::length2(m_properties.direction) < 1e-12f) m_properties.direction = glm::vec3(0, 0, -1);
+        else m_properties.direction = glm::normalize(m_properties.direction);
 
         m_properties.coneInner = glm::clamp(m_properties.coneInner, 0.0f, 89.0f);
         m_properties.coneOuter = glm::clamp(glm::max(m_properties.coneOuter, m_properties.coneInner), 0.0f, 89.0f);
@@ -52,8 +47,7 @@ class SpotLight
     void setTarget(const glm::vec3& target = {0.f, 0.f, 0.f})
     {
         glm::vec3 dir = target - m_properties.position;
-        if (glm::length2(dir) < 1e-12f)
-            dir = glm::vec3(0, 0, -1);
+        if (glm::length2(dir) < 1e-12f) dir = glm::vec3(0, 0, -1);
         m_properties.direction = glm::normalize(dir);
         syncShadowCamera_();
     }
@@ -80,36 +74,18 @@ class SpotLight
         m_properties.colorIntensity.b = b;
     }
 
-    void setIntensity(float I)
-    {
-        m_properties.colorIntensity.w = glm::max(I, 0.0f);
-    }
+    void setIntensity(float I) { m_properties.colorIntensity.w = glm::max(I, 0.0f); }
 
-    SpotLightProperties getSpotLightProperties() const
-    {
-        return m_properties;
-    }
+    SpotLightProperties getSpotLightProperties() const { return m_properties; }
 
-    float getRange() const
-    {
-        return m_range;
-    }
+    float getRange() const { return m_range; }
 
-    Ref<Camera> getShadowCam() const
-    {
-        return m_shadowCam;
-    }
-
-    UUID getIdentifier() const
-    {
-        return identifier;
-    }
+    Ref<Camera> getShadowCam() const { return m_shadowCam; }
 
   private:
     void syncShadowCamera_()
     {
-        if (!m_shadowCam)
-            m_shadowCam = CreateRef<Camera>();
+        if (!m_shadowCam) m_shadowCam = CreateRef<Camera>();
 
         // Compute a reasonable far plane from attenuation (e.g., 1% cutoff)
         m_range = glm::max(ComputeEffectiveRange(m_properties.colorIntensity.w, m_properties.attenuation, 0.01f), 1.0f);
@@ -125,7 +101,6 @@ class SpotLight
     }
 
   private:
-    UUID identifier;
     SpotLightProperties m_properties;
     Ref<Camera> m_shadowCam;
     float m_range = 0.0f;

@@ -8,7 +8,6 @@
 #include "core/Event.h"
 #include "core/EventManager.h"
 #include "renderer/Camera.h"
-#include "util/uuid.h"
 
 namespace Engine
 {
@@ -48,15 +47,11 @@ class DirectionalLight
         syncShadowCameras();
     }
 
-    DirectionalLight() : DirectionalLight(DirectionalLightProperties{})
-    {
-        std::println("asdfghj");
-    }
+    DirectionalLight() : DirectionalLight(DirectionalLightProperties{}) { std::println("asdfghj"); }
 
     void setDirection(glm::vec3 dir = {-1.f, -1.f, -1.f})
     {
-        if (glm::length2(dir) > 1e-12f)
-            m_properties.direction = glm::normalize(dir);
+        if (glm::length2(dir) > 1e-12f) m_properties.direction = glm::normalize(dir);
         syncShadowCameras();
     }
 
@@ -78,25 +73,11 @@ class DirectionalLight
         syncShadowCameras();
     }
 
-    [[nodiscard]] const DirectionalLightProperties& props() const
-    {
-        return m_properties;
-    }
+    [[nodiscard]] const DirectionalLightProperties& props() const { return m_properties; }
 
-    [[nodiscard]] const std::array<std::optional<Camera>, kCascadeCount>& getShadowCams() const
-    {
-        return m_shadowCams;
-    }
+    [[nodiscard]] const std::array<std::optional<Camera>, kCascadeCount>& getShadowCams() const { return m_shadowCams; }
 
-    DirectionalLightProperties getDirectionalLightProperties() const
-    {
-        return m_properties;
-    }
-
-    UUID getIdentifier() const
-    {
-        return identifier;
-    }
+    DirectionalLightProperties getDirectionalLightProperties() const { return m_properties; }
 
   private:
     // Practical split scheme (λ∈[0,1]): mix of linear/log
@@ -149,8 +130,7 @@ class DirectionalLight
 
     void syncShadowCameras()
     {
-        if (!m_main.valid)
-            return; // wait until we saw the main cam once
+        if (!m_main.valid) return; // wait until we saw the main cam once
 
         // 1) cascade splits
         float split[kCascadeCount + 1];
@@ -280,8 +260,7 @@ class DirectionalLight
     void onMainCameraChanged(Ref<Event> e)
     {
         auto ev = std::dynamic_pointer_cast<MainCameraChangedEvent>(e);
-        if (!ev)
-            return;
+        if (!ev) return;
 
         // Expect your event to carry these (adapt names accordingly)
         m_main.pos = ev->position;
@@ -296,7 +275,6 @@ class DirectionalLight
     }
 
   private:
-    UUID identifier;
     DirectionalLightProperties m_properties;
     std::array<std::optional<Camera>, kCascadeCount> m_shadowCams;
     MainCamData m_main{};

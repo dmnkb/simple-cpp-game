@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/Core.h"
+#include "renderer/Asset.h"
 #include "renderer/Shader.h"
 #include "renderer/Texture.h"
 
@@ -24,10 +25,10 @@ enum class AlphaMode
     Blend
 };
 
-struct Material
+struct Material : public Asset
 {
     // Identity
-    std::string name;
+    AssetMetadata metadata{.type = AssetType::Material, .name = "Unnamed Material"};
 
     // Render state
     bool isDoubleSided = false;
@@ -70,6 +71,7 @@ struct Material
     const Ref<Texture>& getTexture(TextureType type = TextureType::Albedo);
 
     // Uniform setters (pass-through to shader)
+    // TODO: Decide if we simply want to expose the Shader directly instead
     void setUniformMatrix4fv(const char* name, const glm::mat4 value);
     void setUniform3fv(const char* name, const glm::vec3 value);
     void setUniform4fv(const char* name, const glm::vec4 value);

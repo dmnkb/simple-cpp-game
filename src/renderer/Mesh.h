@@ -1,5 +1,6 @@
 #pragma once
 
+#include "renderer/Asset.h"
 #include "renderer/Material.h"
 #include "renderer/Shader.h"
 
@@ -23,7 +24,7 @@ struct Submesh
     uint32_t materialIndex;
 };
 
-class Mesh
+class Mesh : public Asset
 {
   public:
     std::vector<Vertex> vertices;

@@ -10,7 +10,6 @@
 #include "scene/Entity.h"
 #include "scene/Scene.h"
 #include "util/MemoryUsage.h"
-#include "util/uuid.h"
 
 namespace Engine
 {

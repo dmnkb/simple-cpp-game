@@ -7,11 +7,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/norm.hpp>
 
+#include "core/Core.h"
 #include "renderer/Camera.h"
-#include "renderer/Framebuffer.h"
-#include "renderer/Texture.h"
 #include "util/ComputeEffectiveRange.h"
-#include "util/uuid.h"
 
 namespace Engine
 {
@@ -19,8 +17,6 @@ namespace Engine
 class PointLight
 {
   public:
-    // TODO: Make this public accessible and add a direty flag, which, if true, the ECS LightUpdateSystem
-    // will pick up and use to recalculate the range and cosines (spot)
     struct PointLightProperties
     {
         glm::vec3 position = {0.0f, 0.0f, 0.0f};             // world-space
@@ -63,26 +59,12 @@ class PointLight
         syncShadowCameras_();
     }
 
-    PointLightProperties getPointLightProperties() const
-    {
-        return m_properties;
-    }
+    PointLightProperties getPointLightProperties() const { return m_properties; }
 
-    float getRange() const
-    {
-        return m_range;
-    }
+    float getRange() const { return m_range; }
 
     // 6 cameras for a cubemap: +X, -X, +Y, -Y, +Z, -Z
-    const std::array<Ref<Camera>, 6>& getShadowCams() const
-    {
-        return m_shadowCams;
-    }
-
-    UUID getIdentifier() const
-    {
-        return identifier;
-    }
+    const std::array<Ref<Camera>, 6>& getShadowCams() const { return m_shadowCams; }
 
   private:
     void syncShadowCameras_()
@@ -116,8 +98,7 @@ class PointLight
 
         for (size_t i = 0; i < 6; ++i)
         {
-            if (!m_shadowCams[i])
-                m_shadowCams[i] = CreateRef<Camera>();
+            if (!m_shadowCams[i]) m_shadowCams[i] = CreateRef<Camera>();
 
             m_shadowCams[i]->setPerspective(fovY, /*aspect*/ 1.0f, nearP, farP);
             m_shadowCams[i]->setPosition(m_properties.position);
@@ -126,7 +107,6 @@ class PointLight
     }
 
   private:
-    UUID identifier;
     PointLightProperties m_properties;
     std::array<Ref<Camera>, 6> m_shadowCams;
     float m_range = 0.0f;

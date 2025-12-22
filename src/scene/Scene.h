@@ -3,6 +3,7 @@
 #include <entt/entt.hpp>
 
 #include "assets/MeshLoader.h"
+#include "renderer/Asset.h"
 #include "renderer/Camera.h"
 #include "renderer/DirectionalLight.h"
 #include "scene/Components.h"
@@ -15,10 +16,7 @@ struct SubmeshKey
     Ref<Mesh> mesh;
     uint32_t submeshIndex;
 
-    bool operator==(const SubmeshKey& other) const
-    {
-        return mesh == other.mesh && submeshIndex == other.submeshIndex;
-    }
+    bool operator==(const SubmeshKey& other) const { return mesh == other.mesh && submeshIndex == other.submeshIndex; }
 };
 
 } // namespace Engine
@@ -44,11 +42,14 @@ using RenderQueue = std::unordered_map<Ref<Material>, std::unordered_map<Submesh
 
 class Entity;
 
-class Scene
+class Scene : public Asset
 {
   public:
     Scene();
     ~Scene();
+
+    // Identity
+    AssetMetadata metadata{.type = AssetType::Scene, .name = "Unnamed Scene"};
 
     // Entities
     Entity createEntity(const std::string& name = std::string());
