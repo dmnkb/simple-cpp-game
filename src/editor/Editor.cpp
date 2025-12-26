@@ -6,7 +6,6 @@
 #include "core/Window.h"
 #include "editor/Editor.h"
 #include "editor/PanelComponents.h"
-#include "editor/PanelFrametime.h"
 #include "editor/PanelScene.h"
 #include "editor/PanelSceneHierarchy.h"
 #include "editor/PanelStats.h"
@@ -40,7 +39,6 @@ void Editor::onImGuiRender(float fps, const Ref<Scene>& activeScene, const doubl
     ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
     PanelStats::render(fps);
-    PanelFrametime::render();
     PanelSceneHierarchy::render(activeScene);
     PanelComponents::render(activeScene);
     // PanelScene::render(activeScene);
@@ -64,6 +62,7 @@ void Editor::throwAwayDemoScene(const Ref<Scene>& activeScene)
             Ref<Material> material = CreateRef<Material>(Shader::getStandardShader());
             material->assignTexture(matData.albedo, TextureType::Albedo);
             meshComp.materials.push_back(material);
+            meshComp.materialSlotNames.push_back(matData.materialSlotName);
         }
     }
 

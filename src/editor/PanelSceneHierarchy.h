@@ -34,6 +34,9 @@ struct PanelSceneHierarchy
         {
             s_selected = id;
             g_editorState.selectedEntity = entity;
+            g_editorState.selectedMesh = entity.hasComponent<MeshComponent>()
+                                             ? entity.getComponent<MeshComponent>().mesh->metadata.uuid
+                                             : UUID::zero();
         }
     }
 

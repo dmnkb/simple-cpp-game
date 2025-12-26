@@ -1,8 +1,10 @@
 #pragma once
 
+#include <filesystem>
+#include <string>
+
 #include "core/Core.h"
 #include "core/UUID.h"
-#include <string>
 
 namespace Engine
 {
@@ -20,9 +22,9 @@ enum class AssetType
 struct AssetMetadata
 {
     AssetType type = AssetType::None;
-    std::string name = std::string();
-    std::filesystem::path path = std::filesystem::path();
-    UUID uuid;
+    std::string name = "Unnamed Asset";
+    std::filesystem::path path = "Unknown Path";
+    UUID uuid = UUID::random();
 };
 
 class Asset
@@ -32,6 +34,7 @@ class Asset
     AssetMetadata metadata;
 };
 
+// Stores “what assets exist” and their IDs/paths/types. This survives restarts.
 class AssetRegistry
 {
   public:
@@ -42,11 +45,13 @@ class AssetRegistry
     std::unordered_map<UUID, AssetMetadata> m_meta;
 };
 
+// Stores “what assets are currently loaded”
 class AssetManager
 {
   public:
     template <typename T>
-    Ref<T> get(UUID id);
+    Ref<T> getOrImport(UUID id);
+    template <typename T>
     void unload(UUID id);
 
   private:

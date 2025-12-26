@@ -257,16 +257,29 @@ static void renderMeshComponent(Entity entity, const Ref<Scene>& scene)
         return;
     }
 
-    ImGui::Text("Mesh: %s", "Loaded Mesh"); // Could add path to Mesh class later
-    ImGui::Text("Submeshes: %d", (int)meshComp.mesh->submeshes.size());
-    // TODO: Not all materials are used, Assimp seems to generate an extra one.
-    ImGui::Text("Materials: %d", (int)meshComp.materials.size());
+    ImGui::Text("Mesh: %s", meshComp.mesh->metadata.path.c_str());
 
-    if (ImGui::TreeNode("Submesh List"))
+    if (ImGui::TreeNodeEx("##SubmeshList", ImGuiTreeNodeFlags_None, "Submesh List | Count: %d",
+                          (int)meshComp.mesh->submeshes.size()))
     {
-        for (uint32_t i = 0; i < meshComp.mesh->submeshes.size(); ++i)
         {
-            ImGui::BulletText("Submesh %d: %d indices", i, meshComp.mesh->submeshes[i].indexCount);
+            for (uint32_t i = 0; i < meshComp.mesh->submeshes.size(); ++i)
+            {
+                ImGui::BulletText("Submesh %d: %d indices", i, meshComp.mesh->submeshes[i].indexCount);
+            }
+            ImGui::TreePop();
+        }
+    }
+    // TODO: Not all materials are used, Assimp seems to generate an extra one.
+    if (ImGui::TreeNodeEx("##MaterialSlotList", ImGuiTreeNodeFlags_None, "Material Slots | Count: %d",
+                          (int)meshComp.materials.size()))
+    {
+        for (uint32_t i = 0; i < meshComp.materials.size(); ++i)
+        {
+            ImGui::BulletText(
+                "%s: Assigned Material: %s",
+                (i < meshComp.materialSlotNames.size() ? meshComp.materialSlotNames[i].c_str() : "Unnamed"),
+                (meshComp.materials[i] ? meshComp.materials[i]->metadata.path.c_str() : "No"));
         }
         ImGui::TreePop();
     }
@@ -278,6 +291,8 @@ struct PanelComponents
     {
         static bool open = true;
         ImGui::Begin("Components", &open);
+
+        renderComponentSelectionPopup(g_editorState.selectedEntity, scene);
 
         if (!g_editorState.selectedEntity)
         {
@@ -299,8 +314,6 @@ struct PanelComponents
             renderMeshComponent(entity, scene);
         });
         // clang-format on
-
-        renderComponentSelectionPopup(g_editorState.selectedEntity, scene);
 
         ImGui::End();
     }

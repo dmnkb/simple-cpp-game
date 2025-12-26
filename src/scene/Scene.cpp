@@ -51,18 +51,19 @@ RenderQueue Scene::getRenderQueue(const std::string& passName)
         for (uint32_t i = 0; i < mesh->submeshes.size(); ++i)
         {
             Ref<Material> material;
+            if (i > meshComp.materials.size())
+            {
+                std::cerr << "Warning: Mesh submesh " << i << " exceeds material count. Skipping." << std::endl;
+                continue;
+            }
 
-            // Resolve material: try MeshComponent override first
-            if (i < meshComp.materials.size() && meshComp.materials[i])
+            if (!meshComp.materials[i])
             {
-                material = meshComp.materials[i];
+                std::cerr << "Warning: Mesh submesh " << i << " has no assigned material. Skipping." << std::endl;
+                continue;
             }
-            else
-            {
-                // Fallback (e.g. default material if you had one in Mesh, but here we'll just skip or use a default)
-                // For now, let's assume we expect at least one material in MeshComponent or have a global fallback.
-                if (!meshComp.materials.empty()) material = meshComp.materials[0];
-            }
+
+            material = meshComp.materials[i];
 
             if (!material) continue;
 

@@ -97,6 +97,16 @@ std::optional<ModelData> MeshLoader::loadMeshFromFile(std::filesystem::path cons
         if (assimpMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor) == AI_SUCCESS)
             materialData.baseColor = glm::vec3(diffuseColor.r, diffuseColor.g, diffuseColor.b);
 
+        aiString matName;
+        if (assimpMaterial->Get(AI_MATKEY_NAME, matName) == AI_SUCCESS && matName.length > 0)
+        {
+            materialData.materialSlotName = matName.C_Str();
+        }
+        else
+        {
+            materialData.materialSlotName = "Material_" + std::to_string(i);
+        }
+
         materials.push_back(materialData);
     }
 

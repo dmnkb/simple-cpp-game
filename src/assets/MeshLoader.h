@@ -19,6 +19,7 @@ struct MeshMaterialData
     Ref<Texture> metallic;
     Ref<Texture> ao;
     glm::vec3 baseColor = glm::vec3(1.0f);
+    std::string materialSlotName = std::string();
 };
 
 struct ModelData

@@ -42,6 +42,7 @@ struct MeshComponent
 {
     Ref<Mesh> mesh;
     std::vector<Ref<Material>> materials;
+    std::vector<std::string> materialSlotNames;
 
     MeshComponent() = default;
     MeshComponent(const MeshComponent&) = default;

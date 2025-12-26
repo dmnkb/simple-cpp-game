@@ -20,11 +20,11 @@ struct EditorState
     // TODO: Can be generalized? Like selectedAsset of type UUID + AssetType?
     // Or even selectedResource of type  std::variant<Scene, Material, Mesh, Shader, Texture>?
     // Can mutiple different assets be selected at once?
-    UUID selectedScene = UUID::zero();
-    UUID selectedMaterial = UUID::zero();
+    // UUID selectedScene = UUID::zero();
+    // UUID selectedMaterial = UUID::zero();
     UUID selectedMesh = UUID::zero();
-    UUID selectedShader = UUID::zero();
-    UUID selectedTexture = UUID::zero();
+    // UUID selectedShader = UUID::zero();
+    // UUID selectedTexture = UUID::zero();
 
     // Camera
     // std::variant<OrbitPanCtrl, FlySpectatorCtrl> viewportCamController;
