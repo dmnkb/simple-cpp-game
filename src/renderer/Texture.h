@@ -4,6 +4,8 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
+#include "assets/Asset.h"
+
 namespace Engine
 {
 
@@ -52,7 +54,7 @@ struct CustomProperties
     aiTextureType materialTextureType = aiTextureType_NONE;
 };
 
-struct Texture
+struct Texture : public Asset
 {
     GLuint id = 0;
     bool isLoaded = false;
@@ -60,6 +62,9 @@ struct Texture
     Texture() = default;
     Texture(const std::string& path);
     Texture(TextureProperties props, CustomProperties customProps = {});
+
+    // Identity
+    AssetMetadata metadata{.type = AssetType::Texture, .name = "Unnamed Texture"};
 
     void bind(uint32_t slot = 0) const;
     void unbind(uint32_t slot = 0) const;

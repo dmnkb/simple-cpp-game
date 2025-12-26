@@ -26,12 +26,16 @@ Editor::Editor(const Ref<Scene>& activeScene, const Ref<AssetManager>& assetMana
 {
     m_viewportCamController = CreateRef<FlySpectatorCtrl>();
 
+    onLoad();
     throwAwayDemoScene(activeScene);
 }
 
 void Editor::onLoad()
 {
     // Load default material
+    UUID matId =
+        m_assetRegistry->findOrRegisterAsset(AssetType::Material, "assets/materials/default.mat", "Default Material");
+    Ref<Material> mat = m_assetManager->getOrImport<Material>(matId);
 }
 
 void Editor::onUpdate(float fps, const Ref<Scene>& activeScene, const double deltaTime)
