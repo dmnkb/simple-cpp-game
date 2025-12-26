@@ -1,6 +1,6 @@
 #pragma once
 
-#include "renderer/Asset.h"
+#include "assets/Asset.h"
 #include "renderer/Material.h"
 #include "renderer/Shader.h"
 
@@ -30,6 +30,9 @@ class Mesh : public Asset
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
     std::vector<Submesh> submeshes;
+
+    // Identity
+    AssetMetadata metadata{.type = AssetType::Mesh, .name = "Unnamed Mesh"};
 
     unsigned int VAO;
 

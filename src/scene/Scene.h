@@ -2,8 +2,8 @@
 
 #include <entt/entt.hpp>
 
+#include "assets/Asset.h"
 #include "assets/MeshLoader.h"
-#include "renderer/Asset.h"
 #include "renderer/Camera.h"
 #include "renderer/DirectionalLight.h"
 #include "scene/Components.h"

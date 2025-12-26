@@ -3,8 +3,8 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
+#include "assets/Asset.h"
 #include "core/Core.h"
-#include "renderer/Asset.h"
 
 namespace Engine
 {

@@ -1,7 +1,7 @@
 #pragma once
 
+#include "assets/Asset.h"
 #include "core/Core.h"
-#include "renderer/Asset.h"
 #include "renderer/Shader.h"
 #include "renderer/Texture.h"
 

@@ -7,6 +7,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <imgui_internal.h>
 
+#include "assets/Asset.h"
 #include "editor/EditorState.h"
 #include "scene/Entity.h"
 #include "scene/Scene.h"
@@ -194,8 +195,8 @@ static void renderComponentSelectionPopup(Entity entity, const Ref<Scene>& scene
     }
 }
 
-// MARK: Component Renderers
-static void renderTagComponen(Entity entity, const Ref<Scene>& scene)
+// MARK: Tag Component
+static void renderTagComponent(Entity entity, const Ref<Scene>& scene)
 {
     auto& tag = entity.getComponent<TagComponent>().tag;
 
@@ -220,6 +221,7 @@ static void renderTagComponen(Entity entity, const Ref<Scene>& scene)
     }
 }
 
+// MARK: Transform Component
 static void renderTransformComponent(Entity entity, const Ref<Scene>& scene)
 {
     auto& transform = entity.getComponent<TransformComponent>();
@@ -248,7 +250,9 @@ static void renderTransformComponent(Entity entity, const Ref<Scene>& scene)
     }
 }
 
-static void renderMeshComponent(Entity entity, const Ref<Scene>& scene)
+// MARK: Mesh Component
+static void renderMeshComponent(Entity entity, const Ref<Scene>& scene, const Ref<AssetManager>& assetManager,
+                                const Ref<AssetRegistry>& assetRegistry)
 {
     auto& meshComp = entity.getComponent<MeshComponent>();
     if (!meshComp.mesh)
@@ -257,11 +261,65 @@ static void renderMeshComponent(Entity entity, const Ref<Scene>& scene)
         return;
     }
 
-    ImGui::Text("Mesh: %s", meshComp.mesh->metadata.path.c_str());
+    ImGui::Text("Path: %s", meshComp.mesh->metadata.path.c_str());
+    ImGui::Dummy(ImVec2(0.0f, 5.0f));
 
-    if (ImGui::TreeNodeEx("##SubmeshList", ImGuiTreeNodeFlags_None, "Submesh List | Count: %d",
-                          (int)meshComp.mesh->submeshes.size()))
+    if (ImGui::BeginTable("MaterialSlotTable", 4, ImGuiTableFlags_SizingStretchSame))
     {
+        const float availableWidth = ImGui::GetContentRegionAvail().x;
+        const float slotIndexWidth = ImGui::CalcTextSize("Slot xxx").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+        const float assignButtonWidth = ImGui::CalcTextSize("Assign...").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+        ImGui::TableSetupColumn("slot", slotIndexWidth);
+        ImGui::TableSetupColumn("slot name", ImGuiTableColumnFlags_WidthFixed,
+                                availableWidth - slotIndexWidth - assignButtonWidth - 150.0f);
+        ImGui::TableSetupColumn("assigned material name", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("actions", assignButtonWidth);
+
+        // FIXME: This inconventiently uses the submesh count for iteration, since
+        // assimp adds one extra material, so: Mat Count = Submesh Count + 1.
+        // for (uint32_t i = 0; i < meshComp.materials.size(); ++i)
+        for (uint32_t i = 0; i < meshComp.mesh->submeshes.size(); ++i)
+        {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::TextUnformatted("Slot 0");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::TextUnformatted(meshComp.materialSlotNames[i].c_str());
+            ImGui::TableSetColumnIndex(2);
+            ImGui::TextUnformatted(meshComp.materials[i]->metadata.name.c_str());
+            ImGui::TableSetColumnIndex(3);
+            if (ImGui::Button("Assign..."))
+            {
+                ImGui::OpenPopup(std::format("Assign Material to Slot {}", i).c_str());
+            }
+            if (ImGui::BeginPopupModal(std::format("Assign Material to Slot {}", i).c_str(), nullptr,
+                                       ImGuiWindowFlags_AlwaysAutoResize))
+            {
+                ImGui::TextUnformatted("Select Material to Assign:");
+                ImGui::Separator();
+
+                assetRegistry->forEachByType(AssetType::Material,
+                                             [&](UUID id, const AssetMetadata& meta)
+                                             {
+                                                 if (ImGui::Selectable(meta.name.c_str()))
+                                                 {
+                                                     std::println("Assiging material {}", meta.name.c_str());
+
+                                                     ImGui::CloseCurrentPopup();
+                                                 }
+                                             });
+
+                ImGui::EndPopup();
+            }
+        }
+
+        ImGui::EndTable();
+    }
+
+    if (ImGui::TreeNode("##SubmeshInfo", "Debug"))
+    {
+        if (ImGui::TreeNodeEx("##SubmeshList", ImGuiTreeNodeFlags_None, "Total Submeshes: %d",
+                              (int)meshComp.mesh->submeshes.size()))
         {
             for (uint32_t i = 0; i < meshComp.mesh->submeshes.size(); ++i)
             {
@@ -269,25 +327,16 @@ static void renderMeshComponent(Entity entity, const Ref<Scene>& scene)
             }
             ImGui::TreePop();
         }
-    }
-    // TODO: Not all materials are used, Assimp seems to generate an extra one.
-    if (ImGui::TreeNodeEx("##MaterialSlotList", ImGuiTreeNodeFlags_None, "Material Slots | Count: %d",
-                          (int)meshComp.materials.size()))
-    {
-        for (uint32_t i = 0; i < meshComp.materials.size(); ++i)
-        {
-            ImGui::BulletText(
-                "%s: Assigned Material: %s",
-                (i < meshComp.materialSlotNames.size() ? meshComp.materialSlotNames[i].c_str() : "Unnamed"),
-                (meshComp.materials[i] ? meshComp.materials[i]->metadata.path.c_str() : "No"));
-        }
+        ImGui::Text("Total Vertices: %d", (int)meshComp.mesh->vertices.size());
+        ImGui::Text("Total Indices: %d", (int)meshComp.mesh->indices.size());
         ImGui::TreePop();
     }
 }
 
 struct PanelComponents
 {
-    static void render(const Ref<Scene>& scene)
+    static void render(const Ref<Scene>& scene, const Ref<AssetManager>& assetManager,
+                       const Ref<AssetRegistry>& assetRegistry)
     {
         static bool open = true;
         ImGui::Begin("Components", &open);
@@ -301,19 +350,25 @@ struct PanelComponents
             return;
         }
 
-        const auto& entity = g_editorState.selectedEntity;
+        Entity& entity = g_editorState.selectedEntity;
 
-        // clang-format off
-        drawComponentUI<TagComponent>("Tag Component", entity, [&](TagComponent& component) {
-            renderTagComponen(entity, scene);
-        });
-        drawComponentUI<TransformComponent>("Transform Component", entity, [&](TransformComponent& component) {
-            renderTransformComponent(entity, scene);
-        });
-        drawComponentUI<MeshComponent>("Mesh Component", entity, [&](MeshComponent& component) {
-            renderMeshComponent(entity, scene);
-        });
-        // clang-format on
+        // Tag Component
+        drawComponentUI<TagComponent>("Tag Component", entity,
+                                      [&](TagComponent& component) { renderTagComponent(entity, scene); });
+
+        // Transform Component
+        drawComponentUI<TransformComponent>("Transform Component", entity, [&](TransformComponent& component)
+                                            { renderTransformComponent(entity, scene); });
+
+        // Mesh Component
+        std::string meshComponentHeader = "Mesh Component";
+        if (entity.hasComponent<MeshComponent>())
+        {
+            auto& meshComp = entity.getComponent<MeshComponent>();
+            meshComponentHeader = std::format("Mesh Component ({})", meshComp.mesh->metadata.name.c_str());
+        }
+        drawComponentUI<MeshComponent>(meshComponentHeader.c_str(), entity, [&](MeshComponent& component)
+                                       { renderMeshComponent(entity, scene, assetManager, assetRegistry); });
 
         ImGui::End();
     }

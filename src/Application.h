@@ -1,5 +1,6 @@
 #pragma once
 
+#include "assets/Asset.h"
 #include "core/Core.h"
 #include "core/EventManager.h"
 #include "editor/Editor.h"
@@ -24,9 +25,9 @@ class Application
     Scope<Editor> m_editorLayer;
     Scope<ImGuiLayer> m_imguiLayer;
     Scope<Renderer> m_renderer;
+    Ref<AssetManager> m_assetManager;
+    Ref<AssetRegistry> m_assetRegistry;
     Ref<Scene> m_activeScene;
-
-    // AssetSystem m_assets; TODO: Implement asset system
 
     // TODO: Think about how to best handle editor vs. runtime mode
     bool m_isEditorMode = true;

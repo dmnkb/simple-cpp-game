@@ -9,9 +9,11 @@ namespace Engine
 class Editor
 {
   public:
-    Editor(const Ref<Scene>& activeScene);
+    Editor(const Ref<Scene>& activeScene, const Ref<AssetManager>& assetManager,
+           const Ref<AssetRegistry>& assetRegistry);
     ~Editor() = default;
 
+    void onLoad();
     void onUpdate(float fps, const Ref<Scene>& activeScene, const double deltaTime);
 
   private:
@@ -19,6 +21,8 @@ class Editor
     void throwAwayDemoScene(const Ref<Scene>& activeScene);
 
   private:
+    Ref<AssetManager> m_assetManager;
+    Ref<AssetRegistry> m_assetRegistry;
     Ref<FlySpectatorCtrl> m_viewportCamController;
 };
 

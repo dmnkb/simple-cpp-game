@@ -20,11 +20,18 @@
 namespace Engine
 {
 
-Editor::Editor(const Ref<Scene>& activeScene)
+Editor::Editor(const Ref<Scene>& activeScene, const Ref<AssetManager>& assetManager,
+               const Ref<AssetRegistry>& assetRegistry)
+    : m_assetManager(assetManager), m_assetRegistry(assetRegistry)
 {
     m_viewportCamController = CreateRef<FlySpectatorCtrl>();
 
     throwAwayDemoScene(activeScene);
+}
+
+void Editor::onLoad()
+{
+    // Load default material
 }
 
 void Editor::onUpdate(float fps, const Ref<Scene>& activeScene, const double deltaTime)
@@ -40,7 +47,7 @@ void Editor::onImGuiRender(float fps, const Ref<Scene>& activeScene, const doubl
 
     PanelStats::render(fps);
     PanelSceneHierarchy::render(activeScene);
-    PanelComponents::render(activeScene);
+    PanelComponents::render(activeScene, m_assetManager, m_assetRegistry);
     // PanelScene::render(activeScene);
     // PanelStatsHighlights::render(fps, activeScene);
 }

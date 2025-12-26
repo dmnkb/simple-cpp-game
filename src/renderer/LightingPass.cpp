@@ -1,6 +1,5 @@
 #include "glm/gtx/string_cast.hpp"
 #include <cmath>
-#include <fmt/core.h>
 #include <glm/gtc/type_ptr.hpp>
 
 #include "core/Profiler.h"

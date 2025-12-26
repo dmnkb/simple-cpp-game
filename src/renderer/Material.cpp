@@ -1,9 +1,7 @@
-#include <fmt/core.h>
-
+#include "renderer/Material.h"
 #include "core/Window.h"
 #include "pch.h"
 #include "renderer/GLDebug.h"
-#include "renderer/Material.h"
 
 namespace Engine
 {

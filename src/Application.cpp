@@ -20,7 +20,9 @@ Application::Application()
                                     [this](const Ref<Event> event) { this->onKeyEvent(event); });
 
     m_activeScene = CreateRef<Scene>();
-    m_editorLayer = CreateScope<Editor>(m_activeScene);
+    m_assetRegistry = CreateRef<AssetRegistry>();
+    m_assetManager = CreateRef<AssetManager>(m_assetRegistry);
+    m_editorLayer = CreateScope<Editor>(m_activeScene, m_assetManager, m_assetRegistry);
     m_imguiLayer = CreateScope<ImGuiLayer>();
     m_imguiLayer->onAttach(Window::glfwWindow);
     m_renderer = CreateScope<Renderer>();
@@ -75,8 +77,7 @@ void Application::run()
 void Application::onKeyEvent(const Ref<Event> event)
 {
     auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(event);
-    if (!keyEvent)
-        return;
+    if (!keyEvent) return;
 
     if (keyEvent->key == GLFW_KEY_ESCAPE && keyEvent->action == GLFW_PRESS)
     {
