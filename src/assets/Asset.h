@@ -53,6 +53,16 @@ class AssetRegistry
             if (meta.type == type) fn(id, meta);
     }
 
+    std::unordered_map<UUID, AssetMetadata> getAllAssetsByTypeDummy(AssetType type) const
+    {
+        const std::unordered_map<UUID, AssetMetadata> dummyData = {
+            {UUID::random(), AssetMetadata{type, "Dummy Asset 1", "/path/to/dummy1", UUID::random()}},
+            {UUID::random(), AssetMetadata{type, "Dummy Asset 2", "/path/to/dummy2", UUID::random()}},
+            {UUID::random(), AssetMetadata{type, "Dummy Asset 3", "/path/to/dummy3", UUID::random()}},
+        };
+        return dummyData;
+    }
+
     // serialize/deserialize registry file
   private:
     std::unordered_map<UUID, AssetMetadata> m_meta;

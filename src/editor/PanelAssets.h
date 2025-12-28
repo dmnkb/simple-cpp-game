@@ -4,6 +4,8 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
+#include "assets/Asset.h"
+
 namespace Engine
 {
 
@@ -125,7 +127,13 @@ struct PanelAssets
         int LayoutLineCount = 0;
 
         // Functions
-        ExampleAssetsBrowser() { AddItems(10000); }
+        ExampleAssetsBrowser(const std::unordered_map<UUID, AssetMetadata>& assets)
+        {
+            for (const auto& [id, meta] : assets)
+            {
+                Items.push_back(ExampleAsset(static_cast<ImGuiID>(NextItemId++), static_cast<int>(meta.type)));
+            }
+        }
         void AddItems(int count)
         {
             if (Items.Size == 0) NextItemId = 0;
@@ -405,12 +413,12 @@ struct PanelAssets
             // ImGui::End();
         }
     };
-    static void render(const float fps)
+    static void render(const float fps, const Ref<AssetRegistry>& assetRegistry)
     {
         static bool open = true;
         ImGui::Begin("Assets Browser", &open, ImGuiWindowFlags_MenuBar);
 
-        static ExampleAssetsBrowser assets_browser;
+        static ExampleAssetsBrowser assets_browser(assetRegistry->getAllAssetsByTypeDummy(AssetType::Texture));
         assets_browser.Draw();
 
         ImGui::End();
