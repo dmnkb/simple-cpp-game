@@ -6,6 +6,7 @@
 
 #include "assets/Asset.h"
 #include "core/UUID.h"
+#include "editor/EditorState.h"
 
 namespace Engine
 {
@@ -109,7 +110,7 @@ struct PanelAssets
                // required to able to amend with Shift+box-select. Value is small in Explorer.
 
         // State
-        AssetType CurrentAssetType = AssetType::Texture;
+        AssetType CurrentAssetType = AssetType::Mesh;
         ImVector<ExampleAsset> Items; // Our items
         ExampleSelectionWithDeletion
             Selection;              // Our selection (ImGuiSelectionBasicStorage + helper funcs to handle deletion)
@@ -128,7 +129,7 @@ struct PanelAssets
         // Functions
         ExampleAssetsBrowser(const Ref<AssetRegistry>& assetRegistry)
         {
-            for (const auto& [id, meta] : assetRegistry->getAllAssetsByTypeDummy(CurrentAssetType))
+            for (const auto& [id, meta] : assetRegistry->getAllAssetsByType(CurrentAssetType))
             {
                 Items.push_back(ExampleAsset(static_cast<ImGuiID>(NextItemId++), meta));
             }
@@ -175,7 +176,7 @@ struct PanelAssets
                                 Items.clear();
                                 Selection.Clear();
                                 NextItemId = 0;
-                                for (const auto& [id, meta] : assetRegistry->getAllAssetsByTypeDummy(CurrentAssetType))
+                                for (const auto& [id, meta] : assetRegistry->getAllAssetsByType(CurrentAssetType))
                                 {
                                     Items.push_back(ExampleAsset(static_cast<ImGuiID>(NextItemId++), meta));
                                 }
