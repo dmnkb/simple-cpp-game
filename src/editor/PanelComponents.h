@@ -23,9 +23,8 @@ void drawComponentUI(const char* name, Entity entity, std::function<void(T&)> ui
 
     ImGui::PushID((int)typeid(T).hash_code());
 
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
-                               ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding |
-                               ImGuiTreeNodeFlags_AllowOverlap;
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth |
+                               ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_AllowOverlap;
 
     bool opened = ImGui::TreeNodeEx("##component_header", flags, "%s", name);
 

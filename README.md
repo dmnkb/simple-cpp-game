@@ -24,20 +24,21 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [x] Cascaded shadow maps 
 - [x] Change debug to editor
 - [ ] ECS
-    - [ ] Add entities
+    - [x] Add entities
     - [ ] Remove entities
     - [ ] Scene hierarchy panel
-        - [ ] Display associated components
-        - [ ] Add / remove components
-        - [ ] Modify components
+        - [x] Display associated components
+        - [x] Add / remove components
+        - [x] Modify components
     - [ ] (De)serialize scene
-- [ ] ImGUI Gizmo controls
-- [ ] Assets
+- [ ] Assets (Material editing)
+    - [ ] Assets panel
+        - [x] List all assets
+        - [ ] Create new material
     - [ ] (De)serialize materials
     - [ ] Assign material to material slot
-    - [ ] Assets panel
-        - [ ] Create (Store) new asset
     - [ ] Edit material
+- [ ] ImGUI Gizmo controls
 - [x] Display frametime (CPU)
 - [ ] Mip chain bloom
 - [ ] Split architecture into engine and game

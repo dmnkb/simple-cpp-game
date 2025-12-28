@@ -21,19 +21,13 @@ class FlySpectatorCtrl
     void update(Camera& camera, double deltaTime);
     bool isKeyPressed(unsigned int key);
 
-    glm::vec3 getPosition()
-    {
-        return m_Position;
-    }
-    glm::vec2 getRotation()
-    {
-        return m_Rotation;
-    }
+    glm::vec3 getPosition() { return m_Position; }
+    glm::vec2 getRotation() { return m_Rotation; }
 
   private:
     // Core player attributes
     glm::vec3 m_Position = glm::vec3({-85, 50, -80});
-    glm::vec2 m_Rotation = glm::vec2({45, -15}); // yaw (x), pitch (y)
+    glm::vec2 m_Rotation = glm::vec2({45, -25}); // yaw (x), pitch (y)
     glm::vec3 m_Direction = glm::vec3(0.f);
     float m_verticalVelocity = 0;
 

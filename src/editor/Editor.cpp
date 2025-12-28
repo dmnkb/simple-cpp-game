@@ -61,7 +61,6 @@ void Editor::onImGuiRender(float fps, const Ref<Scene>& activeScene, const doubl
 }
 
 // TODO: remove once scene loading is in place
-// TODO: consider the editor owning the scene
 void Editor::throwAwayDemoScene(const Ref<Scene>& activeScene)
 {
     auto groundData = MeshLoader::loadMeshFromFile("assets/models/ground/ground.gltf");
