@@ -69,6 +69,7 @@ Ref<Material> AssetLoader::load<Material>(const AssetMetadata& meta)
 
     // Optional: if you require the file to exist:
     // if (!std::filesystem::exists(meta.path)) { ... return nullptr; }
+    std::println("AssetLoader<Material>: Loading material '{}' from '{}'", meta.name, meta.path.string());
 
     Ref<Material> mat = CreateRef<Material>(Shader::getStandardShader());
     mat->metadata = meta;

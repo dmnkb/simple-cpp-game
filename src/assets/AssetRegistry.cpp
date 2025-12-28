@@ -1,12 +1,9 @@
-#include "assets/Asset.h"
-
-#include <filesystem>
-#include <iostream>
+#include "assets/AssetRegistry.h"
+#include "pch.h"
 
 namespace Engine
 {
 
-// AssetRegistry methods
 const AssetMetadata* AssetRegistry::find(UUID id) const
 {
     auto it = m_meta.find(id);
