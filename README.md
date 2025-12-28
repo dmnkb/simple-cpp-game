@@ -32,6 +32,12 @@ I'm building this game to learn game development in C++ sticking to best practic
         - [ ] Modify components
     - [ ] (De)serialize scene
 - [ ] ImGUI Gizmo controls
+- [ ] Assets
+    - [ ] (De)serialize materials
+    - [ ] Assign material to material slot
+    - [ ] Assets panel
+        - [ ] Create (Store) new asset
+    - [ ] Edit material
 - [x] Display frametime (CPU)
 - [ ] Mip chain bloom
 - [ ] Split architecture into engine and game

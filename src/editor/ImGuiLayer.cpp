@@ -60,11 +60,11 @@ void ImGuiLayer::onAttach(GLFWwindow* window)
     colors[ImGuiCol_HeaderHovered] = ImVec4(0.25f, 0.25f, 0.25f, 1.00f);
     colors[ImGuiCol_HeaderActive] = ImVec4(0.67f, 0.67f, 0.67f, 0.39f);
     colors[ImGuiCol_Separator] = ImVec4(0.38f, 0.38f, 0.38f, 1.00f);
-    colors[ImGuiCol_SeparatorHovered] = ImVec4(0.41f, 0.42f, 0.44f, 1.00f);
-    colors[ImGuiCol_SeparatorActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
+    colors[ImGuiCol_SeparatorHovered] = ImVec4(0.06f, 0.54f, 0.91f, 1.00f);
+    colors[ImGuiCol_SeparatorActive] = ImVec4(0.06f, 0.54f, 0.91f, 1.00f);
     colors[ImGuiCol_ResizeGrip] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-    colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.29f, 0.30f, 0.31f, 0.67f);
-    colors[ImGuiCol_ResizeGripActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
+    colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.06f, 0.54f, 0.91f, 1.00f);
+    colors[ImGuiCol_ResizeGripActive] = ImVec4(0.06f, 0.54f, 0.91f, 1.00f);
     colors[ImGuiCol_TabHovered] = ImVec4(0.33f, 0.34f, 0.36f, 0.83f);
     colors[ImGuiCol_Tab] = ImVec4(0.16f, 0.16f, 0.16f, 1.00f);
     colors[ImGuiCol_TabSelected] = ImVec4(0.33f, 0.34f, 0.36f, 0.83f);
@@ -107,6 +107,7 @@ void ImGuiLayer::onAttach(GLFWwindow* window)
     style.TabBarBorderSize = 0.000000;
     style.WindowBorderSize = 0.000000;
     style.SeparatorTextBorderSize = 1.000000;
+    style.IndentSpacing = 0.000000;
 
     // Setup Platform/Renderer backends
     // Use a GLSL version compatible with your OpenGL context (Mac: 410 core is fine)

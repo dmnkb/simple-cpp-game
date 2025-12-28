@@ -264,14 +264,13 @@ static void renderMeshComponent(Entity entity, const Ref<Scene>& scene, const Re
     ImGui::Text("Path: %s", meshComp.mesh->metadata.path.c_str());
     ImGui::Dummy(ImVec2(0.0f, 5.0f));
 
-    if (ImGui::BeginTable("MaterialSlotTable", 4, ImGuiTableFlags_SizingStretchSame))
+    if (ImGui::BeginTable("MaterialSlotTable", 3,
+                          ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_RowBg))
     {
         const float availableWidth = ImGui::GetContentRegionAvail().x;
-        const float slotIndexWidth = ImGui::CalcTextSize("Slot xxx").x + ImGui::GetStyle().FramePadding.x * 2.0f;
         const float assignButtonWidth = ImGui::CalcTextSize("Assign...").x + ImGui::GetStyle().FramePadding.x * 2.0f;
-        ImGui::TableSetupColumn("slot", slotIndexWidth);
         ImGui::TableSetupColumn("slot name", ImGuiTableColumnFlags_WidthFixed,
-                                availableWidth - slotIndexWidth - assignButtonWidth - 150.0f);
+                                availableWidth - assignButtonWidth - 150.0f);
         ImGui::TableSetupColumn("assigned material name", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("actions", assignButtonWidth);
 
@@ -282,12 +281,10 @@ static void renderMeshComponent(Entity entity, const Ref<Scene>& scene, const Re
         {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            ImGui::TextUnformatted("Slot 0");
-            ImGui::TableSetColumnIndex(1);
             ImGui::TextUnformatted(meshComp.materialSlotNames[i].c_str());
-            ImGui::TableSetColumnIndex(2);
+            ImGui::TableSetColumnIndex(1);
             ImGui::TextUnformatted(meshComp.materials[i]->metadata.name.c_str());
-            ImGui::TableSetColumnIndex(3);
+            ImGui::TableSetColumnIndex(2);
             if (ImGui::Button("Assign..."))
             {
                 ImGui::OpenPopup(std::format("Assign Material to Slot {}", i).c_str());
