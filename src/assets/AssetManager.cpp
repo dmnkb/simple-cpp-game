@@ -117,4 +117,7 @@ bool AssetManager::saveAsset(const UUID& id)
     return true;
 }
 
+// Explicit template instantiations
+template Ref<Material> AssetManager::getOrImport<Material>(UUID id);
+
 } // namespace Engine
