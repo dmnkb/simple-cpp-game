@@ -92,34 +92,7 @@ struct ExampleAsset
         ID = id;
         Type = type;
     }
-
-    static const ImGuiTableSortSpecs* s_current_sort_specs;
-
-    static void SortWithSortSpecs(ImGuiTableSortSpecs* sort_specs, ExampleAsset* items, int items_count)
-    {
-        s_current_sort_specs = sort_specs; // Store in variable accessible by the sort function.
-        if (items_count > 1) qsort(items, (size_t)items_count, sizeof(items[0]), ExampleAsset::CompareWithSortSpecs);
-        s_current_sort_specs = NULL;
-    }
-
-    // Compare function to be used by qsort()
-    static int CompareWithSortSpecs(const void* lhs, const void* rhs)
-    {
-        const ExampleAsset* a = (const ExampleAsset*)lhs;
-        const ExampleAsset* b = (const ExampleAsset*)rhs;
-        for (int n = 0; n < s_current_sort_specs->SpecsCount; n++)
-        {
-            const ImGuiTableColumnSortSpecs* sort_spec = &s_current_sort_specs->Specs[n];
-            int delta = 0;
-            if (sort_spec->ColumnIndex == 0) delta = ((int)a->ID - (int)b->ID);
-            else if (sort_spec->ColumnIndex == 1) delta = (a->Type - b->Type);
-            if (delta > 0) return (sort_spec->SortDirection == ImGuiSortDirection_Ascending) ? +1 : -1;
-            if (delta < 0) return (sort_spec->SortDirection == ImGuiSortDirection_Ascending) ? -1 : +1;
-        }
-        return (int)a->ID - (int)b->ID;
-    }
 };
-const ImGuiTableSortSpecs* ExampleAsset::s_current_sort_specs = NULL;
 
 struct PanelAssets
 {
@@ -127,16 +100,11 @@ struct PanelAssets
     struct ExampleAssetsBrowser
     {
         // Options
-        bool ShowTypeOverlay = true;
-        bool AllowSorting = true;
-        bool AllowDragUnselected = false;
-        bool AllowBoxSelect = true;
         float IconSize = 32.0f;
         int IconSpacing = 10;
         int IconHitSpacing =
             4; // Increase hit-spacing if you want to make it possible to clear or box-select from gaps. Some spacing is
                // required to able to amend with Shift+box-select. Value is small in Explorer.
-        bool StretchSpacing = true;
 
         // State
         ImVector<ExampleAsset> Items; // Our items
@@ -178,7 +146,6 @@ struct PanelAssets
         {
             // Layout: when not stretching: allow extending into right-most spacing.
             LayoutItemSpacing = (float)IconSpacing;
-            if (StretchSpacing == false) avail_width += floorf(LayoutItemSpacing * 0.5f);
 
             // Layout: calculate number of icon per line and number of lines
             LayoutItemSize = ImVec2(floorf(IconSize), floorf(IconSize));
@@ -187,7 +154,7 @@ struct PanelAssets
 
             // Layout: when stretching: allocate remaining space to more spacing. Round before division, so item_spacing
             // may be non-integer.
-            if (StretchSpacing && LayoutColumnCount > 1)
+            if (LayoutColumnCount > 1)
                 LayoutItemSpacing = floorf(avail_width - LayoutItemSize.x * LayoutColumnCount) / LayoutColumnCount;
 
             LayoutItemStep = ImVec2(LayoutItemSize.x + LayoutItemSpacing, LayoutItemSize.y + LayoutItemSpacing);
@@ -195,15 +162,8 @@ struct PanelAssets
             LayoutOuterPadding = floorf(LayoutItemSpacing * 0.5f);
         }
 
-        void Draw(const char* title, bool* p_open)
+        void Draw()
         {
-            // ImGui::SetNextWindowSize(ImVec2(IconSize * 25, IconSize * 15), ImGuiCond_FirstUseEver);
-            // if (!ImGui::Begin(title, p_open, ImGuiWindowFlags_MenuBar))
-            // {
-            //     ImGui::End();
-            //     return;
-            // }
-
             // Menu bar
             if (ImGui::BeginMenuBar())
             {
@@ -211,8 +171,6 @@ struct PanelAssets
                 {
                     if (ImGui::MenuItem("Add 10000 items")) AddItems(10000);
                     if (ImGui::MenuItem("Clear items")) ClearItems();
-                    ImGui::Separator();
-                    if (ImGui::MenuItem("Close", NULL, false, p_open != NULL)) *p_open = false;
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Edit"))
@@ -223,50 +181,16 @@ struct PanelAssets
                 if (ImGui::BeginMenu("Options"))
                 {
                     ImGui::PushItemWidth(ImGui::GetFontSize() * 10);
-
-                    ImGui::SeparatorText("Contents");
-                    ImGui::Checkbox("Show Type Overlay", &ShowTypeOverlay);
-                    ImGui::Checkbox("Allow Sorting", &AllowSorting);
-
-                    ImGui::SeparatorText("Selection Behavior");
-                    ImGui::Checkbox("Allow dragging unselected item", &AllowDragUnselected);
-                    ImGui::Checkbox("Allow box-selection", &AllowBoxSelect);
-
                     ImGui::SeparatorText("Layout");
                     ImGui::SliderFloat("Icon Size", &IconSize, 16.0f, 128.0f, "%.0f");
                     ImGui::SameLine();
                     HelpMarker("Use Ctrl+Wheel to zoom");
                     ImGui::SliderInt("Icon Spacing", &IconSpacing, 0, 32);
                     ImGui::SliderInt("Icon Hit Spacing", &IconHitSpacing, 0, 32);
-                    ImGui::Checkbox("Stretch Spacing", &StretchSpacing);
                     ImGui::PopItemWidth();
                     ImGui::EndMenu();
                 }
                 ImGui::EndMenuBar();
-            }
-
-            // Show a table with ONLY one header row to showcase the idea/possibility of using this to provide a sorting
-            // UI
-            if (AllowSorting)
-            {
-                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-                ImGuiTableFlags table_flags_for_sort_specs = ImGuiTableFlags_Sortable | ImGuiTableFlags_SortMulti |
-                                                             ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Borders;
-                if (ImGui::BeginTable("for_sort_specs_only", 2, table_flags_for_sort_specs,
-                                      ImVec2(0.0f, ImGui::GetFrameHeight())))
-                {
-                    ImGui::TableSetupColumn("Index");
-                    ImGui::TableSetupColumn("Type");
-                    ImGui::TableHeadersRow();
-                    if (ImGuiTableSortSpecs* sort_specs = ImGui::TableGetSortSpecs())
-                        if (sort_specs->SpecsDirty || RequestSort)
-                        {
-                            ExampleAsset::SortWithSortSpecs(sort_specs, Items.Data, Items.Size);
-                            sort_specs->SpecsDirty = RequestSort = false;
-                        }
-                    ImGui::EndTable();
-                }
-                ImGui::PopStyleVar();
             }
 
             ImGuiIO& io = ImGui::GetIO();
@@ -289,12 +213,8 @@ struct PanelAssets
                 ImGuiMultiSelectFlags ms_flags =
                     ImGuiMultiSelectFlags_ClearOnEscape | ImGuiMultiSelectFlags_ClearOnClickVoid;
 
-                // - Enable box-select (in 2D mode, so that changing box-select rectangle X1/X2 boundaries will affect
-                // clipped items)
-                if (AllowBoxSelect) ms_flags |= ImGuiMultiSelectFlags_BoxSelect2d;
-
                 // - This feature allows dragging an unselected item without selecting it (rarely used)
-                if (AllowDragUnselected) ms_flags |= ImGuiMultiSelectFlags_SelectOnClickRelease;
+                ms_flags |= ImGuiMultiSelectFlags_SelectOnClickRelease;
 
                 // - Enable keyboard wrapping on X axis
                 // (FIXME-MULTISELECT: We haven't designed/exposed a general nav wrapping api yet, so this flag is
@@ -410,14 +330,7 @@ struct PanelAssets
                                 ImVec2 box_max(box_min.x + LayoutItemSize.x + 2,
                                                box_min.y + LayoutItemSize.y + 2);          // Dubious
                                 draw_list->AddRectFilled(box_min, box_max, icon_bg_color); // Background color
-                                if (ShowTypeOverlay && item_data->Type != 0)
-                                {
-                                    ImU32 type_col = icon_type_overlay_colors[item_data->Type %
-                                                                              IM_ARRAYSIZE(icon_type_overlay_colors)];
-                                    draw_list->AddRectFilled(
-                                        ImVec2(box_max.x - 2 - icon_type_overlay_size.x, box_min.y + 2),
-                                        ImVec2(box_max.x - 2, box_min.y + 2 + icon_type_overlay_size.y), type_col);
-                                }
+
                                 if (display_label)
                                 {
                                     ImU32 label_col =
@@ -498,7 +411,7 @@ struct PanelAssets
         ImGui::Begin("Assets Browser", &open, ImGuiWindowFlags_MenuBar);
 
         static ExampleAssetsBrowser assets_browser;
-        assets_browser.Draw("Example: Assets Browser", &open);
+        assets_browser.Draw();
 
         ImGui::End();
     }
