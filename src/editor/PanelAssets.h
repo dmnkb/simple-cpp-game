@@ -5,6 +5,7 @@
 #include "imgui_internal.h"
 
 #include "assets/Asset.h"
+#include "core/UUID.h"
 
 namespace Engine
 {
@@ -87,35 +88,33 @@ static void HelpMarker(const char* desc)
 struct ExampleAsset
 {
     ImGuiID ID;
-    int Type;
+    AssetMetadata metadata;
 
-    ExampleAsset(ImGuiID id, int type)
+    ExampleAsset(ImGuiID id, AssetMetadata metadata)
     {
         ID = id;
-        Type = type;
+        this->metadata = metadata;
     }
 };
 
 struct PanelAssets
 {
-
     struct ExampleAssetsBrowser
     {
         // Options
-        float IconSize = 32.0f;
+        float IconSize = 96.0f;
         int IconSpacing = 10;
         int IconHitSpacing =
             4; // Increase hit-spacing if you want to make it possible to clear or box-select from gaps. Some spacing is
                // required to able to amend with Shift+box-select. Value is small in Explorer.
 
         // State
+        AssetType CurrentAssetType = AssetType::Texture;
         ImVector<ExampleAsset> Items; // Our items
         ExampleSelectionWithDeletion
-            Selection;               // Our selection (ImGuiSelectionBasicStorage + helper funcs to handle deletion)
-        ImGuiID NextItemId = 0;      // Unique identifier when creating new items
-        bool RequestDelete = false;  // Deferred deletion request
-        bool RequestSort = false;    // Deferred sort request
-        float ZoomWheelAccum = 0.0f; // Mouse wheel accumulator to handle smooth wheels better
+            Selection;              // Our selection (ImGuiSelectionBasicStorage + helper funcs to handle deletion)
+        ImGuiID NextItemId = 0;     // Unique identifier when creating new items
+        bool RequestDelete = false; // Deferred deletion request
 
         // Calculated sizes for layout, output of UpdateLayoutSizes(). Could be locals but our code is simpler this way.
         ImVec2 LayoutItemSize;
@@ -127,25 +126,12 @@ struct PanelAssets
         int LayoutLineCount = 0;
 
         // Functions
-        ExampleAssetsBrowser(const std::unordered_map<UUID, AssetMetadata>& assets)
+        ExampleAssetsBrowser(const Ref<AssetRegistry>& assetRegistry)
         {
-            for (const auto& [id, meta] : assets)
+            for (const auto& [id, meta] : assetRegistry->getAllAssetsByTypeDummy(CurrentAssetType))
             {
-                Items.push_back(ExampleAsset(static_cast<ImGuiID>(NextItemId++), static_cast<int>(meta.type)));
+                Items.push_back(ExampleAsset(static_cast<ImGuiID>(NextItemId++), meta));
             }
-        }
-        void AddItems(int count)
-        {
-            if (Items.Size == 0) NextItemId = 0;
-            Items.reserve(Items.Size + count);
-            for (int n = 0; n < count; n++, NextItemId++)
-                Items.push_back(ExampleAsset(NextItemId, (NextItemId % 20) < 15 ? 0 : (NextItemId % 20) < 18 ? 1 : 2));
-            RequestSort = true;
-        }
-        void ClearItems()
-        {
-            Items.clear();
-            Selection.Clear();
         }
 
         // Logic would be written in the main code BeginChild() and outputting to local variables.
@@ -170,15 +156,32 @@ struct PanelAssets
             LayoutOuterPadding = floorf(LayoutItemSpacing * 0.5f);
         }
 
-        void Draw()
+        void Draw(const Ref<AssetRegistry>& assetRegistry)
         {
             // Menu bar
             if (ImGui::BeginMenuBar())
             {
-                if (ImGui::BeginMenu("File"))
+                if (ImGui::BeginMenu("Asset Type"))
                 {
-                    if (ImGui::MenuItem("Add 10000 items")) AddItems(10000);
-                    if (ImGui::MenuItem("Clear items")) ClearItems();
+                    assetRegistry->forEachAssetType(
+                        [&](AssetType type, std::string_view name)
+                        {
+                            bool is_selected = (type == CurrentAssetType);
+                            if (ImGui::MenuItem(name.data(), nullptr, is_selected))
+                            {
+                                CurrentAssetType = type;
+
+                                // Reload items
+                                Items.clear();
+                                Selection.Clear();
+                                NextItemId = 0;
+                                for (const auto& [id, meta] : assetRegistry->getAllAssetsByTypeDummy(CurrentAssetType))
+                                {
+                                    Items.push_back(ExampleAsset(static_cast<ImGuiID>(NextItemId++), meta));
+                                }
+                            }
+                        });
+
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Edit"))
@@ -344,7 +347,8 @@ struct PanelAssets
                                     ImU32 label_col =
                                         ImGui::GetColorU32(item_is_selected ? ImGuiCol_Text : ImGuiCol_TextDisabled);
                                     char label[32];
-                                    sprintf(label, "%d", item_data->ID);
+                                    sprintf(label, "%s",
+                                            item_data->metadata.name.c_str() ? item_data->metadata.name.c_str() : "");
                                     draw_list->AddText(ImVec2(box_min.x, box_max.y - ImGui::GetFontSize()), label_col,
                                                        label);
                                 }
@@ -369,48 +373,8 @@ struct PanelAssets
                 ms_io = ImGui::EndMultiSelect();
                 Selection.ApplyRequests(ms_io);
                 if (want_delete) Selection.ApplyDeletionPostLoop(ms_io, Items, item_curr_idx_to_focus);
-
-                // Zooming with Ctrl+Wheel
-                if (ImGui::IsWindowAppearing()) ZoomWheelAccum = 0.0f;
-                if (ImGui::IsWindowHovered() && io.MouseWheel != 0.0f && ImGui::IsKeyDown(ImGuiMod_Ctrl) &&
-                    ImGui::IsAnyItemActive() == false)
-                {
-                    ZoomWheelAccum += io.MouseWheel;
-                    if (fabsf(ZoomWheelAccum) >= 1.0f)
-                    {
-                        // Calculate hovered item index from mouse location
-                        // FIXME: Locking aiming on 'hovered_item_idx' (with a cool-down timer) would ensure zoom keeps
-                        // on it.
-                        const float hovered_item_nx =
-                            (io.MousePos.x - start_pos.x + LayoutItemSpacing * 0.5f) / LayoutItemStep.x;
-                        const float hovered_item_ny =
-                            (io.MousePos.y - start_pos.y + LayoutItemSpacing * 0.5f) / LayoutItemStep.y;
-                        const int hovered_item_idx = ((int)hovered_item_ny * LayoutColumnCount) + (int)hovered_item_nx;
-                        // ImGui::SetTooltip("%f,%f -> item %d", hovered_item_nx, hovered_item_ny, hovered_item_idx); //
-                        // Move those 4 lines in block above for easy debugging
-
-                        // Zoom
-                        IconSize *= powf(1.1f, (float)(int)ZoomWheelAccum);
-                        IconSize = ImClamp(IconSize, 16.0f, 128.0f);
-                        ZoomWheelAccum -= (int)ZoomWheelAccum;
-                        UpdateLayoutSizes(avail_width);
-
-                        // Manipulate scroll to that we will land at the same Y location of currently hovered item.
-                        // - Calculate next frame position of item under mouse
-                        // - Set new scroll position to be used in next ImGui::BeginChild() call.
-                        float hovered_item_rel_pos_y =
-                            ((float)(hovered_item_idx / LayoutColumnCount) + fmodf(hovered_item_ny, 1.0f)) *
-                            LayoutItemStep.y;
-                        hovered_item_rel_pos_y += ImGui::GetStyle().WindowPadding.y;
-                        float mouse_local_y = io.MousePos.y - ImGui::GetWindowPos().y;
-                        ImGui::SetScrollY(hovered_item_rel_pos_y - mouse_local_y);
-                    }
-                }
             }
             ImGui::EndChild();
-
-            ImGui::Text("Selected: %d/%d items", Selection.Size, Items.Size);
-            // ImGui::End();
         }
     };
     static void render(const float fps, const Ref<AssetRegistry>& assetRegistry)
@@ -418,8 +382,8 @@ struct PanelAssets
         static bool open = true;
         ImGui::Begin("Assets Browser", &open, ImGuiWindowFlags_MenuBar);
 
-        static ExampleAssetsBrowser assets_browser(assetRegistry->getAllAssetsByTypeDummy(AssetType::Texture));
-        assets_browser.Draw();
+        static ExampleAssetsBrowser assets_browser(assetRegistry);
+        assets_browser.Draw(assetRegistry);
 
         ImGui::End();
     }

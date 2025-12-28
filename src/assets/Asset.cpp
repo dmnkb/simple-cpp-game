@@ -28,11 +28,18 @@ UUID AssetRegistry::findOrRegisterAsset(AssetType type, const std::filesystem::p
     if (!path.empty()) meta.path = path;
 
     m_meta[newId] = meta;
+    // TODO: serialize registry to disk?
 
     std::println("Registered new asset: {} (type={}, path='{}')", meta.name, static_cast<int>(type),
                  meta.path.string());
 
     return newId;
+}
+
+void AssetRegistry::deleteAsset(UUID id)
+{
+    m_meta.erase(id);
+    // TODO: serialize registry to disk?
 }
 
 std::optional<UUID> AssetRegistry::findAsset(const std::filesystem::path path) const

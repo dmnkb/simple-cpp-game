@@ -21,6 +21,11 @@ enum class AssetType
     Shader,
     Material,
     Scene,
+    Size
+};
+
+static const std::array<std::string, 7> AssetTypeNames = {
+    "None", "Mesh", "Texture", "Shader", "Material", "Scene", "Size",
 };
 
 struct AssetMetadata
@@ -45,6 +50,18 @@ class AssetRegistry
 
     UUID findOrRegisterAsset(AssetType type, const std::filesystem::path path = std::filesystem::path(),
                              const std::string& name = std::string());
+
+    void deleteAsset(UUID id);
+
+    template <typename Fn>
+        requires std::invocable<Fn, AssetType, std::string_view>
+    void forEachAssetType(Fn&& fn) const
+    {
+        for (int i = static_cast<int>(AssetType::Mesh); i < static_cast<int>(AssetType::Size); ++i)
+        {
+            fn(static_cast<AssetType>(i), AssetTypeNames[i]);
+        }
+    }
 
     template <typename Fn>
     void forEachByType(AssetType type, Fn&& fn) const
