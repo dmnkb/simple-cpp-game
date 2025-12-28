@@ -21,8 +21,8 @@ struct EditorState
     // Or even selectedResource of type  std::variant<Scene, Material, Mesh, Shader, Texture>?
     // Can mutiple different assets be selected at once?
     // UUID selectedScene = UUID::zero();
-    // UUID selectedMaterial = UUID::zero();
-    UUID selectedMesh = UUID::zero();
+    UUID selectedMaterial = UUID::zero();
+    // UUID selectedMesh = UUID::zero();
     // UUID selectedShader = UUID::zero();
     // UUID selectedTexture = UUID::zero();
 

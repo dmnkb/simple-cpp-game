@@ -7,6 +7,7 @@
 #include "editor/Editor.h"
 #include "editor/PanelAssets.h"
 #include "editor/PanelComponents.h"
+#include "editor/PanelMaterial.h"
 #include "editor/PanelScene.h"
 #include "editor/PanelSceneHierarchy.h"
 #include "editor/PanelStats.h"
@@ -53,7 +54,8 @@ void Editor::onImGuiRender(float fps, const Ref<Scene>& activeScene, const doubl
     PanelStats::render(fps);
     PanelSceneHierarchy::render(activeScene);
     PanelComponents::render(activeScene, m_assetManager, m_assetRegistry);
-    PanelAssets::render(fps, m_assetRegistry);
+    PanelAssets::render(m_assetRegistry);
+    PanelMaterial::render(m_assetRegistry);
     // PanelScene::render(activeScene);
     // PanelStatsHighlights::render(fps, activeScene);
 }
