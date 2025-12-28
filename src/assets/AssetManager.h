@@ -17,6 +17,8 @@ class AssetManager
     template <typename T>
     Ref<T> getOrImport(UUID id);
 
+    Ref<Material> createMaterial(const std::filesystem::path& path, std::string name);
+
     bool saveAsset(const UUID& id);
 
     // template <typename T>

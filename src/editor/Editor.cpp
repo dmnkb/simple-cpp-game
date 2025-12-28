@@ -54,7 +54,7 @@ void Editor::onImGuiRender(float fps, const Ref<Scene>& activeScene, const doubl
     PanelStats::render(fps);
     PanelSceneHierarchy::render(activeScene);
     PanelComponents::render(activeScene, m_assetManager, m_assetRegistry);
-    PanelAssets::render(m_assetRegistry);
+    PanelAssets::render(m_assetRegistry, m_assetManager);
     PanelMaterial::render(m_assetRegistry);
     // PanelScene::render(activeScene);
     // PanelStatsHighlights::render(fps, activeScene);

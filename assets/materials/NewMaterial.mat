@@ -1,0 +1,8 @@
+metadata:
+  type: 4
+  name: NewMaterial
+  path: /Users/dominikborchert/Desktop/simple-cpp-game/assets/materials/NewMaterial.mat
+  uuid: 41306229-f092-4474-9a83-e1acecef5baa
+isDoubleSided: false
+alphaMode: 0
+alphaCutoff: 0.5

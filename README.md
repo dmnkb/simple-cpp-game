@@ -34,7 +34,8 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [ ] Assets (Material editing)
     - [ ] Assets panel
         - [x] List all assets
-        - [ ] Create new material
+        - [x] Create new material
+    - [ ] (De)serialize assets registry (project-wide asset database)
     - [ ] (De)serialize materials
     - [ ] Assign material to material slot
     - [ ] Edit material

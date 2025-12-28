@@ -65,6 +65,27 @@ Ref<T> AssetManager::getOrImport(UUID id)
     return asset;
 }
 
+Ref<Material> AssetManager::createMaterial(const std::filesystem::path& path, std::string name)
+{
+    // 1) register metadata (or reuse if already registered)
+    UUID id = m_registry->findOrRegisterAsset(AssetType::Material, path, name);
+
+    // 2) create runtime object
+    auto mat = CreateRef<Material>(Shader::getStandardShader());
+    mat->metadata = *m_registry->find(id); // or set directly
+    mat->metadata.uuid = id;
+    mat->metadata.path = path;
+    mat->metadata.name = name;
+
+    // 3) cache
+    m_loaded[id] = mat;
+
+    // 4) optionally save immediately so it exists on disk
+    MaterialSerializer::serialize(mat, path);
+
+    return mat;
+}
+
 bool AssetManager::saveAsset(const UUID& id)
 {
     if (!m_registry)

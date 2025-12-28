@@ -62,6 +62,8 @@ class FileDialog
     {
         NFD_Init();
 
+        std::println("Invoking save file dialog with title '{}'", title);
+
         nfdchar_t* outPath = nullptr;
         nfdresult_t result;
 
