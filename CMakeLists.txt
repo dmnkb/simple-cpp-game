@@ -4,9 +4,9 @@ project(SimpleCPPGame)
 
 set(CMAKE_CXX_STANDARD 23)
 
-file(GLOB_RECURSE MY_SOURCES src/*.cpp include/*.h)
+file(GLOB_RECURSE CPP_SOURCES src/*.cpp include/*.h)
 
-add_executable(${PROJECT_NAME} ${MY_SOURCES})
+add_executable(${PROJECT_NAME} ${CPP_SOURCES})
 
 # Enable precompiled header
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.h)
@@ -22,10 +22,14 @@ add_subdirectory(vendor/imgui)
 # yaml-cpp (disable extras)
 set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
-# Some versions use these:
 set(YAML_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "" FORCE)
 add_subdirectory(vendor/yaml-cpp EXCLUDE_FROM_ALL)
+
+# nativefiledialog-extended
+set(nfd_PLATFORM PLATFORM_MACOS)
+set(nfd_COMPILER COMPILER_CLANG)
+add_subdirectory(vendor/nativefiledialog-extended EXCLUDE_FROM_ALL)
 
 # Assimp local include + lib
 set(ASSIMP_DIR "${CMAKE_SOURCE_DIR}/vendor/assimp")
@@ -40,6 +44,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/vendor/stduuid/include
     ${CMAKE_SOURCE_DIR}/vendor/entt/src
     ${CMAKE_SOURCE_DIR}/vendor/yaml-cpp/include/
+    ${CMAKE_SOURCE_DIR}/vendor/nativefiledialog-extended/include
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -52,8 +57,10 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE fmt::fmt
     PRIVATE ${ASSIMP_LIBRARY}
     PRIVATE yaml-cpp
+    PRIVATE nfd
 )
 
 # Copy runtime assets
 file(COPY assets DESTINATION ${CMAKE_BINARY_DIR})
 file(COPY shader DESTINATION ${CMAKE_BINARY_DIR})
+
