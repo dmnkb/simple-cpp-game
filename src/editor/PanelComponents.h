@@ -7,7 +7,8 @@
 #include <glm/gtx/quaternion.hpp>
 #include <imgui_internal.h>
 
-#include "assets/Asset.h"
+#include "assets/AssetManager.h"
+#include "assets/AssetRegistry.h"
 #include "editor/EditorState.h"
 #include "scene/Entity.h"
 #include "scene/Scene.h"

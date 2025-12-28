@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "assets/AssetLoader.h"
 #include "core/Core.h"
 #include "core/UUID.h"
@@ -30,7 +32,7 @@ struct AssetMetadata
     UUID uuid = UUID::random();
 };
 
-class Asset
+class Asset : public std::enable_shared_from_this<Asset>
 {
   public:
     virtual ~Asset() = default;

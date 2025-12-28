@@ -4,7 +4,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
-#include "assets/Asset.h"
+#include "assets/AssetRegistry.h"
 #include "core/UUID.h"
 #include "editor/EditorState.h"
 

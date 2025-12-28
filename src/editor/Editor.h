@@ -1,5 +1,7 @@
 #pragma once
 
+#include "assets/AssetManager.h"
+#include "assets/AssetRegistry.h"
 #include "editor/FlySpectatorCtrl.h"
 #include "scene/Scene.h"
 

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "assets/Asset.h"
+#include "assets/AssetManager.h"
+#include "assets/AssetRegistry.h"
 #include "core/Core.h"
 #include "core/EventManager.h"
 #include "editor/Editor.h"

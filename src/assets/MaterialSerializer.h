@@ -1,8 +1,8 @@
 #pragma once
 
-#include "vendor/yaml-cpp/include/yaml-cpp/yaml.h"
 #include <filesystem>
 #include <fstream>
+#include <yaml-cpp/yaml.h>
 
 #include "renderer/Material.h"
 

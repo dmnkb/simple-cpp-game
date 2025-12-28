@@ -19,6 +19,14 @@ add_subdirectory(vendor/fmt)
 add_subdirectory(vendor/entt)
 add_subdirectory(vendor/imgui)
 
+# yaml-cpp (disable extras)
+set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+# Some versions use these:
+set(YAML_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "" FORCE)
+add_subdirectory(vendor/yaml-cpp EXCLUDE_FROM_ALL)
+
 # Assimp local include + lib
 set(ASSIMP_DIR "${CMAKE_SOURCE_DIR}/vendor/assimp")
 set(ASSIMP_INCLUDE_DIR "${ASSIMP_DIR}/include")
@@ -31,6 +39,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${ASSIMP_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/vendor/stduuid/include
     ${CMAKE_SOURCE_DIR}/vendor/entt/src
+    ${CMAKE_SOURCE_DIR}/vendor/yaml-cpp/include/
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -42,7 +51,7 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE imgui_impl_opengl3
     PRIVATE fmt::fmt
     PRIVATE ${ASSIMP_LIBRARY}
-    PRIVATE EnTT::EnTT
+    PRIVATE yaml-cpp
 )
 
 # Copy runtime assets

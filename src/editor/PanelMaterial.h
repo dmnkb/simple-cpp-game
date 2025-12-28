@@ -2,7 +2,7 @@
 
 #include "imgui.h"
 
-#include "assets/Asset.h"
+#include "assets/AssetRegistry.h"
 #include "editor/EditorState.h"
 
 namespace Engine
