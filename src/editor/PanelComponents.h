@@ -311,29 +311,37 @@ static void renderMeshComponent(Entity entity, const Ref<Scene>& scene)
         for (uint32_t i = 0; i < meshComp.mesh->defaultMaterialSlots.size(); ++i)
         {
             ImGui::TableNextRow();
+            ImGui::PushID(static_cast<int>(i)); // Unique ID scope per slot row
 
+            // Column 0: Slot index
             ImGui::TableSetColumnIndex(0);
             ImGui::AlignTextToFramePadding();
             ImGui::Text("%u", i);
 
+            // Column 1: Default material name
             ImGui::TableSetColumnIndex(1);
             ImGui::AlignTextToFramePadding();
-            ImGui::TextUnformatted(meshComp.mesh->defaultMaterialSlots[i]->metadata.name.c_str());
+            if (i < meshComp.mesh->defaultMaterialSlots.size() && meshComp.mesh->defaultMaterialSlots[i])
+                ImGui::TextUnformatted(meshComp.mesh->defaultMaterialSlots[i]->metadata.name.c_str());
+            else ImGui::TextUnformatted("None");
 
+            // Column 2: Override material name
+            // TODO: Add remove button
             ImGui::TableSetColumnIndex(2);
             ImGui::AlignTextToFramePadding();
-            ImGui::TextUnformatted((i < meshComp.overrideMaterials.size() && meshComp.overrideMaterials[i])
-                                       ? meshComp.overrideMaterials[i]->metadata.name.c_str()
-                                       : "None");
+            const bool hasOverride = (i < meshComp.overrideMaterials.size() && meshComp.overrideMaterials[i]);
+            ImGui::TextUnformatted(hasOverride ? meshComp.overrideMaterials[i]->metadata.name.c_str() : "None");
 
+            // Column 3: Actions
             ImGui::TableSetColumnIndex(3);
+
+            // Use a stable popup name, scoped by PushID(i)
             if (ImGui::Button("Assign..."))
             {
-                ImGui::OpenPopup(std::format("Assign Material to Slot {}", i).c_str());
+                ImGui::OpenPopup("AssignMaterialPopup");
             }
 
-            if (ImGui::BeginPopupModal(std::format("Assign Material to Slot {}", i).c_str(), nullptr,
-                                       ImGuiWindowFlags_AlwaysAutoResize))
+            if (ImGui::BeginPopupModal("AssignMaterialPopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
             {
                 ImGui::TextUnformatted("Select Material to Assign:");
                 ImGui::Separator();
@@ -341,16 +349,27 @@ static void renderMeshComponent(Entity entity, const Ref<Scene>& scene)
                 AssetRegistry::forEachByType(AssetType::Material,
                                              [&](UUID id, const AssetMetadata& meta)
                                              {
+                                                 // Ensure unique IDs even if meta.name duplicates
+                                                 ImGui::PushID(id.to_string().c_str());
+
                                                  if (ImGui::Selectable(meta.name.c_str()))
                                                  {
+                                                     // Ensure vector is large enough
+                                                     if (meshComp.overrideMaterials.size() <= i)
+                                                         meshComp.overrideMaterials.resize(i + 1);
+
                                                      meshComp.overrideMaterials[i] =
                                                          AssetManager::getOrImport<Material>(id);
                                                      ImGui::CloseCurrentPopup();
                                                  }
+
+                                                 ImGui::PopID();
                                              });
 
                 ImGui::EndPopup();
             }
+
+            ImGui::PopID();
         }
 
         ImGui::EndTable();
