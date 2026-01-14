@@ -4,6 +4,7 @@
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
+#include "assets/AssetManager.h"
 #include "renderer/Material.h"
 
 namespace Engine
@@ -16,6 +17,8 @@ struct MaterialSerializer
         YAML::Emitter out;
         out << YAML::BeginMap;
 
+        out << YAML::Key << "shader" << YAML::Value << material->getShader()->metadata.uuid.to_string();
+
         out << YAML::Key << "metadata" << YAML::Value;
         out << YAML::BeginMap;
         out << YAML::Key << "type" << YAML::Value << static_cast<int>(material->metadata.type);
@@ -27,8 +30,6 @@ struct MaterialSerializer
         out << YAML::Key << "isDoubleSided" << YAML::Value << material->isDoubleSided;
         out << YAML::Key << "alphaMode" << YAML::Value << static_cast<int>(material->alphaMode);
         out << YAML::Key << "alphaCutoff" << YAML::Value << material->alphaCutoff;
-
-        // Serialize other properties as needed...
 
         out << YAML::EndMap;
 
@@ -45,6 +46,27 @@ struct MaterialSerializer
         {
             std::cerr << "MaterialSerializer: Failed to load material from '" << filepath.string() << "'\n";
             return false;
+        }
+
+        if (auto shaderUuidOpt = UUID::from_string(data["shader"].as<std::string>()))
+        {
+            UUID shaderUuid = *shaderUuidOpt;
+            Ref<Shader> shader = AssetManager::getOrImport<Shader>(shaderUuid);
+            if (shader)
+            {
+                material->shader = shader;
+            }
+            else
+            {
+                std::cerr << "MaterialSerializer: Shader UUID in material didn't resolve to a valid shader. Using "
+                             "default shader\n";
+                material->shader = Shader::getStandardShader();
+            }
+        }
+        else
+        {
+            std::cerr << "MaterialSerializer: shader UUID missing. Using default shader\n";
+            material->shader = Shader::getStandardShader();
         }
 
         auto metaNode = data["metadata"];
@@ -67,8 +89,6 @@ struct MaterialSerializer
         material->isDoubleSided = data["isDoubleSided"].as<bool>(false);
         material->alphaMode = static_cast<AlphaMode>(data["alphaMode"].as<int>(0));
         material->alphaCutoff = data["alphaCutoff"].as<float>(0.5f);
-
-        // Deserialize other properties as needed...
 
         return true;
     }

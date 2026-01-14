@@ -1,6 +1,5 @@
 #pragma once
 
-#include "assets/Asset.h"
 #include "core/Core.h"
 #include "renderer/Shader.h"
 #include "renderer/Texture.h"
@@ -57,9 +56,6 @@ struct Material : public Asset
     float aoValue = 1.0f;
     glm::vec3 emissiveColor = glm::vec3(0.0f);
     float emissiveIntensity = 1.0f;
-
-    // Constructor
-    Material(const Ref<Shader>& shader);
 
     // Binding
     void bind();

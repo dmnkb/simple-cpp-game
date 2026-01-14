@@ -1,8 +1,9 @@
+shader: 9398d54b-ab96-4b5b-b72b-a2d2fd72a52a
 metadata:
   type: 4
   name: NewMaterial
   path: /Users/dominikborchert/Desktop/simple-cpp-game/assets/materials/NewMaterial.mat
-  uuid: 41306229-f092-4474-9a83-e1acecef5baa
+  uuid: 1bd3b9ab-2550-4f9c-a3ca-04b8674ff7cb
 isDoubleSided: false
 alphaMode: 0
 alphaCutoff: 0.5

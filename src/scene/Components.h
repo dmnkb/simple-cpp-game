@@ -41,12 +41,12 @@ struct TransformComponent
 struct MeshComponent
 {
     Ref<Mesh> mesh;
-    std::vector<Ref<Material>> materials;
-    std::vector<std::string> materialSlotNames;
+    std::vector<Ref<Material>> overrideMaterials;
 
     MeshComponent() = default;
     MeshComponent(const MeshComponent&) = default;
-    MeshComponent(const Ref<Mesh>& mesh, const std::vector<Ref<Material>>& materials) : mesh(mesh), materials(materials)
+    MeshComponent(const Ref<Mesh>& mesh, const std::vector<Ref<Material>>& materials)
+        : mesh(mesh), overrideMaterials(materials)
     {
     }
 };

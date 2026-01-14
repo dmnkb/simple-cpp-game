@@ -251,9 +251,39 @@ static void renderTransformComponent(Entity entity, const Ref<Scene>& scene)
 }
 
 // MARK: Mesh Component
-static void renderMeshComponent(Entity entity, const Ref<Scene>& scene, const Ref<AssetManager>& assetManager,
-                                const Ref<AssetRegistry>& assetRegistry)
+static void renderMeshComponent(Entity entity, const Ref<Scene>& scene)
 {
+    ImGui::Button("Assign Mesh...");
+    if (ImGui::IsItemClicked())
+    {
+        ImGui::OpenPopup("AssignMeshPopup");
+    }
+    if (ImGui::BeginPopupModal("AssignMeshPopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::TextUnformatted("Select Mesh to Assign:");
+        ImGui::Separator();
+
+        AssetRegistry::forEachByType(AssetType::Mesh,
+                                     [&](UUID id, const AssetMetadata& meta)
+                                     {
+                                         if (ImGui::Selectable(meta.name.c_str()))
+                                         {
+                                             std::println("Assigning mesh {}", meta.name.c_str());
+
+                                             Ref<Mesh> mesh = AssetManager::getOrImport<Mesh>(id);
+
+                                             auto& meshComp = entity.getComponent<MeshComponent>();
+                                             meshComp.mesh = mesh;
+
+                                             meshComp.overrideMaterials.resize(mesh->defaultMaterialSlots.size());
+
+                                             ImGui::CloseCurrentPopup();
+                                         }
+                                     });
+
+        ImGui::EndPopup();
+    }
+
     auto& meshComp = entity.getComponent<MeshComponent>();
     if (!meshComp.mesh)
     {
@@ -281,9 +311,12 @@ static void renderMeshComponent(Entity entity, const Ref<Scene>& scene, const Re
         {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            ImGui::TextUnformatted(meshComp.materialSlotNames[i].c_str());
+            ImGui::TextUnformatted(std::to_string(i).c_str());
             ImGui::TableSetColumnIndex(1);
-            ImGui::TextUnformatted(meshComp.materials[i]->metadata.name.c_str());
+            ImGui::TextUnformatted(meshComp.overrideMaterials[i] ? meshComp.overrideMaterials[i]->metadata.name.c_str()
+                                   : meshComp.mesh->defaultMaterialSlots[i]
+                                       ? meshComp.mesh->defaultMaterialSlots[i]->metadata.name.c_str()
+                                       : "None");
             ImGui::TableSetColumnIndex(2);
             if (ImGui::Button("Assign..."))
             {
@@ -295,12 +328,15 @@ static void renderMeshComponent(Entity entity, const Ref<Scene>& scene, const Re
                 ImGui::TextUnformatted("Select Material to Assign:");
                 ImGui::Separator();
 
-                assetRegistry->forEachByType(AssetType::Material,
+                AssetRegistry::forEachByType(AssetType::Material,
                                              [&](UUID id, const AssetMetadata& meta)
                                              {
                                                  if (ImGui::Selectable(meta.name.c_str()))
                                                  {
                                                      std::println("Assiging material {}", meta.name.c_str());
+
+                                                     auto material = AssetManager::getOrImport<Material>(id);
+                                                     meshComp.overrideMaterials[i] = material;
 
                                                      ImGui::CloseCurrentPopup();
                                                  }
@@ -332,8 +368,7 @@ static void renderMeshComponent(Entity entity, const Ref<Scene>& scene, const Re
 
 struct PanelComponents
 {
-    static void render(const Ref<Scene>& scene, const Ref<AssetManager>& assetManager,
-                       const Ref<AssetRegistry>& assetRegistry)
+    static void render(const Ref<Scene>& scene)
     {
         static bool open = true;
         ImGui::Begin("Components", &open);
@@ -362,10 +397,11 @@ struct PanelComponents
         if (entity.hasComponent<MeshComponent>())
         {
             auto& meshComp = entity.getComponent<MeshComponent>();
-            meshComponentHeader = std::format("Mesh Component ({})", meshComp.mesh->metadata.name.c_str());
+            meshComponentHeader =
+                std::format("Mesh Component ({})", meshComp.mesh ? meshComp.mesh->metadata.name.c_str() : "No Mesh");
         }
-        drawComponentUI<MeshComponent>(meshComponentHeader.c_str(), entity, [&](MeshComponent& component)
-                                       { renderMeshComponent(entity, scene, assetManager, assetRegistry); });
+        drawComponentUI<MeshComponent>(meshComponentHeader.c_str(), entity,
+                                       [&](MeshComponent& component) { renderMeshComponent(entity, scene); });
 
         ImGui::End();
     }

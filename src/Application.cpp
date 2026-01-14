@@ -20,9 +20,7 @@ Application::Application()
                                     [this](const Ref<Event> event) { this->onKeyEvent(event); });
 
     m_activeScene = CreateRef<Scene>();
-    m_assetRegistry = CreateRef<AssetRegistry>();
-    m_assetManager = CreateRef<AssetManager>(m_assetRegistry);
-    m_editorLayer = CreateScope<Editor>(m_activeScene, m_assetManager, m_assetRegistry);
+    m_editorLayer = CreateScope<Editor>(m_activeScene);
     m_imguiLayer = CreateScope<ImGuiLayer>();
     m_imguiLayer->onAttach(Window::glfwWindow);
     m_renderer = CreateScope<Renderer>();

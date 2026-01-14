@@ -4,7 +4,7 @@
 namespace Engine
 {
 
-const AssetMetadata* AssetRegistry::find(UUID id) const
+const AssetMetadata* AssetRegistry::find(UUID id)
 {
     auto it = m_meta.find(id);
     if (it != m_meta.end()) return &it->second;
@@ -25,7 +25,7 @@ UUID AssetRegistry::findOrRegisterAsset(AssetType type, const std::filesystem::p
     if (!path.empty()) meta.path = path;
 
     m_meta[newId] = meta;
-    // TODO: serialize registry to disk?
+    // TODO: serialize registry to disk? -> On "save project"?
 
     std::println("Registered new asset: {} (type={}, path='{}')", meta.name, static_cast<int>(type),
                  meta.path.string());
@@ -33,13 +33,12 @@ UUID AssetRegistry::findOrRegisterAsset(AssetType type, const std::filesystem::p
     return newId;
 }
 
-void AssetRegistry::deleteAsset(UUID id)
+void AssetRegistry::unregisterAssetByID(UUID id)
 {
     m_meta.erase(id);
-    // TODO: serialize registry to disk?
 }
 
-std::optional<UUID> AssetRegistry::findAsset(const std::filesystem::path path) const
+std::optional<UUID> AssetRegistry::findAsset(const std::filesystem::path path)
 {
     for (const auto& [id, meta] : m_meta)
     {

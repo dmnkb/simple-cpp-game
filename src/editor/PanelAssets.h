@@ -63,13 +63,13 @@ struct PanelAssets
         }
     }
 
-    static void render(const Ref<AssetRegistry>& assetRegistry, const Ref<AssetManager>& assetManager)
+    static void render()
     {
         static bool open = true;
         ImGui::Begin("Assets Browser", &open, ImGuiWindowFlags_MenuBar);
 
         // Get assets from registry (stateless - always reflects current registry state)
-        auto assets = assetRegistry->getAllAssetsByType(CurrentAssetType);
+        auto assets = AssetRegistry::getAllAssetsByType(CurrentAssetType);
         std::vector<std::pair<UUID, AssetMetadata>> assetList(assets.begin(), assets.end());
 
         const int realItemCount = static_cast<int>(assetList.size());
@@ -80,7 +80,7 @@ struct PanelAssets
         {
             if (ImGui::BeginMenu("Asset Type"))
             {
-                assetRegistry->forEachAssetType(
+                AssetRegistry::forEachAssetType(
                     [&](AssetType type, std::string_view name)
                     {
                         bool isSelected = (type == CurrentAssetType);
@@ -203,11 +203,11 @@ struct PanelAssets
                                     auto pathOpt =
                                         FileDialog::saveFile("Create Material", FiltersForType(CurrentAssetType),
                                                              /*defaultPath*/ "", /*defaultName*/ "NewMaterial.mat");
-                                    if (pathOpt && assetManager)
+                                    if (pathOpt)
                                     {
                                         std::filesystem::path p = *pathOpt;
                                         std::string name = p.stem().string();
-                                        assetManager->createMaterial(p, name);
+                                        AssetManager::createMaterial(p, name);
                                         Selection.Clear();
                                     }
                                 }
@@ -220,7 +220,7 @@ struct PanelAssets
                                     {
                                         std::filesystem::path p = *pathOpt;
                                         std::string name = p.stem().string();
-                                        assetRegistry->findOrRegisterAsset(CurrentAssetType, p, name);
+                                        AssetRegistry::findOrRegisterAsset(CurrentAssetType, p, name);
                                         Selection.Clear();
                                     }
                                 }

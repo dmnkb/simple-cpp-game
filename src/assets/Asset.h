@@ -2,7 +2,6 @@
 
 #include <memory>
 
-#include "assets/AssetLoader.h"
 #include "core/Core.h"
 #include "core/UUID.h"
 

@@ -35,6 +35,7 @@ I'm building this game to learn game development in C++ sticking to best practic
     - [ ] Assets panel
         - [x] List all assets
         - [x] Create new material
+        - [x] When assigning a mesh to mesh component, automatically use default material (Bug)
     - [ ] (De)serialize assets registry (project-wide asset database)
     - [ ] (De)serialize materials
     - [ ] Assign material to material slot

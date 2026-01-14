@@ -15,16 +15,16 @@ namespace Engine
 class AssetRegistry
 {
   public:
-    const AssetMetadata* find(UUID id) const;
+    static const AssetMetadata* find(UUID id);
 
-    UUID findOrRegisterAsset(AssetType type, const std::filesystem::path path = std::filesystem::path(),
-                             const std::string& name = std::string());
+    static UUID findOrRegisterAsset(AssetType type, const std::filesystem::path path = std::filesystem::path(),
+                                    const std::string& name = std::string());
 
-    void deleteAsset(UUID id);
+    static void unregisterAssetByID(UUID id);
 
     template <typename Fn>
         requires std::invocable<Fn, AssetType, std::string_view>
-    void forEachAssetType(Fn&& fn) const
+    static void forEachAssetType(Fn&& fn)
     {
         for (int i = static_cast<int>(AssetType::Mesh); i < static_cast<int>(AssetType::Size); ++i)
         {
@@ -33,13 +33,13 @@ class AssetRegistry
     }
 
     template <typename Fn>
-    void forEachByType(AssetType type, Fn&& fn) const
+    static void forEachByType(AssetType type, Fn&& fn)
     {
         for (auto& [id, meta] : m_meta)
             if (meta.type == type) fn(id, meta);
     }
 
-    std::unordered_map<UUID, AssetMetadata> getAllAssetsByType(AssetType type) const
+    static std::unordered_map<UUID, AssetMetadata> getAllAssetsByType(AssetType type)
     {
         std::unordered_map<UUID, AssetMetadata> result;
         for (const auto& [id, meta] : m_meta)
@@ -49,11 +49,12 @@ class AssetRegistry
         return result;
     }
 
-    // serialize/deserialize registry file
+    // TODO: serialize/deserialize registry file
   private:
-    std::unordered_map<UUID, AssetMetadata> m_meta;
+    inline static std::unordered_map<UUID, AssetMetadata> m_meta;
 
-    std::optional<UUID> findAsset(const std::filesystem::path path) const;
+  private:
+    static std::optional<UUID> findAsset(const std::filesystem::path path);
 };
 
 } // namespace Engine

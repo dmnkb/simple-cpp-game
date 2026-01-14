@@ -1,55 +1,55 @@
-#include "assets/AssetLoader.h"
 
-#include <filesystem>
-#include <iostream>
+#include "pch.h"
+#include <fmt/format.h>
 
 #include "assets/Asset.h"
+#include "assets/AssetLoader.h"
+#include "assets/MaterialSerializer.h"
+#include "assets/MeshLoader.h"
 #include "renderer/Material.h"
+#include "renderer/Mesh.h"
 #include "renderer/Shader.h"
 #include "renderer/Texture.h"
+#include "scene/Scene.h"
 
 namespace Engine
 {
+
+template <typename T>
+static bool isSane(const AssetMetadata& meta)
+{
+    if (meta.path.empty())
+    {
+        std::cerr << fmt::format("AssetLoader<{}>: empty path (uuid={})\n", typeid(T).name(), meta.uuid.to_string());
+        return false;
+    }
+
+    if (!std::filesystem::exists(meta.path))
+    {
+        std::cerr << fmt::format("AssetLoader<{}>: file not found '{}' (uuid={})\n", typeid(T).name(),
+                                 meta.path.string(), meta.uuid.to_string());
+        return false;
+    }
+
+    return true;
+}
 
 // MARK: Texture
 template <>
 Ref<Texture> AssetLoader::load<Texture>(const AssetMetadata& meta)
 {
-    if (meta.path.empty())
-    {
-        std::cerr << "AssetLoader<Texture>: empty path (uuid=" << meta.uuid.to_string() << ")\n";
-        return nullptr;
-    }
+    if (!isSane<Texture>(meta)) return nullptr;
 
-    if (!std::filesystem::exists(meta.path))
-    {
-        std::cerr << "AssetLoader<Texture>: file not found '" << meta.path.string()
-                  << "' (uuid=" << meta.uuid.to_string() << ")\n";
-        return nullptr;
-    }
-
-    // Your current texture ctor seems to take a filename
-    Ref<Texture> tex = CreateRef<Texture>(meta.path.string());
-    tex->metadata = meta;
-    return tex;
+    Ref<Texture> texture = CreateRef<Texture>(meta.path.string());
+    texture->metadata = meta;
+    return texture;
 }
 
 // MARK: Shader
 template <>
 Ref<Shader> AssetLoader::load<Shader>(const AssetMetadata& meta)
 {
-    if (meta.path.empty())
-    {
-        std::cerr << "AssetLoader<Shader>: empty path (uuid=" << meta.uuid.to_string() << ")\n";
-        return nullptr;
-    }
-
-    if (!std::filesystem::exists(meta.path))
-    {
-        std::cerr << "AssetLoader<Shader>: file not found '" << meta.path.string()
-                  << "' (uuid=" << meta.uuid.to_string() << ")\n";
-        return nullptr;
-    }
+    if (!isSane<Shader>(meta)) return nullptr;
 
     // FIXME: What to do about separate vertex/fragment paths?
     // Currently passing the same path for both - needs proper shader asset format
@@ -63,21 +63,61 @@ Ref<Shader> AssetLoader::load<Shader>(const AssetMetadata& meta)
 template <>
 Ref<Material> AssetLoader::load<Material>(const AssetMetadata& meta)
 {
-    // If you have a material file format, deserialize it here.
-    // For now, we create a material with your standard shader as a fallback.
-    // This keeps the pipeline working while you build proper serialization.
+    if (!isSane<Material>(meta)) return nullptr;
 
-    // Optional: if you require the file to exist:
-    // if (!std::filesystem::exists(meta.path)) { ... return nullptr; }
     std::println("AssetLoader<Material>: Loading material '{}' from '{}'", meta.name, meta.path.string());
 
-    Ref<Material> mat = CreateRef<Material>(Shader::getStandardShader());
-    mat->metadata = meta;
+    Ref<Material> material = CreateRef<Material>();
+    MaterialSerializer::deserialize(material, meta.path);
 
-    // TODO: when you implement MaterialSerializer:
-    // MaterialSerializer::Deserialize(*mat, meta.path);
+    return material;
+}
 
-    return mat;
+// MARK: Mesh
+template <>
+Ref<Mesh> AssetLoader::load<Mesh>(const AssetMetadata& meta)
+{
+    if (!isSane<Mesh>(meta)) return nullptr;
+
+    const auto modelDataOpt = MeshLoader::loadMeshFromFile(meta.path.string());
+    if (!modelDataOpt)
+    {
+        std::cerr << fmt::format("AssetLoader<Mesh>: Failed to load model data from '{}' (uuid={})\n",
+                                 meta.path.string(), meta.uuid.to_string());
+        return nullptr;
+    }
+
+    const auto resolvedModelData = *modelDataOpt;
+
+    Ref<Mesh> mesh = resolvedModelData.mesh;
+    mesh->metadata = meta;
+
+    for (size_t i = 0; i < resolvedModelData.materials.size(); ++i)
+    {
+        const auto& matData = resolvedModelData.materials[i];
+
+        std::println("AssetLoader<Mesh>: Loaded material slot '{}' for mesh '{}'", matData.materialSlotName, meta.name);
+
+        Ref<Material> material = AssetManager::getDefaultMaterial();
+        material->metadata.name = fmt::format("{}_Material_{}", meta.name, i);
+        material->albedo = matData.albedo;
+        material->normal = matData.normal;
+        material->roughness = matData.roughness;
+        material->metallic = matData.metallic;
+        material->ao = matData.ao;
+        material->baseColor = matData.baseColor;
+        // TODO: Slot name and base color?
+
+        mesh->defaultMaterialSlots.push_back(material);
+    }
+
+    return mesh;
+}
+
+template <>
+Ref<Scene> AssetLoader::load<Scene>(const AssetMetadata& meta)
+{
+    assert(false && "AssetLoader::load<Scene> not implemented yet");
 }
 
 } // namespace Engine

@@ -26,8 +26,6 @@ class Application
     Scope<Editor> m_editorLayer;
     Scope<ImGuiLayer> m_imguiLayer;
     Scope<Renderer> m_renderer;
-    Ref<AssetManager> m_assetManager;
-    Ref<AssetRegistry> m_assetRegistry;
     Ref<Scene> m_activeScene;
 
     // TODO: Think about how to best handle editor vs. runtime mode

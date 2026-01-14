@@ -5,7 +5,9 @@
 #include <string>
 #include <type_traits>
 
+#include "assets/MeshLoader.h"
 #include "core/Core.h"
+#include "scene/Scene.h"
 
 namespace Engine
 {
@@ -39,5 +41,11 @@ Ref<Shader> AssetLoader::load<Shader>(const AssetMetadata& meta);
 
 template <>
 Ref<Material> AssetLoader::load<Material>(const AssetMetadata& meta);
+
+template <>
+Ref<Mesh> AssetLoader::load<Mesh>(const AssetMetadata& meta);
+
+template <>
+Ref<Scene> AssetLoader::load<Scene>(const AssetMetadata& meta);
 
 } // namespace Engine

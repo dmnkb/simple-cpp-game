@@ -51,19 +51,21 @@ RenderQueue Scene::getRenderQueue(const std::string& passName)
         for (uint32_t i = 0; i < mesh->submeshes.size(); ++i)
         {
             Ref<Material> material;
-            if (i > meshComp.materials.size())
+            if (i > meshComp.overrideMaterials.size())
             {
                 std::cerr << "Warning: Mesh submesh " << i << " exceeds material count. Skipping." << std::endl;
                 continue;
             }
 
-            if (!meshComp.materials[i])
+            if (i >= meshComp.overrideMaterials.size() || !meshComp.overrideMaterials[i])
             {
-                std::cerr << "Warning: Mesh submesh " << i << " has no assigned material. Skipping." << std::endl;
+                // std::cerr << "Warning: Mesh submesh " << i << " has no assigned material. Skipping." << std::endl;
+                // TODO: Log only once per missing material per mesh to avoid spamming
                 continue;
             }
 
-            material = meshComp.materials[i];
+            material =
+                meshComp.overrideMaterials[i] ? meshComp.overrideMaterials[i] : meshComp.mesh->defaultMaterialSlots[i];
 
             if (!material) continue;
 

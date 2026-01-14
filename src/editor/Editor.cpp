@@ -2,6 +2,8 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
+#include "assets/AssetManager.h"
+#include "assets/AssetRegistry.h"
 #include "assets/MeshLoader.h"
 #include "core/Window.h"
 #include "editor/Editor.h"
@@ -22,9 +24,7 @@
 namespace Engine
 {
 
-Editor::Editor(const Ref<Scene>& activeScene, const Ref<AssetManager>& assetManager,
-               const Ref<AssetRegistry>& assetRegistry)
-    : m_assetManager(assetManager), m_assetRegistry(assetRegistry)
+Editor::Editor(const Ref<Scene>& activeScene)
 {
     m_viewportCamController = CreateRef<FlySpectatorCtrl>();
 
@@ -32,13 +32,7 @@ Editor::Editor(const Ref<Scene>& activeScene, const Ref<AssetManager>& assetMana
     throwAwayDemoScene(activeScene);
 }
 
-void Editor::onLoad()
-{
-    // Load default material
-    UUID matId =
-        m_assetRegistry->findOrRegisterAsset(AssetType::Material, "assets/materials/default.mat", "Default Material");
-    Ref<Material> mat = m_assetManager->getOrImport<Material>(matId);
-}
+void Editor::onLoad() {}
 
 void Editor::onUpdate(float fps, const Ref<Scene>& activeScene, const double deltaTime)
 {
@@ -53,9 +47,9 @@ void Editor::onImGuiRender(float fps, const Ref<Scene>& activeScene, const doubl
 
     PanelStats::render(fps);
     PanelSceneHierarchy::render(activeScene);
-    PanelComponents::render(activeScene, m_assetManager, m_assetRegistry);
-    PanelAssets::render(m_assetRegistry, m_assetManager);
-    PanelMaterial::render(m_assetRegistry);
+    PanelComponents::render(activeScene);
+    PanelAssets::render();
+    PanelMaterial::render();
     // PanelScene::render(activeScene);
     // PanelStatsHighlights::render(fps, activeScene);
 }
@@ -63,22 +57,26 @@ void Editor::onImGuiRender(float fps, const Ref<Scene>& activeScene, const doubl
 // TODO: remove once scene loading is in place
 void Editor::throwAwayDemoScene(const Ref<Scene>& activeScene)
 {
-    auto groundData = MeshLoader::loadMeshFromFile("assets/models/ground/ground.gltf");
 
-    if (groundData)
-    {
-        auto entity = activeScene->createEntity("Ground");
-        auto& meshComp = entity.addComponent<MeshComponent>();
-        meshComp.mesh = groundData->mesh;
+    // auto groundMesh = AssetManager::getOrImport<Mesh>(
+    //     AssetRegistry::findOrRegisterAsset(AssetType::Mesh, "assets/models/ground/ground.gltf", "Ground Mesh"));
 
-        for (const auto& matData : groundData->materials)
-        {
-            Ref<Material> material = CreateRef<Material>(Shader::getStandardShader());
-            material->assignTexture(matData.albedo, TextureType::Albedo);
-            meshComp.materials.push_back(material);
-            meshComp.materialSlotNames.push_back(matData.materialSlotName);
-        }
-    }
+    // if (groundMesh)
+    // {
+
+    //     auto entity = activeScene->createEntity("Ground");
+    //     auto& meshComp = entity.addComponent<MeshComponent>();
+    //     meshComp.mesh = groundMesh;
+
+    //     for (const auto& matData : groundMesh->materials)
+    //     {
+    //         // TODO: Would happen via editor
+    //         Ref<Material> material = AssetManager::getOrImport<Material>(m_defaultMaterialId);
+    //         material->assignTexture(matData.albedo, TextureType::Albedo);
+    //         meshComp.materials.push_back(material);
+    //         meshComp.materialSlotNames.push_back(matData.materialSlotName);
+    //     }
+    // }
 
     // auto modelData = MeshLoader::loadMeshFromFile("./assets/models/sponza/glTF/Sponza.gltf");
     // if (modelData)

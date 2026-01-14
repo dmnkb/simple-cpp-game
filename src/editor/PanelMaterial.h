@@ -9,7 +9,7 @@ namespace Engine
 {
 struct PanelMaterial
 {
-    static void render(const Ref<AssetRegistry>& assetRegistry)
+    static void render()
     {
         // TODO: Implementation for rendering the Material panel in the editor
         static bool open = true;
@@ -17,7 +17,7 @@ struct PanelMaterial
 
         if (g_editorState.selectedMaterial != UUID::zero())
         {
-            const AssetMetadata* meta = assetRegistry->find(g_editorState.selectedMaterial);
+            const AssetMetadata* meta = AssetRegistry::find(g_editorState.selectedMaterial);
             if (meta)
             {
                 ImGui::Text("Material: %s", meta->name.c_str());

@@ -18,7 +18,7 @@ namespace Engine
 
 std::optional<ModelData> MeshLoader::loadMeshFromFile(std::filesystem::path const& path)
 {
-    std::println("[Model] Loading model: {}", path.c_str());
+    std::println("[MeshLoader] Loading mesh from file: {}", path.string());
 
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(path.string(), aiProcess_Triangulate | aiProcess_GenSmoothNormals |
@@ -128,6 +128,7 @@ std::vector<Ref<Texture>> MeshLoader::loadMaterialTextures(aiMaterial* mat, aiTe
         std::string filename = std::string(texturePath.C_Str());
         filename = path.string() + '/' + filename;
 
+        // FIXME: Use assetManager!
         Ref<Texture> texture = CreateRef<Texture>(filename);
         texture->customProperties.materialTextureType = type;
         texture->customProperties.path = texturePath.C_Str();

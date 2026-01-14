@@ -3,6 +3,7 @@
 #include "assets/Asset.h"
 #include "renderer/Material.h"
 #include "renderer/Shader.h"
+#include <vector>
 
 namespace Engine
 {
@@ -29,7 +30,9 @@ class Mesh : public Asset
   public:
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
+
     std::vector<Submesh> submeshes;
+    std::vector<Ref<Material>> defaultMaterialSlots;
 
     // Identity
     AssetMetadata metadata{.type = AssetType::Mesh, .name = "Unnamed Mesh"};

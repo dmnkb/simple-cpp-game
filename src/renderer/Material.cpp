@@ -6,8 +6,6 @@
 namespace Engine
 {
 
-Material::Material(const Ref<Shader>& shader) : shader(shader) {}
-
 void Material::bind()
 {
     shader->bind();
