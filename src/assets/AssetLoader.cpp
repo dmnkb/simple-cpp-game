@@ -24,10 +24,11 @@ static bool isSane(const AssetMetadata& meta)
         return false;
     }
 
-    if (!std::filesystem::exists(meta.path))
+    auto absolutePath = meta.getAbsolutePath();
+    if (!std::filesystem::exists(absolutePath))
     {
         std::cerr << fmt::format("AssetLoader<{}>: file not found '{}' (uuid={})\n", typeid(T).name(),
-                                 meta.path.string(), meta.uuid.to_string());
+                                 absolutePath.string(), meta.uuid.to_string());
         return false;
     }
 
@@ -40,7 +41,8 @@ Ref<Texture> AssetLoader::load<Texture>(const AssetMetadata& meta)
 {
     if (!isSane<Texture>(meta)) return nullptr;
 
-    Ref<Texture> texture = CreateRef<Texture>(meta.path.string());
+    auto absolutePath = meta.getAbsolutePath();
+    Ref<Texture> texture = CreateRef<Texture>(absolutePath.string());
     texture->metadata = meta;
     return texture;
 }
@@ -53,7 +55,8 @@ Ref<Shader> AssetLoader::load<Shader>(const AssetMetadata& meta)
 
     // FIXME: What to do about separate vertex/fragment paths?
     // Currently passing the same path for both - needs proper shader asset format
-    std::string pathStr = meta.path.string();
+    auto absolutePath = meta.getAbsolutePath();
+    std::string pathStr = absolutePath.string();
     Ref<Shader> shader = CreateRef<Shader>(pathStr.c_str(), pathStr.c_str());
     shader->metadata = meta;
     return shader;
@@ -65,10 +68,11 @@ Ref<Material> AssetLoader::load<Material>(const AssetMetadata& meta)
 {
     if (!isSane<Material>(meta)) return nullptr;
 
-    std::println("AssetLoader<Material>: Loading material '{}' from '{}'", meta.name, meta.path.string());
+    auto absolutePath = meta.getAbsolutePath();
+    std::println("AssetLoader<Material>: Loading material '{}' from '{}'", meta.name, absolutePath.string());
 
     Ref<Material> material = CreateRef<Material>();
-    MaterialSerializer::deserialize(material, meta.path);
+    MaterialSerializer::deserialize(material, absolutePath);
 
     return material;
 }
@@ -79,7 +83,8 @@ Ref<Mesh> AssetLoader::load<Mesh>(const AssetMetadata& meta)
 {
     if (!isSane<Mesh>(meta)) return nullptr;
 
-    const auto modelDataOpt = MeshLoader::loadMeshFromFile(meta.path.string());
+    auto absolutePath = meta.getAbsolutePath();
+    const auto modelDataOpt = MeshLoader::loadMeshFromFile(absolutePath.string());
     if (!modelDataOpt)
     {
         std::cerr << fmt::format("AssetLoader<Mesh>: Failed to load model data from '{}' (uuid={})\n",
@@ -99,9 +104,8 @@ Ref<Mesh> AssetLoader::load<Mesh>(const AssetMetadata& meta)
         std::println("AssetLoader<Mesh>: Loaded material slot '{}' for mesh '{}'", matData.materialSlotName, meta.name);
 
         // Create a default material for this slot
-        Ref<Material> material = AssetManager::createMaterial(
-            fmt::format("/Users/dominikborchert/Desktop/simple-cpp-game/assets/materials/{}_{}.mat", meta.name, i),
-            fmt::format("{}_mat_{}", meta.name, i));
+        Ref<Material> material = AssetManager::createMaterial(fmt::format("assets/materials/{}_{}.mat", meta.name, i),
+                                                              fmt::format("{}_mat_{}", meta.name, i));
 
         material->albedo = matData.albedo;
         material->normal = matData.normal;

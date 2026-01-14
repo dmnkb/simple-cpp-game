@@ -27,8 +27,11 @@ struct AssetMetadata
 {
     AssetType type = AssetType::None;
     std::string name = "Unnamed Asset";
-    std::filesystem::path path = "Unknown Path";
+    std::filesystem::path path = "Unknown Path"; // Stored as relative path
     UUID uuid = UUID::random();
+
+    // Helper to get absolute path (forward declaration, defined in AssetManager.h)
+    std::filesystem::path getAbsolutePath() const;
 };
 
 class Asset : public std::enable_shared_from_this<Asset>

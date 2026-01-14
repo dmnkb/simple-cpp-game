@@ -14,8 +14,12 @@ const AssetMetadata* AssetRegistry::find(UUID id)
 UUID AssetRegistry::findOrRegisterAsset(AssetType type, const std::filesystem::path path, const std::string& name)
 {
     std::println("AssetRegistry: find / reg asset '{}'", name);
+
+    // Normalize to relative path for storage
+    auto relativePath = path.is_absolute() ? std::filesystem::relative(path, std::filesystem::current_path()) : path;
+
     // If already registered, return existing ID
-    if (auto existingId = findAsset(path); existingId.has_value()) return *existingId;
+    if (auto existingId = findAsset(relativePath); existingId.has_value()) return *existingId;
 
     // Register new asset
     UUID newId = UUID::random();
@@ -23,7 +27,7 @@ UUID AssetRegistry::findOrRegisterAsset(AssetType type, const std::filesystem::p
     meta.type = type;
     meta.uuid = newId;
     if (!name.empty()) meta.name = name;
-    if (!path.empty()) meta.path = path;
+    if (!path.empty()) meta.path = relativePath;
 
     m_meta[newId] = meta;
     // TODO: serialize registry to disk? -> On "save project"?

@@ -12,6 +12,12 @@ namespace Engine
 static AssetRegistry s_registry;
 std::unordered_map<UUID, Ref<Asset>> AssetManager::m_loaded{};
 
+// Implementation of AssetMetadata::getAbsolutePath()
+std::filesystem::path AssetMetadata::getAbsolutePath() const
+{
+    return AssetManager::toAbsolutePath(path);
+}
+
 template <typename T>
 Ref<T> AssetManager::getOrImport(UUID id)
 {
@@ -43,10 +49,11 @@ Ref<T> AssetManager::getOrImport(UUID id)
         return nullptr;
     }
 
-    if (!std::filesystem::exists(meta->path))
+    auto absolutePath = meta->getAbsolutePath();
+    if (!std::filesystem::exists(absolutePath))
     {
-        std::cerr << "AssetManager: File not found for asset " << id.to_string() << " at path '" << meta->path.string()
-                  << "'\n";
+        std::cerr << "AssetManager: File not found for asset " << id.to_string() << " at path '"
+                  << absolutePath.string() << "'\n";
         return nullptr;
     }
 
