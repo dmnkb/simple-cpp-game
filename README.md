@@ -37,7 +37,7 @@ I'm building this game to learn game development in C++ sticking to best practic
         - [x] Create new material
         - [x] When assigning a mesh to mesh component, automatically use default material (Bug)
     - [ ] (De)serialize assets registry (project-wide asset database)
-    - [ ] (De)serialize materials
+    - [x] (De)serialize materials
     - [ ] Assign material to material slot
     - [ ] Edit material
 - [ ] ImGUI Gizmo controls

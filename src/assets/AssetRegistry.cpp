@@ -1,4 +1,5 @@
 #include "assets/AssetRegistry.h"
+#include "assets/AssetManager.h"
 #include "pch.h"
 
 namespace Engine
@@ -15,8 +16,7 @@ UUID AssetRegistry::findOrRegisterAsset(AssetType type, const std::filesystem::p
 {
     std::println("AssetRegistry: find / reg asset '{}'", name);
 
-    // Normalize to relative path for storage
-    auto relativePath = path.is_absolute() ? std::filesystem::relative(path, std::filesystem::current_path()) : path;
+    auto relativePath = path.is_absolute() ? std::filesystem::relative(path, AssetManager::getProjectRoot()) : path;
 
     // If already registered, return existing ID
     if (auto existingId = findAsset(relativePath); existingId.has_value()) return *existingId;
