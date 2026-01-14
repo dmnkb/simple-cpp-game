@@ -36,41 +36,40 @@ void Scene::destroyEntity(entt::entity entity)
 // TODO: Maybe consider submitting instanced meshes to the rendererAPI directly so we don't have to loop twice
 RenderQueue Scene::getRenderQueue(const std::string& passName)
 {
-    RenderQueue renderQueue = {};
+    RenderQueue renderQueue{};
 
     auto group = m_registry.group<TransformComponent>(entt::get<MeshComponent>);
 
     for (auto entity : group)
     {
         const auto& [transformComp, meshComp] = group.get<TransformComponent, MeshComponent>(entity);
+
         const Ref<Mesh>& mesh = meshComp.mesh;
         if (!mesh) continue;
 
-        const auto& instanceTransform = transformComp.getTransform();
+        const glm::mat4 instanceTransform = transformComp.getTransform();
 
         for (uint32_t i = 0; i < mesh->submeshes.size(); ++i)
         {
-            Ref<Material> material;
-            if (i > meshComp.overrideMaterials.size())
+            Ref<Material> material = nullptr;
+
+            // 1) optional override
+            if (i < meshComp.overrideMaterials.size())
             {
-                std::cerr << "Warning: Mesh submesh " << i << " exceeds material count. Skipping." << std::endl;
-                continue;
+                material = meshComp.overrideMaterials[i];
             }
 
-            if (i >= meshComp.overrideMaterials.size() || !meshComp.overrideMaterials[i])
+            // 2) fallback to mesh default slot
+            if (!material && i < mesh->defaultMaterialSlots.size())
             {
-                // std::cerr << "Warning: Mesh submesh " << i << " has no assigned material. Skipping." << std::endl;
-                // TODO: Log only once per missing material per mesh to avoid spamming
-                continue;
+                material = mesh->defaultMaterialSlots[i];
             }
 
-            material =
-                meshComp.overrideMaterials[i] ? meshComp.overrideMaterials[i] : meshComp.mesh->defaultMaterialSlots[i];
-
+            // 3) no material assigned
             if (!material) continue;
 
             SubmeshKey key{mesh, i};
-            renderQueue[material][key].emplace_back(instanceTransform);
+            renderQueue[material->metadata.uuid][key].emplace_back(instanceTransform);
         }
     }
 

@@ -16,11 +16,17 @@ template <typename T>
 Ref<T> AssetManager::getOrImport(UUID id)
 {
     // TODO: Add type safety with AssetTraits<T>::Type specializations
+    // std::println("AssetManager: getOrImport asset type {} UUID={}", typeid(T).name(), id.to_string());
 
-    if (id.is_nil()) return nullptr;
+    if (id.is_nil())
+    {
+        // std::cerr << "AssetManager: Requested asset with nil UUID!\n";
+        return nullptr;
+    }
 
     if (auto it = m_loaded.find(id); it != m_loaded.end())
     {
+        // std::println("AssetManager: Found cached asset for UUID={}", id.to_string());
         return std::dynamic_pointer_cast<T>(it->second);
     }
 
@@ -52,6 +58,8 @@ Ref<T> AssetManager::getOrImport(UUID id)
         return nullptr;
     }
 
+    std::println("AssetManager: Loaded asset '{}' (UUID={})", meta->name, id.to_string());
+
     m_loaded[id] = asset;
 
     std::println("AssetManager: Cached asset '{}' (UUID={})", meta->name, id.to_string());
@@ -61,6 +69,7 @@ Ref<T> AssetManager::getOrImport(UUID id)
 
 Ref<Material> AssetManager::createMaterial(const std::filesystem::path& path, std::string name)
 {
+    std::println("AssetManager: Creating new material '{}'", name);
     UUID id = s_registry.findOrRegisterAsset(AssetType::Material, path, name);
 
     auto mat = CreateRef<Material>();
@@ -72,7 +81,8 @@ Ref<Material> AssetManager::createMaterial(const std::filesystem::path& path, st
 
     m_loaded[id] = mat;
 
-    MaterialSerializer::serialize(mat, path);
+    // TODO: Decide when to serialize - on creation or on first save
+    // MaterialSerializer::serialize(mat, path);
 
     return mat;
 }

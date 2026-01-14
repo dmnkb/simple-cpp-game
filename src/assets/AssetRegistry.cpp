@@ -13,6 +13,7 @@ const AssetMetadata* AssetRegistry::find(UUID id)
 
 UUID AssetRegistry::findOrRegisterAsset(AssetType type, const std::filesystem::path path, const std::string& name)
 {
+    std::println("AssetRegistry: find / reg asset '{}'", name);
     // If already registered, return existing ID
     if (auto existingId = findAsset(path); existingId.has_value()) return *existingId;
 

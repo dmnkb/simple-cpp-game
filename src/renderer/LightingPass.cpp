@@ -2,6 +2,7 @@
 #include <cmath>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "assets/AssetManager.h"
 #include "core/Profiler.h"
 #include "core/Window.h"
 #include "pch.h"
@@ -32,8 +33,13 @@ LightingOutputs LightingPass::execute(const Ref<Scene>& scene, const LightingInp
     GLCall(glEnable(GL_CULL_FACE));
     GLCall(glCullFace(GL_BACK));
 
-    for (const auto& [material, submeshBatchMap] : scene->getRenderQueue("Lighting Pass"))
+    for (const auto& [materialID, submeshBatchMap] : scene->getRenderQueue("Lighting Pass"))
     {
+        // std::println("Lighting Pass: Rendering material UUID={}", materialID.to_string());
+        Ref<Material> material = AssetManager::getOrImport<Material>(materialID);
+
+        assert(material && "Lighting Pass: Material not found in AssetManager!");
+
         material->bind();
         material->update();
 

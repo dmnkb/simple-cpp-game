@@ -4,6 +4,7 @@
 
 #include "assets/Asset.h"
 #include "assets/MeshLoader.h"
+#include "core/UUID.h"
 #include "renderer/Camera.h"
 #include "renderer/DirectionalLight.h"
 #include "scene/Components.h"
@@ -38,7 +39,7 @@ struct hash<Engine::SubmeshKey>
 namespace Engine
 {
 
-using RenderQueue = std::unordered_map<Ref<Material>, std::unordered_map<SubmeshKey, std::vector<glm::mat4>>>;
+using RenderQueue = std::unordered_map<UUID, std::unordered_map<SubmeshKey, std::vector<glm::mat4>>>;
 
 class Entity;
 

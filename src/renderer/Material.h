@@ -38,7 +38,7 @@ struct Material : public Asset
     float textureRepeat = 1.0f;
     glm::vec2 uvOffset = glm::vec2(0.0f);
 
-    // Shader
+    // Shader TODO: use standard shader by default?
     Ref<Shader> shader = nullptr;
 
     // PBR Textures
