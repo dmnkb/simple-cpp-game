@@ -101,7 +101,7 @@ Ref<Mesh> AssetLoader::load<Mesh>(const AssetMetadata& meta)
         // Create a default material for this slot
         Ref<Material> material = AssetManager::createMaterial(
             fmt::format("/Users/dominikborchert/Desktop/simple-cpp-game/assets/materials/{}_{}.mat", meta.name, i),
-            fmt::format("{}_Material_{}", meta.name, i));
+            fmt::format("{}_mat_{}", meta.name, i));
 
         material->albedo = matData.albedo;
         material->normal = matData.normal;

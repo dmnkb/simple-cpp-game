@@ -294,34 +294,44 @@ static void renderMeshComponent(Entity entity, const Ref<Scene>& scene)
     ImGui::Text("Path: %s", meshComp.mesh->metadata.path.c_str());
     ImGui::Dummy(ImVec2(0.0f, 5.0f));
 
-    if (ImGui::BeginTable("MaterialSlotTable", 3,
-                          ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_RowBg))
+    if (ImGui::BeginTable("MaterialSlotTable", 4,
+                          ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_RowBg |
+                              ImGuiTableFlags_BordersInnerH))
     {
-        const float availableWidth = ImGui::GetContentRegionAvail().x;
+        const float indexNumberWidth = ImGui::CalcTextSize("42").x + ImGui::GetStyle().FramePadding.x * 2.0f;
         const float assignButtonWidth = ImGui::CalcTextSize("Assign...").x + ImGui::GetStyle().FramePadding.x * 2.0f;
-        ImGui::TableSetupColumn("slot name", ImGuiTableColumnFlags_WidthFixed,
-                                availableWidth - assignButtonWidth - 150.0f);
-        ImGui::TableSetupColumn("assigned material name", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("actions", assignButtonWidth);
 
-        // FIXME: This inconventiently uses the submesh count for iteration, since
-        // assimp adds one extra material, so: Mat Count = Submesh Count + 1.
-        // for (uint32_t i = 0; i < meshComp.materials.size(); ++i)
-        for (uint32_t i = 0; i < meshComp.mesh->submeshes.size(); ++i)
+        ImGui::TableSetupColumn("Slot", ImGuiTableColumnFlags_WidthFixed, indexNumberWidth);
+        ImGui::TableSetupColumn("Default Material", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Override Material", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, assignButtonWidth);
+
+        ImGui::TableHeadersRow();
+
+        for (uint32_t i = 0; i < meshComp.mesh->defaultMaterialSlots.size(); ++i)
         {
             ImGui::TableNextRow();
+
             ImGui::TableSetColumnIndex(0);
-            ImGui::TextUnformatted(std::to_string(i).c_str());
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("%u", i);
+
             ImGui::TableSetColumnIndex(1);
-            ImGui::TextUnformatted(meshComp.overrideMaterials[i] ? meshComp.overrideMaterials[i]->metadata.name.c_str()
-                                   : meshComp.mesh->defaultMaterialSlots[i]
-                                       ? meshComp.mesh->defaultMaterialSlots[i]->metadata.name.c_str()
-                                       : "None");
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted(meshComp.mesh->defaultMaterialSlots[i]->metadata.name.c_str());
+
             ImGui::TableSetColumnIndex(2);
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted((i < meshComp.overrideMaterials.size() && meshComp.overrideMaterials[i])
+                                       ? meshComp.overrideMaterials[i]->metadata.name.c_str()
+                                       : "None");
+
+            ImGui::TableSetColumnIndex(3);
             if (ImGui::Button("Assign..."))
             {
                 ImGui::OpenPopup(std::format("Assign Material to Slot {}", i).c_str());
             }
+
             if (ImGui::BeginPopupModal(std::format("Assign Material to Slot {}", i).c_str(), nullptr,
                                        ImGuiWindowFlags_AlwaysAutoResize))
             {
@@ -333,11 +343,8 @@ static void renderMeshComponent(Entity entity, const Ref<Scene>& scene)
                                              {
                                                  if (ImGui::Selectable(meta.name.c_str()))
                                                  {
-                                                     std::println("Assiging material {}", meta.name.c_str());
-
-                                                     auto material = AssetManager::getOrImport<Material>(id);
-                                                     meshComp.overrideMaterials[i] = material;
-
+                                                     meshComp.overrideMaterials[i] =
+                                                         AssetManager::getOrImport<Material>(id);
                                                      ImGui::CloseCurrentPopup();
                                                  }
                                              });
