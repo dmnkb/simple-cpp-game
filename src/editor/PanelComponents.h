@@ -176,14 +176,6 @@ static void renderComponentSelectionPopup(Entity entity, const Ref<Scene>& scene
                     ImGui::CloseCurrentPopup();
                 }
             }
-            // if (!entity.hasComponent<MaterialComponent>())
-            // {
-            //     if (ImGui::MenuItem("Material Component"))
-            //     {
-            //         entity.addComponent<MaterialComponent>();
-            //         ImGui::CloseCurrentPopup();
-            //     }
-            // }
             ImGui::TreePop();
         }
         if (ImGui::TreeNodeEx("Physics", ImGuiTreeNodeFlags_DefaultOpen))
@@ -258,7 +250,7 @@ static void renderMeshComponent(Entity entity, const Ref<Scene>& scene)
     {
         ImGui::OpenPopup("AssignMeshPopup");
     }
-    if (ImGui::BeginPopupModal("AssignMeshPopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    if (ImGui::BeginPopup("AssignMeshPopup", ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::TextUnformatted("Select Mesh to Assign:");
         ImGui::Separator();
@@ -280,6 +272,11 @@ static void renderMeshComponent(Entity entity, const Ref<Scene>& scene)
                                              ImGui::CloseCurrentPopup();
                                          }
                                      });
+
+        if (ImGui::Button("Cancel", ImVec2(120, 0)))
+        {
+            ImGui::CloseCurrentPopup();
+        }
 
         ImGui::EndPopup();
     }
@@ -341,7 +338,7 @@ static void renderMeshComponent(Entity entity, const Ref<Scene>& scene)
                 ImGui::OpenPopup("AssignMaterialPopup");
             }
 
-            if (ImGui::BeginPopupModal("AssignMaterialPopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+            if (ImGui::BeginPopup("AssignMaterialPopup", ImGuiWindowFlags_AlwaysAutoResize))
             {
                 ImGui::TextUnformatted("Select Material to Assign:");
                 ImGui::Separator();
@@ -365,6 +362,11 @@ static void renderMeshComponent(Entity entity, const Ref<Scene>& scene)
 
                                                  ImGui::PopID();
                                              });
+
+                if (ImGui::Button("Cancel", ImVec2(120, 0)))
+                {
+                    ImGui::CloseCurrentPopup();
+                }
 
                 ImGui::EndPopup();
             }
