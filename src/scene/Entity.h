@@ -42,6 +42,8 @@ class Entity
         m_scene->m_registry.remove<T>(m_handle);
     }
 
+    void destroy() { m_scene->destroyEntity(m_handle); }
+
     entt::entity getHandle() const { return m_handle; }
 
     glm::mat4 getTransformMatrix() { return getComponent<TransformComponent>().getTransform(); }

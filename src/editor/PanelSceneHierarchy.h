@@ -20,21 +20,64 @@ struct PanelSceneHierarchy
 
     static void drawEntityNode(Entity entity)
     {
+        const entt::entity id = entity.getHandle();
         auto& tag = entity.getComponent<TagComponent>().tag;
 
-        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnArrow |
-                                   ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_Leaf;
+        ImGui::PushID(static_cast<int>(static_cast<uint32_t>(id)));
 
-        const entt::entity id = entity.getHandle();
-        if (s_selected == id) flags |= ImGuiTreeNodeFlags_Selected;
+        const float rowHeight = ImGui::GetFrameHeight();
+        const float buttonWidth = ImGui::CalcTextSize("Edit").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+        const float fullWidth = ImGui::GetContentRegionAvail().x;
+        const float spacing = ImGui::GetStyle().ItemSpacing.x;
+        
+        const bool isSelected = (s_selected == id);
 
-        ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)id, flags, "%s", tag.c_str());
+        // Calculate positions
+        ImVec2 rowStart = ImGui::GetCursorScreenPos();
+        const float labelWidth = fullWidth - buttonWidth - spacing;
 
-        if (ImGui::IsItemClicked())
+        // Draw selectable for the label area only (left side)
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, ImGui::GetStyle().ItemSpacing.y));
+        
+        if (ImGui::Selectable("##entity_row", isSelected, ImGuiSelectableFlags_None, ImVec2(labelWidth, rowHeight)))
         {
             s_selected = id;
             g_editorState.selectedEntity = entity;
         }
+
+        // Draw the entity name text, vertically centered
+        {
+            const float textHeight = ImGui::GetTextLineHeight();
+            const float yOffset = (rowHeight - textHeight) * 0.5f;
+            ImGui::SetCursorScreenPos(ImVec2(rowStart.x + ImGui::GetStyle().FramePadding.x, rowStart.y + yOffset));
+            ImGui::TextUnformatted(tag.c_str());
+        }
+
+        ImGui::PopStyleVar();
+
+        // Position button on the same line, right-aligned
+        ImGui::SameLine(fullWidth - buttonWidth);
+        ImGui::SetCursorPosY(rowStart.y - ImGui::GetCursorScreenPos().y + ImGui::GetCursorPosY());
+
+        bool requestRemove = false;
+        if (ImGui::Button("Edit", ImVec2(buttonWidth, rowHeight)))
+        {
+            ImGui::OpenPopup("EntityContextMenu");
+        }
+
+        if (ImGui::BeginPopup("EntityContextMenu"))
+        {
+            if (ImGui::MenuItem("Remove Component"))
+            {
+                requestRemove = true;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+
+        if (requestRemove) entity.destroy();
+
+        ImGui::PopID();
     }
 
     static void drawNewEntityPopup(const Ref<Scene>& scene)
