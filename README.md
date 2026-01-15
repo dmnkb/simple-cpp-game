@@ -25,14 +25,15 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [x] Change debug to editor
 - [ ] ECS
     - [x] Add entities
-    - [ ] Remove entities
-    - [ ] Scene hierarchy panel
+    - [x] Remove entities
+    - [x] Scene hierarchy panel
         - [x] Display associated components
         - [x] Add / remove components
         - [x] Modify components
+        - [x] Create and switch scenes
     - [ ] (De)serialize scene
 - [ ] Assets (Material editing)
-    - [ ] Assets panel
+    - [x] Assets panel
         - [x] List all assets
         - [x] Create new material
         - [x] When assigning a mesh to mesh component, automatically use default material (Bug)
@@ -43,16 +44,15 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [ ] ImGUI Gizmo controls
 - [x] Display frametime (CPU)
 - [ ] Mip chain bloom
-- [ ] Split architecture into engine and game
 - [ ] Layer architecture (Or scene stack?)
 - [ ] SSAO
 - [ ] Debug view (Wireframe, per instance coloring)
 - [ ] Integrate Bullet Physics (Pull and throw objects)
 - [ ] Audio using [miniaudio](https://github.com/mackron/miniaudio)
-- [ ] UI using [RmlUi](https://github.com/mikke89/RmlUi)
-- [ ] Improve event system referencing ([this](https://github.com/TheCherno/Hazel/blob/1feb70572fa87fa1c4ba784a2cfeada5b4a500db/Hazel/src/Hazel/Core/Base.h#L26))
-- [ ] Simple particle system OR grass rendering
-- [ ] Rendering a heightmap from a texture
+- [ ] UI using [RmlUi](https://github.com/mikke89/RmlUi)? (Or stick with ImGUI?)
+- [ ] ? Improve event system referencing ([this](https://github.com/TheCherno/Hazel/blob/1feb70572fa87fa1c4ba784a2cfeada5b4a500db/Hazel/src/Hazel/Core/Base.h#L26))
+- [ ] Simple particle system
+- [ ] Rendering a heightmap from a texture (Vertex painting?)
 - [ ] Skeletal animation and GPU skinning
 
 

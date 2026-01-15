@@ -23,10 +23,10 @@ class Application
 
   private:
     // Editor is a tool layer that operates on whichever scene the app marks as active.
-    Scope<Editor> m_editorLayer;
-    Scope<ImGuiLayer> m_imguiLayer;
-    Scope<Renderer> m_renderer;
-    Ref<Scene> m_activeScene;
+    Scope<Editor> m_editorLayer = nullptr;
+    Scope<ImGuiLayer> m_imguiLayer = nullptr;
+    Scope<Renderer> m_renderer = nullptr;
+    Ref<Scene> m_activeScene = nullptr;
 
     // TODO: Think about how to best handle editor vs. runtime mode
     bool m_isEditorMode = true;

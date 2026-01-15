@@ -5,6 +5,7 @@
 #include "renderer/Mesh.h"
 #include "renderer/Shader.h"
 #include "renderer/Texture.h"
+#include "scene/Scene.h"
 
 namespace Engine
 {
@@ -94,6 +95,24 @@ Ref<Material> AssetManager::createMaterial(const std::filesystem::path& path, st
     return mat;
 }
 
+Ref<Scene> AssetManager::createScene(const std::filesystem::path& path, std::string name)
+{
+    std::println("AssetManager: Creating new scene '{}'", name);
+    UUID id = s_registry.findOrRegisterAsset(AssetType::Scene, path, name);
+
+    auto scene = CreateRef<Scene>();
+    scene->metadata.uuid = id;
+    scene->metadata.path = path;
+    scene->metadata.name = name;
+
+    m_loaded[id] = scene;
+
+    // TODO: Decide when to serialize - on creation or on first save
+    // SceneSerializer::serialize(scene, path);
+
+    return scene;
+}
+
 // bool AssetManager::saveAsset(const UUID& id)
 // {
 //     assert(!m_registry && "AssetManager::saveAsset called without registry set");
@@ -147,5 +166,6 @@ template Ref<Material> AssetManager::getOrImport<Material>(UUID id);
 template Ref<Mesh> AssetManager::getOrImport<Mesh>(UUID id);
 template Ref<Shader> AssetManager::getOrImport<Shader>(UUID id);
 template Ref<Texture> AssetManager::getOrImport<Texture>(UUID id);
+template Ref<Scene> AssetManager::getOrImport<Scene>(UUID id);
 
 } // namespace Engine

@@ -29,7 +29,7 @@ struct PanelSceneHierarchy
         const float buttonWidth = ImGui::CalcTextSize("Edit").x + ImGui::GetStyle().FramePadding.x * 2.0f;
         const float fullWidth = ImGui::GetContentRegionAvail().x;
         const float spacing = ImGui::GetStyle().ItemSpacing.x;
-        
+
         const bool isSelected = (s_selected == id);
 
         // Calculate positions
@@ -38,7 +38,7 @@ struct PanelSceneHierarchy
 
         // Draw selectable for the label area only (left side)
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, ImGui::GetStyle().ItemSpacing.y));
-        
+
         if (ImGui::Selectable("##entity_row", isSelected, ImGuiSelectableFlags_None, ImVec2(labelWidth, rowHeight)))
         {
             s_selected = id;
@@ -107,14 +107,43 @@ struct PanelSceneHierarchy
         }
     }
 
-    static void render(const Ref<Scene>& scene)
+    static void render(const Ref<Scene>& currenScene, std::function<void(UUID)> onSelectScene)
     {
         static bool open = true;
-        ImGui::Begin("Hierarchy", &open);
+        ImGui::Begin("Hierarchy", &open, ImGuiWindowFlags_MenuBar);
 
-        ImGui::BeginChild("##hier_tree", ImVec2(0, 0));
+        // Menu bar
+        if (ImGui::BeginMenuBar())
         {
-            if (!scene)
+            if (ImGui::BeginMenu("Scenes"))
+            {
+                if (AssetRegistry::getAllAssetsByType(AssetType::Scene).empty())
+                {
+                    ImGui::TextUnformatted("No scenes available.");
+                    ImGui::EndMenu();
+                    ImGui::EndMenuBar();
+                    ImGui::End();
+                    return;
+                }
+                AssetRegistry::forEachByType(AssetType::Scene,
+                                             [&](UUID id, AssetMetadata meta)
+                                             {
+                                                 bool isSelected =
+                                                     currenScene ? (id == currenScene->metadata.uuid) : false;
+                                                 if (ImGui::MenuItem(meta.name.c_str(), nullptr, isSelected))
+                                                 {
+                                                     onSelectScene(id);
+                                                 }
+                                             });
+                ImGui::EndMenu();
+            }
+
+            ImGui::EndMenuBar();
+        }
+
+        ImGui::BeginChild("##hier_tree");
+        {
+            if (!currenScene)
             {
                 ImGui::TextUnformatted("No scene loaded.");
                 ImGui::EndChild();
@@ -130,20 +159,20 @@ struct PanelSceneHierarchy
             }
 
             // Open popup to enter entity name
-            drawNewEntityPopup(scene);
+            drawNewEntityPopup(currenScene);
 
             // Select first entity by default
             static bool firstFrame = true;
-            scene->forEachHierarchyEntity(
+            currenScene->forEachHierarchyEntity(
                 [&](entt::entity entityID)
                 {
                     if (firstFrame)
                     {
                         s_selected = entityID;
-                        g_editorState.selectedEntity = {entityID, scene.get()};
+                        g_editorState.selectedEntity = {entityID, currenScene.get()};
                         firstFrame = false;
                     }
-                    drawEntityNode(Entity{entityID, scene.get()});
+                    drawEntityNode(Entity{entityID, currenScene.get()});
                 });
         }
         ImGui::EndChild();

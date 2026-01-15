@@ -34,19 +34,21 @@ Editor::Editor(const Ref<Scene>& activeScene)
 
 void Editor::onLoad() {}
 
-void Editor::onUpdate(float fps, const Ref<Scene>& activeScene, const double deltaTime)
+void Editor::onUpdate(float fps, const Ref<Scene>& activeScene, const double deltaTime,
+                      std::function<void(UUID)> onSelectScene)
 {
-    m_viewportCamController->update(activeScene->getActiveCamera(), deltaTime);
+    if (activeScene) m_viewportCamController->update(activeScene->getActiveCamera(), deltaTime);
 
-    onImGuiRender(fps, activeScene, deltaTime);
+    onImGuiRender(fps, activeScene, deltaTime, onSelectScene);
 }
 
-void Editor::onImGuiRender(float fps, const Ref<Scene>& activeScene, const double deltaTime)
+void Editor::onImGuiRender(float fps, const Ref<Scene>& activeScene, const double deltaTime,
+                           std::function<void(UUID)> onSelectScene)
 {
     ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
     PanelStats::render(fps);
-    PanelSceneHierarchy::render(activeScene);
+    PanelSceneHierarchy::render(activeScene, onSelectScene);
     PanelComponents::render(activeScene);
     PanelAssets::render();
     PanelMaterial::render();

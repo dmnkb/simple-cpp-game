@@ -15,10 +15,12 @@ class Editor
     ~Editor() = default;
 
     void onLoad();
-    void onUpdate(float fps, const Ref<Scene>& activeScene, const double deltaTime);
+    void onUpdate(float fps, const Ref<Scene>& activeScene, const double deltaTime,
+                  std::function<void(UUID)> onSelectScene);
 
   private:
-    void onImGuiRender(float fps, const Ref<Scene>& activeScene, const double deltaTime);
+    void onImGuiRender(float fps, const Ref<Scene>& activeScene, const double deltaTime,
+                       std::function<void(UUID)> onSelectScene);
     void throwAwayDemoScene(const Ref<Scene>& activeScene);
 
   private:

@@ -5,6 +5,7 @@
 #include "core/Core.h"
 #include "core/UUID.h"
 #include "renderer/Material.h"
+#include "scene/Scene.h"
 
 namespace Engine
 {
@@ -49,6 +50,7 @@ class AssetManager
     static Ref<T> getOrImport(UUID id);
 
     static Ref<Material> createMaterial(const std::filesystem::path& path, std::string name);
+    static Ref<Scene> createScene(const std::filesystem::path& path, std::string name);
 
     // TODO: consider putting somewhere else?
     static Ref<Material> getDefaultMaterial()

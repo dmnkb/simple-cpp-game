@@ -187,8 +187,10 @@ struct PanelAssets
                                 {
                                     drawList->AddText(ImVec2(boxMin.x, boxMax.y - ImGui::GetFontSize()),
                                                       ImGui::GetColorU32(ImGuiCol_TextDisabled),
-                                                      (CurrentAssetType == AssetType::Material) ? "Create..."
-                                                                                                : "Import...");
+                                                      (CurrentAssetType == AssetType::Material ||
+                                                       CurrentAssetType == AssetType::Scene)
+                                                          ? "Create..."
+                                                          : "Import...");
                                 }
                             }
 
@@ -197,6 +199,8 @@ struct PanelAssets
                             {
                                 std::println("Add asset button clicked for type {}",
                                              static_cast<int>(CurrentAssetType));
+
+                                //  TODO: This can be optimized
                                 if (CurrentAssetType == AssetType::Material)
                                 {
                                     // New authored asset => Save dialog
@@ -208,6 +212,20 @@ struct PanelAssets
                                         std::filesystem::path p = *pathOpt;
                                         std::string name = p.stem().string();
                                         AssetManager::createMaterial(p, name);
+                                        Selection.Clear();
+                                    }
+                                }
+                                else if (CurrentAssetType == AssetType::Scene)
+                                {
+                                    // New authored asset => Save dialog
+                                    auto pathOpt =
+                                        FileDialog::saveFile("Create Scene", FiltersForType(CurrentAssetType),
+                                                             /*defaultPath*/ "", /*defaultName*/ "NewScene.scene");
+                                    if (pathOpt)
+                                    {
+                                        std::filesystem::path p = *pathOpt;
+                                        std::string name = p.stem().string();
+                                        AssetManager::createScene(p, name);
                                         Selection.Clear();
                                     }
                                 }

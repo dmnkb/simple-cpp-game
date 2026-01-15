@@ -19,7 +19,6 @@ Application::Application()
     EventManager::registerListeners(typeid(KeyEvent).name(),
                                     [this](const Ref<Event> event) { this->onKeyEvent(event); });
 
-    m_activeScene = CreateRef<Scene>();
     m_editorLayer = CreateScope<Editor>(m_activeScene);
     m_imguiLayer = CreateScope<ImGuiLayer>();
     m_imguiLayer->onAttach(Window::glfwWindow);
@@ -52,11 +51,12 @@ void Application::run()
 
         EventManager::processEvents();
 
-        m_renderer->render(m_activeScene);
+        if (m_activeScene) m_renderer->render(m_activeScene);
 
         m_imguiLayer->beginFrame();
 
-        m_editorLayer->onUpdate(float(fps), m_activeScene, m_DeltaTime);
+        m_editorLayer->onUpdate(float(fps), m_activeScene, m_DeltaTime,
+                                [&](UUID id) { m_activeScene = AssetManager::getOrImport<Scene>(id); });
 
         m_imguiLayer->endFrame();
 
@@ -65,12 +65,6 @@ void Application::run()
         lastTime = currentTime;
     }
 }
-
-// TODO:
-// void Application::onSceneLoaded(Ref<Scene> scene) {
-//     m_activeScene = scene;
-//     m_editor.setScene(m_activeScene);
-// }
 
 void Application::onKeyEvent(const Ref<Event> event)
 {
