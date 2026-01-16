@@ -87,8 +87,11 @@ void Application::onKeyEvent(const Ref<Event> event)
 
 Application::~Application()
 {
+    m_editorLayer.reset();
+    m_imguiLayer->onDetach();
+    m_imguiLayer.reset();
+    m_renderer.reset();
     Window::shutdown();
-    exit(EXIT_SUCCESS);
 }
 
 } // namespace Engine

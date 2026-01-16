@@ -32,6 +32,7 @@ I'm building this game to learn game development in C++ sticking to best practic
         - [x] Modify components
         - [x] Create and switch scenes
     - [ ] (De)serialize scene
+- [ ] Save Button - Saves registry and serializes scenes and materials
 - [ ] Assets (Material editing)
     - [x] Assets panel
         - [x] List all assets

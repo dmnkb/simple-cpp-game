@@ -20,8 +20,7 @@ void init(const WindowProps& props)
 {
     glfwSetErrorCallback([](int error, const char* description) { fprintf(stderr, "Error: %s\n", description); });
 
-    if (!glfwInit())
-        exit(EXIT_FAILURE);
+    if (!glfwInit()) exit(EXIT_FAILURE);
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -55,7 +54,11 @@ void init(const WindowProps& props)
 
 void shutdown()
 {
+    if (!glfwWindow) return;  // Already shut down
+    
+    open = false;
     glfwDestroyWindow(glfwWindow);
+    glfwWindow = nullptr;
     glfwTerminate();
 }
 

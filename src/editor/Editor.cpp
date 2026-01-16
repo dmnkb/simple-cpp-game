@@ -7,6 +7,7 @@
 #include "assets/MeshLoader.h"
 #include "core/Window.h"
 #include "editor/Editor.h"
+#include "editor/MenuBar.h"
 #include "editor/PanelAssets.h"
 #include "editor/PanelComponents.h"
 #include "editor/PanelMaterial.h"
@@ -45,6 +46,8 @@ void Editor::onUpdate(float fps, const Ref<Scene>& activeScene, const double del
 void Editor::onImGuiRender(float fps, const Ref<Scene>& activeScene, const double deltaTime,
                            std::function<void(UUID)> onSelectScene)
 {
+    MenuBar::render([this]() { quitEditor(); }, [this]() { saveProject(); });
+
     ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
     PanelStats::render(fps);
@@ -54,6 +57,21 @@ void Editor::onImGuiRender(float fps, const Ref<Scene>& activeScene, const doubl
     PanelMaterial::render();
     // PanelScene::render(activeScene);
     // PanelStatsHighlights::render(fps, activeScene);
+}
+
+void Editor::saveProject()
+{
+    // TODO: serialize scenes and materials, save asset registry
+    std::println("Saving project... (TODO)");
+}
+
+void Editor::quitEditor()
+{
+    // TODO: prompt to save unsaved changes
+    std::println("Quitting editor...");
+
+    // Just signal quit - let Application handle actual cleanup
+    Window::open = false;
 }
 
 // TODO: remove once scene loading is in place

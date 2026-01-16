@@ -21,6 +21,8 @@ class Editor
   private:
     void onImGuiRender(float fps, const Ref<Scene>& activeScene, const double deltaTime,
                        std::function<void(UUID)> onSelectScene);
+    void saveProject();
+    void quitEditor();
     void throwAwayDemoScene(const Ref<Scene>& activeScene);
 
   private:
