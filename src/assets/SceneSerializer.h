@@ -15,69 +15,6 @@
 #include "scene/Entity.h"
 #include "scene/Scene.h"
 
-namespace YAML
-{
-template <>
-struct convert<glm::vec3>
-{
-    static Node encode(const glm::vec3& rhs)
-    {
-        Node node;
-        node.push_back(rhs.x);
-        node.push_back(rhs.y);
-        node.push_back(rhs.z);
-        return node;
-    }
-
-    static bool decode(const Node& node, glm::vec3& rhs)
-    {
-        if (!node.IsSequence() || node.size() != 3) return false;
-        rhs.x = node[0].as<float>();
-        rhs.y = node[1].as<float>();
-        rhs.z = node[2].as<float>();
-        return true;
-    }
-};
-
-template <>
-struct convert<glm::vec4>
-{
-    static Node encode(const glm::vec4& rhs)
-    {
-        Node node;
-        node.push_back(rhs.x);
-        node.push_back(rhs.y);
-        node.push_back(rhs.z);
-        node.push_back(rhs.w);
-        return node;
-    }
-
-    static bool decode(const Node& node, glm::vec4& rhs)
-    {
-        if (!node.IsSequence() || node.size() != 4) return false;
-        rhs.x = node[0].as<float>();
-        rhs.y = node[1].as<float>();
-        rhs.z = node[2].as<float>();
-        rhs.w = node[3].as<float>();
-        return true;
-    }
-};
-
-inline Emitter& operator<<(Emitter& out, const glm::vec3& v)
-{
-    out << Flow;
-    out << BeginSeq << v.x << v.y << v.z << EndSeq;
-    return out;
-}
-
-inline Emitter& operator<<(Emitter& out, const glm::vec4& v)
-{
-    out << Flow;
-    out << BeginSeq << v.x << v.y << v.z << v.w << EndSeq;
-    return out;
-}
-} // namespace YAML
-
 namespace Engine
 {
 
@@ -134,6 +71,46 @@ struct SceneSerializer
             out << YAML::EndMap;
         }
 
+        // PointLightComponent
+        if (entity.hasComponent<PointLightComponent>())
+        {
+            auto& plc = entity.getComponent<PointLightComponent>();
+            out << YAML::Key << "PointLightComponent" << YAML::Value << YAML::BeginMap;
+            out << YAML::Key << "Color" << YAML::Value << plc.color;
+            out << YAML::Key << "Intensity" << YAML::Value << plc.intensity;
+            out << YAML::Key << "Radius" << YAML::Value << plc.radius;
+            out << YAML::Key << "Constant" << YAML::Value << plc.constant;
+            out << YAML::Key << "Linear" << YAML::Value << plc.linear;
+            out << YAML::Key << "Quadratic" << YAML::Value << plc.quadratic;
+            out << YAML::EndMap;
+        }
+
+        // SpotLightComponent
+        if (entity.hasComponent<SpotLightComponent>())
+        {
+            auto& slc = entity.getComponent<SpotLightComponent>();
+            out << YAML::Key << "SpotLightComponent" << YAML::Value << YAML::BeginMap;
+            out << YAML::Key << "Color" << YAML::Value << slc.color;
+            out << YAML::Key << "Intensity" << YAML::Value << slc.intensity;
+            out << YAML::Key << "InnerConeAngle" << YAML::Value << slc.innerConeAngle;
+            out << YAML::Key << "OuterConeAngle" << YAML::Value << slc.outerConeAngle;
+            out << YAML::Key << "Constant" << YAML::Value << slc.constant;
+            out << YAML::Key << "Linear" << YAML::Value << slc.linear;
+            out << YAML::Key << "Quadratic" << YAML::Value << slc.quadratic;
+            out << YAML::EndMap;
+        }
+
+        // DirectionalLightComponent
+        if (entity.hasComponent<DirectionalLightComponent>())
+        {
+            auto& dlc = entity.getComponent<DirectionalLightComponent>();
+            out << YAML::Key << "DirectionalLightComponent" << YAML::Value << YAML::BeginMap;
+            out << YAML::Key << "Color" << YAML::Value << dlc.color;
+            out << YAML::Key << "Intensity" << YAML::Value << dlc.intensity;
+            out << YAML::Key << "IsMainLight" << YAML::Value << dlc.isMainLight;
+            out << YAML::EndMap;
+        }
+
         out << YAML::EndMap;
     }
 
@@ -146,6 +123,7 @@ struct SceneSerializer
             return false;
         }
 
+        auto absolutePath = AssetManager::toAbsolutePath(filepath);
         YAML::Emitter out;
 
         out << YAML::BeginMap;
@@ -176,10 +154,10 @@ struct SceneSerializer
 
         out << YAML::EndMap;
 
-        std::ofstream fout(filepath);
+        std::ofstream fout(absolutePath);
         if (!fout.is_open())
         {
-            std::cerr << "SceneSerializer: Failed to open for writing: " << filepath.string() << "\n";
+            std::cerr << "SceneSerializer: Failed to open for writing: " << absolutePath.string() << "\n";
             return false;
         }
 
@@ -196,14 +174,15 @@ struct SceneSerializer
             return false;
         }
 
+        auto absolutePath = AssetManager::toAbsolutePath(filepath);
         YAML::Node data;
         try
         {
-            data = YAML::LoadFile(filepath.string());
+            data = YAML::LoadFile(absolutePath.string());
         }
         catch (const std::exception& e)
         {
-            std::cerr << "SceneSerializer: YAML::LoadFile failed for '" << filepath.string() << "': " << e.what()
+            std::cerr << "SceneSerializer: YAML::LoadFile failed for '" << absolutePath.string() << "': " << e.what()
                       << "\n";
             return false;
         }

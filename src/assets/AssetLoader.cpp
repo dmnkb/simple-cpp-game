@@ -6,6 +6,7 @@
 #include "assets/AssetLoader.h"
 #include "assets/MaterialSerializer.h"
 #include "assets/MeshLoader.h"
+#include "assets/SceneSerializer.h"
 #include "renderer/Material.h"
 #include "renderer/Mesh.h"
 #include "renderer/Shader.h"
@@ -123,7 +124,15 @@ Ref<Mesh> AssetLoader::load<Mesh>(const AssetMetadata& meta)
 template <>
 Ref<Scene> AssetLoader::load<Scene>(const AssetMetadata& meta)
 {
-    assert(false && "AssetLoader::load<Scene> not implemented yet");
+    if (!isSane<Scene>(meta)) return nullptr;
+
+    auto absolutePath = meta.getAbsolutePath();
+    std::println("AssetLoader<Scene>: Loading scene '{}' from '{}'", meta.name, absolutePath.string());
+
+    Ref<Scene> scene = CreateRef<Scene>();
+    SceneSerializer::deserialize(scene, absolutePath);
+
+    return scene;
 }
 
 } // namespace Engine

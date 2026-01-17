@@ -74,16 +74,18 @@ void AssetRegistry::serialize(const std::filesystem::path& filepath)
     out << YAML::EndSeq;
     out << YAML::EndMap;
 
-    std::ofstream fout(filepath);
+    auto absolutePath = AssetManager::toAbsolutePath(filepath);
+    std::ofstream fout(absolutePath);
     fout << out.c_str();
 }
 
 void AssetRegistry::deserialize(const std::filesystem::path& filepath)
 {
     YAML::Node data;
+    auto absolutePath = AssetManager::toAbsolutePath(filepath);
     try
     {
-        data = YAML::LoadFile(filepath.string());
+        data = YAML::LoadFile(absolutePath.string());
     }
     catch (const std::exception& e)
     {
