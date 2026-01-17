@@ -80,6 +80,8 @@ class Scene : public Asset
     // Lighting
     void setAmbientLightColor(const glm::vec4& color);
     glm::vec4 getAmbientLightColor() const;
+    void setSunLightColor(const glm::vec4& color);
+    glm::vec4 getSunLightColor() const;
 
     // Camera
     void setActiveCamera(const Camera& camera);
@@ -88,12 +90,12 @@ class Scene : public Asset
   private:
     entt::registry m_registry;
 
+    Camera m_activeCamera;
     glm::vec4 m_ambientLightColor = {0.302f, 0.329f, 0.357f, 1.0f};
     glm::vec4 m_sunLightColor = {0.925f, 0.886f, 0.804f, 0.702f};
 
-    Camera m_activeCamera;
-
     friend class Entity;
+    friend class SceneSerializer;
 };
 
 } // namespace Engine

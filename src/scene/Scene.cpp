@@ -89,6 +89,16 @@ glm::vec4 Scene::getAmbientLightColor() const
     return m_ambientLightColor;
 }
 
+void Scene::setSunLightColor(const glm::vec4& color)
+{
+    m_sunLightColor = color;
+}
+
+glm::vec4 Scene::getSunLightColor() const
+{
+    return m_sunLightColor;
+}
+
 void Scene::setActiveCamera(const Camera& camera)
 {
     m_activeCamera = camera;
