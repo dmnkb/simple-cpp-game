@@ -49,7 +49,9 @@ class AssetRegistry
         return result;
     }
 
-    // TODO: serialize/deserialize registry file
+    static void serialize(const std::filesystem::path& filepath);
+    static void deserialize(const std::filesystem::path& filepath);
+
   private:
     inline static std::unordered_map<UUID, AssetMetadata> m_meta;
 

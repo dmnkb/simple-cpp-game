@@ -4,7 +4,9 @@
 
 #include "assets/AssetManager.h"
 #include "assets/AssetRegistry.h"
+#include "assets/MaterialSerializer.h"
 #include "assets/MeshLoader.h"
+#include "assets/SceneSerializer.h"
 #include "core/Window.h"
 #include "editor/Editor.h"
 #include "editor/MenuBar.h"
@@ -61,8 +63,35 @@ void Editor::onImGuiRender(float fps, const Ref<Scene>& activeScene, const doubl
 
 void Editor::saveProject()
 {
-    // TODO: serialize scenes and materials, save asset registry
-    std::println("Saving project... (TODO)");
+    std::println("Saving project...");
+
+    // TODO:
+    // AssetManager::saveAllModifiedAssets();
+
+    // Serialize materials
+    const auto materials = AssetRegistry::getAllAssetsByType(AssetType::Material);
+    for (const auto& [id, meta] : materials)
+    {
+        Ref<Material> material = AssetManager::getOrImport<Material>(id);
+        if (material)
+        {
+            MaterialSerializer::serialize(material, meta.path);
+        }
+    }
+
+    // Serialize scenes
+    const auto scenes = AssetRegistry::getAllAssetsByType(AssetType::Scene);
+    for (const auto& [id, meta] : scenes)
+    {
+        Ref<Scene> scene = AssetManager::getOrImport<Scene>(id);
+        if (scene)
+        {
+            SceneSerializer::serialize(scene, meta.path);
+        }
+    }
+
+    // Serialize Registry
+    AssetRegistry::serialize("assets/asset_registry.yaml");
 }
 
 void Editor::quitEditor()

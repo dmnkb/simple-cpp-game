@@ -1,6 +1,7 @@
 #include "assets/AssetManager.h"
 #include "assets/AssetLoader.h"
 #include "assets/MaterialSerializer.h"
+#include "assets/SceneSerializer.h"
 #include "pch.h"
 #include "renderer/Mesh.h"
 #include "renderer/Shader.h"
@@ -89,8 +90,7 @@ Ref<Material> AssetManager::createMaterial(const std::filesystem::path& path, st
 
     m_loaded[id] = mat;
 
-    // TODO: Decide when to serialize - on creation or on first save
-    // MaterialSerializer::serialize(mat, path);
+    MaterialSerializer::serialize(mat, path);
 
     return mat;
 }
@@ -107,8 +107,7 @@ Ref<Scene> AssetManager::createScene(const std::filesystem::path& path, std::str
 
     m_loaded[id] = scene;
 
-    // TODO: Decide when to serialize - on creation or on first save
-    // SceneSerializer::serialize(scene, path);
+    SceneSerializer::serialize(scene, path);
 
     return scene;
 }

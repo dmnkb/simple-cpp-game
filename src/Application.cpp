@@ -1,4 +1,5 @@
 #include "Application.h"
+#include "assets/AssetRegistry.h"
 #include "core/Profiler.h"
 #include "core/Window.h"
 #include "pch.h"
@@ -22,6 +23,8 @@ Application::Application()
     m_imguiLayer = CreateScope<ImGuiLayer>();
     m_imguiLayer->onAttach(Window::glfwWindow);
     m_renderer = CreateScope<Renderer>();
+
+    AssetRegistry::deserialize("assets/asset_registry.yaml");
 }
 
 void Application::run()
