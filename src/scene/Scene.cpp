@@ -8,11 +8,14 @@ namespace Engine
 
 Scene::Scene()
 {
-    m_activeCamera = Camera(Camera::CameraProps{.fov = glm::radians(45.0f),
-                                                .aspect = 16.f / 9.f, // TODO: change onViewportResize
-                                                .near = 0.1f,
-                                                .far = 1000.0f,
-                                                .isMainCamera = true});
+    Camera::CameraProps props = {};
+    props.fov = glm::radians(45.0f);
+    props.aspect = 16.f / 9.f;
+    props.near = 0.1f;
+    props.far = 1000.0f;
+    props.isMainCamera = true;
+
+    m_activeCamera = Camera(props);
 }
 
 Scene::~Scene() {}

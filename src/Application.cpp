@@ -8,7 +8,6 @@ namespace Engine
 
 Application::Application()
 {
-    // TODO: Support multiple windows and docking
     Window::WindowProps windowProps = {
         .initialWidth = 1080,
         .initialHeight = 720,

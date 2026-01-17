@@ -104,8 +104,8 @@ Ref<Mesh> AssetLoader::load<Mesh>(const AssetMetadata& meta)
         std::println("AssetLoader<Mesh>: Loaded material slot '{}' for mesh '{}'", matData.materialSlotName, meta.name);
 
         // Create a default material for this slot
-        Ref<Material> material = AssetManager::createMaterial(fmt::format("assets/materials/{}_{}.mat", meta.name, i),
-                                                              fmt::format("{}_mat_{}", meta.name, i));
+        Ref<Material> material = AssetManager::createMaterial(
+            fmt::format("assets/materials/{}.mat", matData.materialSlotName), matData.materialSlotName);
 
         material->albedo = matData.albedo;
         material->normal = matData.normal;
@@ -113,7 +113,6 @@ Ref<Mesh> AssetLoader::load<Mesh>(const AssetMetadata& meta)
         material->metallic = matData.metallic;
         material->ao = matData.ao;
         material->baseColor = matData.baseColor;
-        // TODO: Slot name and base color?
 
         mesh->defaultMaterialSlots.push_back(material);
     }
