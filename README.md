@@ -23,7 +23,7 @@ I'm building this game to learn game development in C++ sticking to best practic
 - [x] Refactor lights
 - [x] Cascaded shadow maps 
 - [x] Change debug to editor
-- [ ] ECS
+- [x] ECS
     - [x] Add entities
     - [x] Remove entities
     - [x] Scene hierarchy panel
@@ -31,21 +31,21 @@ I'm building this game to learn game development in C++ sticking to best practic
         - [x] Add / remove components
         - [x] Modify components
         - [x] Create and switch scenes
-    - [ ] (De)serialize scene
-- [ ] Save Button - Saves registry and serializes scenes and materials
+    - [x] (De)serialize scene
+- [x] Save Button - Saves registry and serializes scenes and materials
 - [ ] Assets (Material editing)
     - [x] Assets panel
         - [x] List all assets
         - [x] Create new material
         - [x] When assigning a mesh to mesh component, automatically use default material (Bug)
-    - [ ] (De)serialize assets registry (project-wide asset database)
+    - [x] (De)serialize assets registry (project-wide asset database)
     - [x] (De)serialize materials
     - [x] Assign material to material slot
     - [ ] Edit material
 - [ ] ImGUI Gizmo controls
+- [ ] Mouse picking
 - [x] Display frametime (CPU)
 - [ ] Mip chain bloom
-- [ ] Layer architecture (Or scene stack?)
 - [ ] SSAO
 - [ ] Debug view (Wireframe, per instance coloring)
 - [ ] Integrate Bullet Physics (Pull and throw objects)
